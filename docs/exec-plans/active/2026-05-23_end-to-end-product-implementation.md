@@ -344,12 +344,12 @@ Risk:
 Status:
 
 - In Progress.
-- Static implementation complete; runtime evidence pending owner approval.
+- Static implementation complete; runtime evidence intentionally deferred to Phase 8 where the controller wires the service into the indicator and the user-visible data path can be exercised end to end.
 - Added `src/runtime/mpris/discovery.js` pure helpers: `isMprisBusName`, `filterMprisNames`, `diffBusNames`, `applyNameOwnerChange`. All testable without GJS.
 - Added `src/runtime/mpris/service.js` `MprisService` class. Subscribes to `org.freedesktop.DBus.NameOwnerChanged` on the session bus and seeds initial state with a single `ListNames` call. Tracks the signal subscription via `signal_unsubscribe` and the initial-call `Gio.Cancellable` through `LifecycleRegistry`. Async callbacks check a guarded `enabled` flag and ignore replies after disable. No wildcard `bus_watch_name` usage anywhere.
 - Added `tests/mpris/discovery.test.js` covering MPRIS prefix filtering (including the bare prefix), set diff with sorted output, and `NameOwnerChanged` reduction (added on new owner, removed on empty owner, no-op on owner-transfer or duplicate state).
 - Verification: `npm run verify` passed with 10 test files and 81 tests; extension bundle includes `src/runtime/mpris/`.
-- Sub-plan: `docs/exec-plans/active/2026-05-23_mpris-player-discovery.md`. Status will move to Complete once runtime evidence is captured on a GNOME Shell 46 session.
+- Sub-plan: `docs/exec-plans/active/2026-05-23_mpris-player-discovery.md`. Sub-plan stays active until Phase 8 records the combined runtime evidence.
 
 ### Phase 7: MPRIS Player Proxy
 
@@ -390,6 +390,16 @@ Runtime evidence:
 Risk:
 
 - High. D-Bus proxy lifecycle and Shell cleanup must be correct.
+
+Status:
+
+- In Progress.
+- Static implementation complete; runtime evidence intentionally deferred to Phase 8 alongside Phase 6 evidence.
+- Added `src/runtime/mpris/player-mapping.js` pure mapper: `mapMprisProperties` builds a `PlayerSnapshot` from a raw MPRIS property bag (using the Phase 5 normalizer), `applyPropertyChanges` folds incremental property changes into an existing snapshot, `snapshotsEqual` performs change detection on the fields LyricBar consumes.
+- Added `src/runtime/mpris/player.js` `PlayerProxy` class. Builds a `Gio.DBusProxy` for `org.mpris.MediaPlayer2.Player` on an exact bus name, seeds the snapshot from cached properties, listens for `g-properties-changed`, and emits only when `snapshotsEqual` returns false. Tracks the proxy signal, the construction `Gio.Cancellable`, and listener registrations through `LifecycleRegistry`. Player disappearance emits `null` once and stops further activity.
+- Added `tests/mpris/player-mapping.test.js` covering full property-bag mapping (including microsecond-to-millisecond duration conversion and multi-artist arrays), missing-property fallbacks, non-MPRIS bus names, blank track ids and non-finite durations, partial change merges, change-set with no relevant keys, snapshot equality, and null comparisons.
+- Verification: `npm run verify` passed with 11 test files and 92 tests; extension bundle includes `src/runtime/mpris/player.js` and `player-mapping.js`.
+- Sub-plan: `docs/exec-plans/active/2026-05-23_mpris-player-proxy.md`. Sub-plan stays active until Phase 8 records the combined runtime evidence.
 
 ### Phase 8: Controller MPRIS Integration
 

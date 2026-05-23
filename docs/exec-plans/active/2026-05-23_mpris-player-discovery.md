@@ -170,7 +170,10 @@ npx commitlint --from HEAD~1 --to HEAD --verbose
 ## Runtime Evidence
 
 Required before Phase 6 is closed in the parent plan. Captured by the human
-owner, not the agent.
+owner, not the agent. Evidence is intentionally **deferred to Phase 8**, where
+the controller wires this service into the indicator and the data path can
+be exercised end to end. Until then the sub-plan stays active and the parent
+plan keeps Phase 6 marked In Progress.
 
 - GNOME Shell version: pending
 - Session type (X11 / Wayland): pending
