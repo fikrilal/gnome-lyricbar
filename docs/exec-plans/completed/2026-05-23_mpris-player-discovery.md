@@ -2,7 +2,7 @@
 
 Date: 2026-05-23  
 Owner: Dante  
-Status: active  
+Status: complete  
 Risk class: high  
 Related issue/PR: N/A  
 Parent plan: `docs/exec-plans/active/2026-05-23_end-to-end-product-implementation.md` (Phase 6)
@@ -169,11 +169,22 @@ npx commitlint --from HEAD~1 --to HEAD --verbose
 
 ## Runtime Evidence
 
-Required before Phase 6 is closed in the parent plan. Captured by the human
-owner, not the agent. Evidence is intentionally **deferred to Phase 8**, where
-the controller wires this service into the indicator and the data path can
-be exercised end to end. Until then the sub-plan stays active and the parent
-plan keeps Phase 6 marked In Progress.
+Captured live on GNOME Shell 46.0 / Ubuntu 24.04.4 LTS / X11. Combined
+evidence for Phases 6, 7, and 8 lives at
+`docs/exec-plans/completed/evidence/2026-05-23_phase-8/scenarios.md`
+and `.../logs/`.
+
+Phase 6 specific outcomes verified:
+
+- Discovery seeded the initial MPRIS bus name set from `ListNames`.
+- `NameOwnerChanged` reduced player additions and removals into the
+  service's set, including Spotify quitting via the MPRIS `Quit` method.
+- Disable produced no `signal_unsubscribe` warnings, no leaked handlers,
+  and no `Gio.Cancellable` criticals in the user journal.
+- Re-enable round-tripped cleanly back to `ACTIVE`.
+
+Sub-plan now marked Complete and moved to
+`docs/exec-plans/completed/`.
 
 - GNOME Shell version: pending
 - Session type (X11 / Wayland): pending

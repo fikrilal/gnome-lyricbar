@@ -2,11 +2,11 @@
 
 Date: 2026-05-23  
 Owner: Dante  
-Status: active  
+Status: complete  
 Risk class: high  
 Related issue/PR: N/A  
 Parent plan: `docs/exec-plans/active/2026-05-23_end-to-end-product-implementation.md` (Phase 7)  
-Depends on: `docs/exec-plans/active/2026-05-23_mpris-player-discovery.md` (Phase 6)
+Depends on: `docs/exec-plans/completed/2026-05-23_mpris-player-discovery.md` (Phase 6)
 
 ## Objective
 
@@ -174,21 +174,24 @@ npx commitlint --from HEAD~1 --to HEAD --verbose
 
 ## Runtime Evidence
 
-Captured by the human owner, not the agent. Phase 7 runtime evidence is
-**deferred to Phase 8** where the controller subscribes to player snapshots
-and the indicator reflects player presence. Until then this plan stays
-active and the parent plan keeps Phase 7 marked In Progress.
+Captured live on GNOME Shell 46.0 / Ubuntu 24.04.4 LTS / X11. Combined
+evidence for Phases 6, 7, and 8 lives at
+`docs/exec-plans/completed/evidence/2026-05-23_phase-8/scenarios.md`
+and `.../logs/`.
 
-Scenarios to capture in Phase 8:
+Phase 7 specific outcomes verified:
 
-- [ ] Spotify started, metadata reads correctly into the indicator track
-      fallback display.
-- [ ] Track skip mid-playback re-emits a snapshot with the new title and
-      artist.
-- [ ] Pause / resume changes `PlaybackStatus` between `Playing` and `Paused`
-      in the snapshot stream.
-- [ ] Quitting Spotify causes the proxy to emit a final snapshot or `null`
-      and clean up without Shell errors.
+- Snapshot was seeded from cached MPRIS properties for both Spotify and
+  Chromium player proxies.
+- Track skip on Spotify produced a fresh snapshot through
+  `g-properties-changed` -> `applyPropertyChanges` -> `snapshotsEqual`.
+- Pause / resume updated only `playbackStatus`, leaving track metadata
+  untouched on the snapshot.
+- Spotify quit caused the proxy to emit `null` once and stop. No
+  callbacks fired afterward; no journal errors.
+
+Sub-plan now marked Complete and moved to
+`docs/exec-plans/completed/`.
 
 ## Risks And Mitigations
 

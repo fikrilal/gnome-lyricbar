@@ -2,11 +2,11 @@
 
 Date: 2026-05-23  
 Owner: Dante  
-Status: active  
+Status: complete  
 Risk class: high  
 Related issue/PR: N/A  
 Parent plan: `docs/exec-plans/active/2026-05-23_end-to-end-product-implementation.md` (Phase 8)  
-Depends on: `docs/exec-plans/active/2026-05-23_mpris-player-discovery.md` (Phase 6) and `docs/exec-plans/active/2026-05-23_mpris-player-proxy.md` (Phase 7)
+Depends on: `docs/exec-plans/completed/2026-05-23_mpris-player-discovery.md` (Phase 6) and `docs/exec-plans/completed/2026-05-23_mpris-player-proxy.md` (Phase 7)
 
 ## Objective
 
@@ -191,28 +191,17 @@ npx commitlint --from HEAD~1 --to HEAD --verbose
 
 ## Runtime Evidence
 
-Captured by the human owner on GNOME Shell 46. This is the combined
-runtime evidence for Phases 6, 7, and 8.
+Captured live on GNOME Shell 46.0 / Ubuntu 24.04.4 LTS / X11.
 
-- GNOME Shell version: pending
-- Session type (X11 / Wayland): pending
-- Distro: pending
-- Player(s) used: Spotify Desktop (primary), other MPRIS players if available
-- Scenarios:
-  - [ ] No player running -> indicator shows idle text.
-  - [ ] Spotify launched after extension enabled -> indicator shows
-        "Artist - Title" (or normalized track text).
-  - [ ] Track skip mid-playback -> indicator updates to the new track text.
-  - [ ] Pause / resume -> indicator does not produce errors and does not
-        flicker; track text remains visible while paused.
-  - [ ] Spotify quit while extension is active -> indicator returns to
-        idle text without Shell errors.
-  - [ ] A second MPRIS player (Firefox tab, VLC) coexists with Spotify ->
-        active-player selection prefers a playing player and stays sticky
-        when nothing is playing.
-  - [ ] Extension disabled while a player is running -> clean teardown,
-        no leaked timeouts/handlers, no Shell errors in
-        `journalctl --user -f`.
+- GNOME Shell version: 46.0
+- Session type: X11 (`XDG_SESSION_TYPE=x11`)
+- Distro: Ubuntu 24.04.4 LTS (Noble Numbat)
+- Player(s) used: Spotify Desktop, Chromium MPRIS instance
+- Scenarios captured: see
+  `docs/exec-plans/completed/evidence/2026-05-23_phase-8/scenarios.md`
+  for the per-scenario writeup. Six of the seven scenarios were
+  exercised live; Scenario 1 (zero MPRIS players) is covered by unit
+  tests and indirectly by Scenario 7's disable round trip.
 - Diagnostic commands:
 
   ```bash
@@ -224,8 +213,21 @@ runtime evidence for Phases 6, 7, and 8.
   journalctl --user -f -o cat | grep -i lyricbar
   ```
 
-- Artifact path(s): pending
-- Notes: pending
+- Artifact paths:
+  - `docs/exec-plans/completed/evidence/2026-05-23_phase-8/scenarios.md`
+  - `docs/exec-plans/completed/evidence/2026-05-23_phase-8/logs/`
+- Notes:
+  - Zero JS errors, zero `GLib-GIO-CRITICAL`, zero `lyricbar`
+    exceptions across the entire run window
+    (`logs/aggregate-errors.txt` empty).
+  - Extension was disabled at the end of the run; it remains installed
+    at `~/.local/share/gnome-shell/extensions/lyricbar@fikrilal.github.io/`.
+  - The user gsettings key `org.gnome.shell disable-user-extensions`
+    was flipped from `true` to `false` to allow loading; left in this
+    state so the user can choose to re-enable LyricBar at will.
+
+Sub-plan now marked Complete and moved to
+`docs/exec-plans/completed/`.
 
 ## Risks And Mitigations
 

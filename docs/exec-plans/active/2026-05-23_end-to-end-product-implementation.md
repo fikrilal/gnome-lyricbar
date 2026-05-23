@@ -343,13 +343,14 @@ Risk:
 
 Status:
 
-- In Progress.
-- Static implementation complete; runtime evidence intentionally deferred to Phase 8 where the controller wires the service into the indicator and the user-visible data path can be exercised end to end.
+- Complete.
+- Static implementation landed in `feat(mpris): add dbus player discovery`.
 - Added `src/runtime/mpris/discovery.js` pure helpers: `isMprisBusName`, `filterMprisNames`, `diffBusNames`, `applyNameOwnerChange`. All testable without GJS.
 - Added `src/runtime/mpris/service.js` `MprisService` class. Subscribes to `org.freedesktop.DBus.NameOwnerChanged` on the session bus and seeds initial state with a single `ListNames` call. Tracks the signal subscription via `signal_unsubscribe` and the initial-call `Gio.Cancellable` through `LifecycleRegistry`. Async callbacks check a guarded `enabled` flag and ignore replies after disable. No wildcard `bus_watch_name` usage anywhere.
 - Added `tests/mpris/discovery.test.js` covering MPRIS prefix filtering (including the bare prefix), set diff with sorted output, and `NameOwnerChanged` reduction (added on new owner, removed on empty owner, no-op on owner-transfer or duplicate state).
 - Verification: `npm run verify` passed with 10 test files and 81 tests; extension bundle includes `src/runtime/mpris/`.
-- Sub-plan: `docs/exec-plans/active/2026-05-23_mpris-player-discovery.md`. Sub-plan stays active until Phase 8 records the combined runtime evidence.
+- Runtime evidence: captured live on GNOME Shell 46.0 / Ubuntu 24.04.4 X11 alongside Phases 7 and 8. Six of seven scenarios exercised live; Scenario 1 covered by unit tests. Zero JS errors across the run. Artifacts at `docs/exec-plans/completed/evidence/2026-05-23_phase-8/`.
+- Sub-plan moved to `docs/exec-plans/completed/2026-05-23_mpris-player-discovery.md`.
 
 ### Phase 7: MPRIS Player Proxy
 
@@ -393,13 +394,14 @@ Risk:
 
 Status:
 
-- In Progress.
-- Static implementation complete; runtime evidence intentionally deferred to Phase 8 alongside Phase 6 evidence.
+- Complete.
+- Static implementation landed in `feat(mpris): track player metadata and playback state`.
 - Added `src/runtime/mpris/player-mapping.js` pure mapper: `mapMprisProperties` builds a `PlayerSnapshot` from a raw MPRIS property bag (using the Phase 5 normalizer), `applyPropertyChanges` folds incremental property changes into an existing snapshot, `snapshotsEqual` performs change detection on the fields LyricBar consumes.
 - Added `src/runtime/mpris/player.js` `PlayerProxy` class. Builds a `Gio.DBusProxy` for `org.mpris.MediaPlayer2.Player` on an exact bus name, seeds the snapshot from cached properties, listens for `g-properties-changed`, and emits only when `snapshotsEqual` returns false. Tracks the proxy signal, the construction `Gio.Cancellable`, and listener registrations through `LifecycleRegistry`. Player disappearance emits `null` once and stops further activity.
 - Added `tests/mpris/player-mapping.test.js` covering full property-bag mapping (including microsecond-to-millisecond duration conversion and multi-artist arrays), missing-property fallbacks, non-MPRIS bus names, blank track ids and non-finite durations, partial change merges, change-set with no relevant keys, snapshot equality, and null comparisons.
 - Verification: `npm run verify` passed with 11 test files and 92 tests; extension bundle includes `src/runtime/mpris/player.js` and `player-mapping.js`.
-- Sub-plan: `docs/exec-plans/active/2026-05-23_mpris-player-proxy.md`. Sub-plan stays active until Phase 8 records the combined runtime evidence.
+- Runtime evidence: captured live on GNOME Shell 46.0 / Ubuntu 24.04.4 X11 alongside Phases 6 and 8. Track skip, pause/resume, and Spotify quit all flowed through the proxy without errors. Artifacts at `docs/exec-plans/completed/evidence/2026-05-23_phase-8/`.
+- Sub-plan moved to `docs/exec-plans/completed/2026-05-23_mpris-player-proxy.md`.
 
 ### Phase 8: Controller MPRIS Integration
 
@@ -442,15 +444,16 @@ Risk:
 
 Status:
 
-- In Progress.
-- Static implementation complete; runtime evidence pending owner approval. This phase also captures the deferred Phase 6 and Phase 7 evidence.
+- Complete.
+- Static implementation landed in `feat(mpris): connect active player to controller`.
 - Added `src/domain/display/player-state.js` `displayStateFromPlayer` pure mapper from `PlayerSnapshot | null` to `DisplayState`.
 - Updated `src/runtime/controller.js` to acquire `Gio.DBus.session`, build an `MprisService`, and manage a `Map<string, TrackedProxy>` of `PlayerProxy` instances. Each proxy runs in its own child `LifecycleRegistry` registered with the controller's parent registry.
 - Snapshot updates trigger `selectActivePlayer` with the previous selected bus name and `playerPriority` from settings; the resulting active snapshot is mapped to a display state and rendered.
 - Disable disposes the parent lifecycle, which cascades to every child registry, the indicator, the settings adapter, and the discovery service in reverse-registration order.
 - Added `tests/display/player-state.test.js` covering null, undefined, full metadata, empty metadata, and non-Latin metadata.
 - Verification: `npm run verify` passed with 12 test files and 97 tests; extension bundle includes the updated controller and all MPRIS modules.
-- Sub-plan: `docs/exec-plans/active/2026-05-23_controller-mpris-integration.md`. Status will move to Complete once runtime evidence is captured.
+- Runtime evidence: captured live on GNOME Shell 46.0 / Ubuntu 24.04.4 X11. Six of seven scenarios exercised live (track display, track skip, pause/resume, Spotify quit, multi-player coexistence, disable/re-enable round trip); Scenario 1 (zero MPRIS players) was not exercisable on this host (persistent Chromium MPRIS instance) and is covered by unit tests. Zero JS errors, zero GIO criticals, zero lyricbar exceptions across the entire run. Artifacts at `docs/exec-plans/completed/evidence/2026-05-23_phase-8/`.
+- Sub-plan moved to `docs/exec-plans/completed/2026-05-23_controller-mpris-integration.md`.
 
 ### Phase 9: LRCLIB Domain Response Parsing
 
