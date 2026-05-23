@@ -1,11 +1,14 @@
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
+import { buildIndicatorViewModel } from '../domain/display/view-model.js';
 import { LyricBarIndicator } from '../shell/indicator.js';
 import { normalizePanelPosition } from '../domain/settings/normalize.js';
 import { LifecycleRegistry } from './lifecycle.js';
 import { SettingsAdapter } from './settings.js';
 
 /**
+ * @import { DisplayState } from '../domain/display/types.js'
+ * @import { IndicatorViewModel } from '../domain/display/view-model.js'
  * @import { LyricBarSettings } from '../domain/settings/types.js'
  * @import { GSettingsBackend } from './settings.js'
  *
@@ -15,7 +18,7 @@ import { SettingsAdapter } from './settings.js';
  * }>} ExtensionHandle
  *
  * @typedef {Readonly<{
- *   setText(text: string): void,
+ *   render(viewModel: IndicatorViewModel): void,
  *   destroy(): void,
  * }>} IndicatorHandle
  */
@@ -35,6 +38,9 @@ export class LyricBarController {
 
   /** @type {LyricBarSettings | null} */
   #currentSettings = null;
+
+  /** @type {DisplayState} */
+  #displayState = { kind: 'idle' };
 
   /** @type {boolean} */
   #enabled = false;
@@ -67,11 +73,12 @@ export class LyricBarController {
     this.#currentSettings = this.#settings.read();
     this.#settings.subscribe((settings) => {
       this.#currentSettings = settings;
+      this.#render();
     });
 
     this.#indicator = /** @type {IndicatorHandle} */ (new LyricBarIndicator());
     const indicator = this.#indicator;
-    indicator.setText('LyricBar');
+    this.#render();
 
     Main.panel.addToStatusArea(
       this.#extension.uuid,
@@ -99,5 +106,16 @@ export class LyricBarController {
     this.#currentSettings = null;
     lifecycle?.dispose();
     this.#indicator = null;
+  }
+
+  /**
+   * @returns {void}
+   */
+  #render() {
+    if (!this.#indicator || !this.#currentSettings) {
+      return;
+    }
+
+    this.#indicator.render(buildIndicatorViewModel(this.#displayState, this.#currentSettings));
   }
 }

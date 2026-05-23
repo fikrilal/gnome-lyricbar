@@ -39,6 +39,7 @@ declare module 'gi://St' {
     constructor(config: { text: string; y_align?: unknown; style_class?: string });
 
     text: string;
+    style: string;
   }
 
   const St: {
@@ -73,6 +74,7 @@ declare module 'resource:///org/gnome/shell/ui/main.js' {
 
 declare module 'resource:///org/gnome/shell/ui/panelMenu.js' {
   export class Button {
+    visible: boolean;
     constructor(menuAlignment?: number, nameText?: string);
     _init(menuAlignment: number, nameText?: string): void;
     add_child(actor: unknown): void;

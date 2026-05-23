@@ -241,6 +241,16 @@ Risk:
 
 - Medium. Shell UI changes run inside GNOME Shell.
 
+Status:
+
+- Complete.
+- Added `src/domain/display/view-model.js` to convert display state plus settings into an indicator view model.
+- Updated `src/shell/indicator.js` to render view models instead of raw strings.
+- Updated controller to render idle display state through domain display formatting.
+- Indicator applies configured max width via inline label style and visible/hidden state through the actor.
+- Added view-model unit tests.
+- Verification: `npm run verify` passed with 8 test files and 48 tests.
+
 ### Phase 5: MPRIS Domain Selection
 
 Commit:

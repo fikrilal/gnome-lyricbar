@@ -4,6 +4,10 @@ import St from 'gi://St';
 
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 
+/**
+ * @import { IndicatorViewModel } from '../domain/display/view-model.js'
+ */
+
 class LyricBarIndicatorBase extends PanelMenu.Button {
   /** @type {InstanceType<typeof St.Label> | null} */
   _label = null;
@@ -22,15 +26,17 @@ class LyricBarIndicatorBase extends PanelMenu.Button {
   }
 
   /**
-   * @param {string} text
+   * @param {IndicatorViewModel} viewModel
    * @returns {void}
    */
-  setText(text) {
+  render(viewModel) {
     if (!this._label) {
       return;
     }
 
-    this._label.text = text;
+    this.visible = viewModel.visible;
+    this._label.text = viewModel.text;
+    this._label.style = `max-width: ${viewModel.maxWidth}px;`;
   }
 
   /** @override */
