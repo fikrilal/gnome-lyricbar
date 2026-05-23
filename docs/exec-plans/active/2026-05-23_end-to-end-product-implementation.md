@@ -341,6 +341,16 @@ Risk:
 
 - High. D-Bus watcher bugs can affect Shell stability.
 
+Status:
+
+- In Progress.
+- Static implementation complete; runtime evidence pending owner approval.
+- Added `src/runtime/mpris/discovery.js` pure helpers: `isMprisBusName`, `filterMprisNames`, `diffBusNames`, `applyNameOwnerChange`. All testable without GJS.
+- Added `src/runtime/mpris/service.js` `MprisService` class. Subscribes to `org.freedesktop.DBus.NameOwnerChanged` on the session bus and seeds initial state with a single `ListNames` call. Tracks the signal subscription via `signal_unsubscribe` and the initial-call `Gio.Cancellable` through `LifecycleRegistry`. Async callbacks check a guarded `enabled` flag and ignore replies after disable. No wildcard `bus_watch_name` usage anywhere.
+- Added `tests/mpris/discovery.test.js` covering MPRIS prefix filtering (including the bare prefix), set diff with sorted output, and `NameOwnerChanged` reduction (added on new owner, removed on empty owner, no-op on owner-transfer or duplicate state).
+- Verification: `npm run verify` passed with 10 test files and 81 tests; extension bundle includes `src/runtime/mpris/`.
+- Sub-plan: `docs/exec-plans/active/2026-05-23_mpris-player-discovery.md`. Status will move to Complete once runtime evidence is captured on a GNOME Shell 46 session.
+
 ### Phase 7: MPRIS Player Proxy
 
 Commit:
