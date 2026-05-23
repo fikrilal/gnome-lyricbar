@@ -194,6 +194,15 @@ Risk:
 
 - Medium. GSettings integration can break extension load if schema handling is wrong.
 
+Status:
+
+- Complete.
+- Added `src/domain/settings/normalize.js` and `src/domain/settings/types.js`.
+- Added `src/runtime/settings.js` GSettings adapter with lifecycle-tracked signal cleanup.
+- Controller now reads settings, subscribes to settings changes, and applies `panel-position` on startup.
+- Added settings normalization and runtime adapter tests.
+- Verification: `npm run verify` passed with 7 test files and 46 tests.
+
 ### Phase 4: Panel Indicator Rendering
 
 Commit:
