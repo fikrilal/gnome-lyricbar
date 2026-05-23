@@ -17,6 +17,7 @@ const runtimeFiles = [
   'stylesheet.css',
   'schemas',
   'src/shell',
+  'src/runtime',
   'src/domain',
 ];
 

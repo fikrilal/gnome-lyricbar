@@ -4,37 +4,42 @@ import St from 'gi://St';
 
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 
-export const LyricBarIndicator = GObject.registerClass(
-  class LyricBarIndicator extends PanelMenu.Button {
-    /** @override */
-    _init() {
-      super._init(0.0, 'LyricBar');
+class LyricBarIndicatorBase extends PanelMenu.Button {
+  /** @type {InstanceType<typeof St.Label> | null} */
+  _label = null;
 
-      this._label = new St.Label({
-        text: 'LyricBar',
-        y_align: Clutter.ActorAlign.CENTER,
-        style_class: 'lyricbar-label',
-      });
+  /** @override */
+  _init() {
+    super._init(0.0, 'LyricBar');
 
-      this.add_child(this._label);
+    this._label = new St.Label({
+      text: 'LyricBar',
+      y_align: Clutter.ActorAlign.CENTER,
+      style_class: 'lyricbar-label',
+    });
+
+    this.add_child(this._label);
+  }
+
+  /**
+   * @param {string} text
+   * @returns {void}
+   */
+  setText(text) {
+    if (!this._label) {
+      return;
     }
 
-    /**
-     * @param {string} text
-     * @returns {void}
-     */
-    setText(text) {
-      if (!this._label) {
-        return;
-      }
+    this._label.text = text;
+  }
 
-      this._label.text = text;
-    }
+  /** @override */
+  destroy() {
+    this._label = null;
+    super.destroy();
+  }
+}
 
-    /** @override */
-    destroy() {
-      this._label = null;
-      super.destroy();
-    }
-  },
+export const LyricBarIndicator = /** @type {typeof LyricBarIndicatorBase} */ (
+  GObject.registerClass(LyricBarIndicatorBase)
 );

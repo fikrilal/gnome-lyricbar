@@ -104,6 +104,15 @@ Risk:
 
 - Medium. This touches Shell lifecycle structure but should not add D-Bus/network behavior.
 
+Status:
+
+- Complete.
+- Added `src/runtime/lifecycle.js` cleanup registry.
+- Added `src/runtime/controller.js` runtime composition root.
+- Moved indicator ownership from `extension.js` into the controller.
+- Added lifecycle unit tests.
+- Verification: `npm run verify` passed with 4 test files and 19 tests.
+
 ### Phase 2: Display State Domain Model
 
 Commit:
