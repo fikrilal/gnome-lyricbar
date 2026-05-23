@@ -290,6 +290,15 @@ Risk:
 
 - Low. Pure logic only.
 
+Status:
+
+- Complete.
+- Expanded `src/domain/mpris/types.js` with normalized `PlayerSnapshot` covering bus name, title, artist, album, duration, track id, and constrained `PlaybackStatus`.
+- Added `src/domain/mpris/normalize.js` with `normalizePlayerSnapshot` and `normalizePlayerSnapshots` helpers that reject non-MPRIS bus names, drop unknown playback statuses to `Stopped`, and clamp non-finite/negative durations and blank track ids to null.
+- Tightened `src/domain/mpris/selection.js` so it operates on validated snapshots, breaks ties between playing players deterministically, ignores stale previous bus names, matches preferred fragments case-insensitively, honors fragment order, and falls back to sorted bus name.
+- Added selection tests covering empty input, multiple playing players, lost previous player, fragment order, case-insensitive fragments, and sorted fallback. Added normalize tests covering full and partial metadata, invalid bus names, invalid playback statuses, invalid durations, and blank track ids.
+- Verification: `npm run verify` passed with 9 test files and 66 tests.
+
 ### Phase 6: MPRIS D-Bus Player Discovery
 
 Commit:

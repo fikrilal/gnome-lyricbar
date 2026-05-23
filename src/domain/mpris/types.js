@@ -1,9 +1,14 @@
 /**
- * @typedef {'Playing' | 'Paused' | 'Stopped' | string} PlaybackStatus
+ * @typedef {'Playing' | 'Paused' | 'Stopped'} PlaybackStatus
  *
  * @typedef {Readonly<{
  *   busName: string,
- *   playbackStatus?: PlaybackStatus | null,
+ *   title: string,
+ *   artist: string,
+ *   album: string,
+ *   durationMs: number | null,
+ *   trackId: string | null,
+ *   playbackStatus: PlaybackStatus,
  * }>} PlayerSnapshot
  */
 
