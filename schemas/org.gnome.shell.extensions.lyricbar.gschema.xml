@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.lyricbar" path="/org/gnome/shell/extensions/lyricbar/">
+    <key name="panel-position" type="s">
+      <default>'center'</default>
+      <summary>Panel position</summary>
+      <description>Where the LyricBar indicator should be placed in the GNOME top bar.</description>
+    </key>
+    <key name="max-width" type="i">
+      <default>360</default>
+      <range min="120" max="720"/>
+      <summary>Maximum label width</summary>
+      <description>Maximum width in pixels for the top-bar lyric label.</description>
+    </key>
+    <key name="fallback-mode" type="s">
+      <default>'track'</default>
+      <summary>Fallback mode</summary>
+      <description>Display behavior when synced lyrics are unavailable.</description>
+    </key>
+    <key name="player-priority" type="as">
+      <default>['spotify']</default>
+      <summary>Player priority</summary>
+      <description>Preferred MPRIS player bus-name fragments, in priority order.</description>
+    </key>
+    <key name="cache-enabled" type="b">
+      <default>true</default>
+      <summary>Cache lyrics</summary>
+      <description>Whether lyric lookup results should be cached locally.</description>
+    </key>
+    <key name="debug-logging" type="b">
+      <default>false</default>
+      <summary>Debug logging</summary>
+      <description>Whether verbose diagnostic logging should be enabled.</description>
+    </key>
+  </schema>
+</schemalist>
