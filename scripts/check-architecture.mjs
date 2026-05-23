@@ -68,6 +68,21 @@ for (const path of sourceFiles) {
     });
   }
 
+  if (path.startsWith('src/runtime/')) {
+    checkRequiredCleanup(path, content, {
+      acquirePattern: /\.connect\s*\(/,
+      releasePattern: /\.disconnect\s*\(|\blifecycle\.\w+\s*\(/,
+      acquireLabel: 'connect(...)',
+      releaseLabel: 'disconnect(...) or lifecycle.<method>(...)',
+    });
+    checkRequiredCleanup(path, content, {
+      acquirePattern: /\bGio\.Cancellable\b/,
+      releasePattern: /\.cancel\s*\(|\blifecycle\.\w+\s*\(/,
+      acquireLabel: 'Gio.Cancellable',
+      releaseLabel: 'cancel(...) or lifecycle.<method>(...)',
+    });
+  }
+
   if (isRuntimeSource(path)) {
     checkForbidden(
       path,
