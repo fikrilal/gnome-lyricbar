@@ -440,6 +440,18 @@ Risk:
 
 - High. This is the first end-to-end runtime data path.
 
+Status:
+
+- In Progress.
+- Static implementation complete; runtime evidence pending owner approval. This phase also captures the deferred Phase 6 and Phase 7 evidence.
+- Added `src/domain/display/player-state.js` `displayStateFromPlayer` pure mapper from `PlayerSnapshot | null` to `DisplayState`.
+- Updated `src/runtime/controller.js` to acquire `Gio.DBus.session`, build an `MprisService`, and manage a `Map<string, TrackedProxy>` of `PlayerProxy` instances. Each proxy runs in its own child `LifecycleRegistry` registered with the controller's parent registry.
+- Snapshot updates trigger `selectActivePlayer` with the previous selected bus name and `playerPriority` from settings; the resulting active snapshot is mapped to a display state and rendered.
+- Disable disposes the parent lifecycle, which cascades to every child registry, the indicator, the settings adapter, and the discovery service in reverse-registration order.
+- Added `tests/display/player-state.test.js` covering null, undefined, full metadata, empty metadata, and non-Latin metadata.
+- Verification: `npm run verify` passed with 12 test files and 97 tests; extension bundle includes the updated controller and all MPRIS modules.
+- Sub-plan: `docs/exec-plans/active/2026-05-23_controller-mpris-integration.md`. Status will move to Complete once runtime evidence is captured.
+
 ### Phase 9: LRCLIB Domain Response Parsing
 
 Commit:
