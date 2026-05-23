@@ -151,6 +151,14 @@ Risk:
 
 - Low. Pure logic only.
 
+Status:
+
+- Complete.
+- Added `src/domain/display/state.js` display-state formatter.
+- Added `src/domain/display/types.js` display-state JSDoc contracts.
+- Added display-state unit tests for lyrics, track fallback, idle, hidden, loading, error, and long text.
+- Verification: `npm run verify` passed with 5 test files and 34 tests.
+
 ### Phase 3: Settings Adapter
 
 Commit:
