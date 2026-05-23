@@ -6,6 +6,10 @@ const metadataPath = 'metadata.json';
 const metadata = JSON.parse(await readFile(repoPath(metadataPath), 'utf8'));
 const failures = [];
 
+/**
+ * @param {string} key
+ * @returns {void}
+ */
 function requireString(key) {
   if (typeof metadata[key] !== 'string' || metadata[key].trim() === '') {
     failures.push(`metadata.json field "${key}" must be a non-empty string.`);

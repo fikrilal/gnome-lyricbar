@@ -39,7 +39,7 @@ try {
     encoding: 'utf8',
   });
 
-  if (result.error?.code === 'ENOENT') {
+  if (isNodeError(result.error) && result.error.code === 'ENOENT') {
     failures.push('glib-compile-schemas is required to validate the GSettings schema.');
   } else if (result.status !== 0) {
     failures.push(`glib-compile-schemas failed:\n${result.stderr || result.stdout}`);
@@ -54,3 +54,11 @@ if (failures.length > 0) {
 }
 
 process.stdout.write('GSettings schema is valid.\n');
+
+/**
+ * @param {unknown} error
+ * @returns {error is NodeJS.ErrnoException}
+ */
+function isNodeError(error) {
+  return error instanceof Error;
+}

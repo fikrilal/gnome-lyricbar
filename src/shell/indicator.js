@@ -6,6 +6,7 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 
 export const LyricBarIndicator = GObject.registerClass(
   class LyricBarIndicator extends PanelMenu.Button {
+    /** @override */
     _init() {
       super._init(0.0, 'LyricBar');
 
@@ -18,6 +19,10 @@ export const LyricBarIndicator = GObject.registerClass(
       this.add_child(this._label);
     }
 
+    /**
+     * @param {string} text
+     * @returns {void}
+     */
     setText(text) {
       if (!this._label) {
         return;
@@ -26,6 +31,7 @@ export const LyricBarIndicator = GObject.registerClass(
       this._label.text = text;
     }
 
+    /** @override */
     destroy() {
       this._label = null;
       super.destroy();

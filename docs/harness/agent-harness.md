@@ -141,6 +141,10 @@ Initial checks:
 - `src/domain/` must not import `gi://` modules.
 - `src/domain/` must not use D-Bus, filesystem, network, or timer APIs.
 - runtime code must not call `Gio.bus_watch_name` with wildcard names.
+- Shell runtime `connect(...)` calls require tracked `disconnect(...)` cleanup.
+- Shell runtime `GLib.timeout_add(...)` calls require tracked `GLib.source_remove(...)` cleanup.
+- Shell runtime `Gio.bus_watch_name(...)` calls require tracked `Gio.bus_unwatch_name(...)` cleanup.
+- Shell runtime `Gio.Cancellable` usage requires explicit cancellation on disable.
 - production source must not use `console.log`.
 
 These checks are intentionally simple. They catch easy drift early and give agents immediate feedback.

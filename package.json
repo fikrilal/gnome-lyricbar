@@ -12,7 +12,8 @@
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "test": "vitest run",
-    "verify": "npm run verify:docs && npm run validate:metadata && npm run validate:schema && npm run check:architecture && npm run format:check && npm run lint && npm test && npm run build:extension",
+    "typecheck": "tsc -p jsconfig.json --noEmit",
+    "verify": "npm run verify:docs && npm run validate:metadata && npm run validate:schema && npm run check:architecture && npm run format:check && npm run lint && npm run typecheck && npm test && npm run build:extension",
     "verify:docs": "node scripts/validate-docs.mjs",
     "validate:metadata": "node scripts/validate-metadata.mjs",
     "validate:schema": "node scripts/validate-schema.mjs",
@@ -21,9 +22,11 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
+    "@types/node": "^22.19.19",
     "eslint": "^9.13.0",
     "globals": "^15.11.0",
     "prettier": "^3.3.3",
+    "typescript": "^5.9.3",
     "vitest": "^4.1.7"
   }
 }

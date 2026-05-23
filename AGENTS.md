@@ -22,6 +22,7 @@ Start here:
 - Shell runtime code must clean up signal handlers, D-Bus subscriptions, timeouts, cancellables, and actors on disable.
 - Async callbacks must be guarded so they do not mutate state after disable.
 - Never use wildcard names with `Gio.bus_watch_name`; it only accepts exact D-Bus names.
+- Treat JavaScript as strict production code: no `any`-style loose shapes in domain logic, no unchecked external data, and keep JSDoc contracts current.
 - Keep `AGENTS.md` short. Promote durable rules into docs, tests, validators, or scripts.
 
 ## Verification

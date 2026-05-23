@@ -3,14 +3,26 @@ import { relative, resolve } from 'node:path';
 
 export const repoRoot = resolve(import.meta.dirname, '..', '..');
 
+/**
+ * @param {...string} parts
+ * @returns {string}
+ */
 export function repoPath(...parts) {
   return resolve(repoRoot, ...parts);
 }
 
+/**
+ * @param {string} path
+ * @returns {Promise<string>}
+ */
 export async function readText(path) {
-  return await readFile(repoPath(path), 'utf8');
+  return readFile(repoPath(path), 'utf8');
 }
 
+/**
+ * @param {string} path
+ * @returns {Promise<boolean>}
+ */
 export async function fileExists(path) {
   try {
     const info = await stat(repoPath(path));
@@ -20,6 +32,10 @@ export async function fileExists(path) {
   }
 }
 
+/**
+ * @param {string} path
+ * @returns {Promise<boolean>}
+ */
 export async function dirExists(path) {
   try {
     const info = await stat(repoPath(path));
@@ -29,11 +45,27 @@ export async function dirExists(path) {
   }
 }
 
+/**
+ * @typedef {Readonly<{
+ *   ignoredDirs?: readonly string[],
+ * }>} ListFilesOptions
+ */
+
+/**
+ * @param {string} rootPath
+ * @param {ListFilesOptions} [options]
+ * @returns {Promise<string[]>}
+ */
 export async function listFiles(rootPath, options = {}) {
   const rootAbs = repoPath(rootPath);
   const ignoredDirs = new Set(options.ignoredDirs ?? ['.git', 'node_modules', 'dist', 'coverage']);
+  /** @type {string[]} */
   const files = [];
 
+  /**
+   * @param {string} dirAbs
+   * @returns {Promise<void>}
+   */
   async function walk(dirAbs) {
     const entries = await readdir(dirAbs, { withFileTypes: true });
     for (const entry of entries) {

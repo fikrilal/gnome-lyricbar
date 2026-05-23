@@ -1,3 +1,13 @@
+/**
+ * @import { PlayerSnapshot } from './types.js'
+ */
+
+/**
+ * @param {readonly PlayerSnapshot[] | null | undefined} players
+ * @param {string | null} [previousBusName]
+ * @param {readonly string[]} [preferredFragments]
+ * @returns {PlayerSnapshot | null}
+ */
 export function selectActivePlayer(players, previousBusName = null, preferredFragments = []) {
   const validPlayers = Array.isArray(players)
     ? players.filter((player) => isValidPlayer(player))
@@ -23,14 +33,22 @@ export function selectActivePlayer(players, previousBusName = null, preferredFra
     }
   }
 
-  return [...validPlayers].sort((left, right) => left.busName.localeCompare(right.busName))[0];
+  return (
+    [...validPlayers].sort((left, right) => left.busName.localeCompare(right.busName))[0] ?? null
+  );
 }
 
+/**
+ * @param {unknown} player
+ * @returns {player is PlayerSnapshot}
+ */
 function isValidPlayer(player) {
+  if (player === null || typeof player !== 'object' || !('busName' in player)) {
+    return false;
+  }
+
+  const candidate = /** @type {{ busName?: unknown }} */ (player);
   return (
-    player !== null &&
-    typeof player === 'object' &&
-    typeof player.busName === 'string' &&
-    player.busName.startsWith('org.mpris.MediaPlayer2.')
+    typeof candidate.busName === 'string' && candidate.busName.startsWith('org.mpris.MediaPlayer2.')
   );
 }

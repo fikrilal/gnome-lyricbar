@@ -1,10 +1,19 @@
 const TIMESTAMP_PATTERN = /\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?\]/g;
 
+/**
+ * @import { LyricLine } from './types.js'
+ */
+
+/**
+ * @param {string} input
+ * @returns {LyricLine[]}
+ */
 export function parseLrc(input) {
-  if (typeof input !== 'string' || input.trim() === '') {
+  if (input.trim() === '') {
     return [];
   }
 
+  /** @type {LyricLine[]} */
   const lines = [];
 
   for (const rawLine of input.split(/\r?\n/)) {
@@ -31,8 +40,13 @@ export function parseLrc(input) {
   return lines.sort((left, right) => left.timeMs - right.timeMs);
 }
 
+/**
+ * @param {readonly LyricLine[]} lines
+ * @param {number} positionMs
+ * @returns {LyricLine | null}
+ */
 export function selectLyricLine(lines, positionMs) {
-  if (!Array.isArray(lines) || lines.length === 0) {
+  if (lines.length === 0) {
     return null;
   }
 
@@ -51,9 +65,19 @@ export function selectLyricLine(lines, positionMs) {
   return current;
 }
 
+/**
+ * @param {RegExpMatchArray} match
+ * @returns {number | null}
+ */
 function parseTimestampMs(match) {
-  const minutes = Number.parseInt(match[1], 10);
-  const seconds = Number.parseInt(match[2], 10);
+  const rawMinutes = match[1];
+  const rawSeconds = match[2];
+  if (rawMinutes === undefined || rawSeconds === undefined) {
+    return null;
+  }
+
+  const minutes = Number.parseInt(rawMinutes, 10);
+  const seconds = Number.parseInt(rawSeconds, 10);
   const fraction = match[3] ?? '0';
 
   if (!Number.isInteger(minutes) || !Number.isInteger(seconds) || seconds > 59) {
@@ -64,6 +88,10 @@ function parseTimestampMs(match) {
   return (minutes * 60 + seconds) * 1000 + fractionMs;
 }
 
+/**
+ * @param {string} value
+ * @returns {number}
+ */
 function parseFractionMs(value) {
   if (value.length === 1) {
     return Number.parseInt(value, 10) * 100;
