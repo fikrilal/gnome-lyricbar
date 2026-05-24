@@ -2,7 +2,7 @@
 
 Date: 2026-05-24  
 Tester: Dante + Codex  
-Git commit: `34b61fb`, then lifecycle fixes `b534d07` and `5a8841e`  
+Git commit: `34b61fb`, then fixes `b534d07`, `5a8841e`, and `253e300`  
 Bundle: `dist/lyricbar@fikrilal.github.io.zip`
 
 ## Environment
@@ -57,6 +57,9 @@ Do not run these scenarios in the owner's primary GNOME session.
 - [x] Enable extension with current players present.
 - [x] Disable extension immediately.
 - [x] Re-enable extension after disable.
+- [x] Re-test lifecycle after fresh GNOME Shell login.
+- [x] Change `panel-position` between left, center, and right.
+- [x] Try Spotify metadata hydration with Spotify already running and playing.
 - [x] Inspect logs for Shell crashes, JS errors, and GLib/GIO criticals.
 - [ ] Enable extension with no active music player.
 - [ ] Enable extension with Spotify already running and playing.
@@ -66,7 +69,6 @@ Do not run these scenarios in the owner's primary GNOME session.
 - [ ] Pause and resume playback.
 - [ ] Quit Spotify while extension is enabled.
 - [ ] Change `player-priority` and confirm active selection refreshes.
-- [ ] Change `panel-position` between left, center, and right.
 - [ ] Disconnect network during lyric lookup.
 - [ ] Disable extension during an in-flight lyrics lookup.
 
@@ -113,8 +115,30 @@ Summary:
   GNOME Shell likely retained an older imported GJS module instance. The
   fix needs validation after a fresh login, Shell restart, VM, or separate
   user session.
-- Runtime evidence stopped before player playback, LRCLIB, cache,
-  panel-position, and network-failure scenarios.
+- After a fresh login, lifecycle enable/disable passed without the
+  GObject handler warning, without Shell crash, and without LyricBar JS
+  exceptions.
+- Panel-position movement passed in the fresh session:
+  - center -> left
+  - left -> right
+  - right -> center
+  - disable after movement
+- Spotify was playing and exposed populated MPRIS metadata over D-Bus:
+  title `Daylight`, artist `David Kushner`, album `The Dichotomy`.
+- LyricBar still hydrated an empty initial snapshot from
+  `Gio.DBusProxy` cached properties, so lyrics lookup was skipped as
+  `no-active-player`.
+- A track skip changed Spotify's D-Bus metadata to title `Home`, artist
+  `Edith Whiskers`, album `Stop Stealing The Covers!`, but LyricBar did
+  not update the player snapshot in that loaded Shell process.
+- Fix `253e300` adds explicit
+  `org.freedesktop.DBus.Properties.GetAll` hydration after proxy startup.
+- Retesting `253e300` in the same Shell process still showed the old
+  empty-snapshot behavior, likely due to GJS module caching again. It
+  needs validation after another fresh login, Shell restart, VM, or
+  separate user session.
+- Runtime evidence stopped before LRCLIB, cache-hit, network-failure,
+  and disable-during-lookup scenarios.
 - The extension was disabled after the run.
 - `org.gnome.shell disable-user-extensions` was restored to `true`, which
   was the value observed before enabling LyricBar.
@@ -156,5 +180,6 @@ Expected screenshots:
 
 ## Stop Conditions
 
-Triggered by repeated GObject cleanup warnings during disable. No crash,
-forced logout, Shell restart loop, or disable failure occurred.
+Triggered first by repeated GObject cleanup warnings during disable, then
+by blocked MPRIS metadata hydration. No crash, forced logout, Shell
+restart loop, or disable failure occurred.
