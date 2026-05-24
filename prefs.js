@@ -111,8 +111,7 @@ export default class LyricBarPreferences extends ExtensionPreferences {
 
     // player-priority: EntryRow
     const playerPriorityRow = new Adw.EntryRow({
-      title: 'Player priority',
-      subtitle: 'Preferred MPRIS player bus-name fragments (comma-separated).',
+      title: 'Player priority (comma-separated)',
       show_apply_button: true,
     });
     const currentPriority = settings.get_strv('player-priority').join(', ');
