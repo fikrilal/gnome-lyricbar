@@ -112,13 +112,14 @@ Tiny docs edits do not need plans.
 
 ### Verification Scripts
 
-Canonical command:
+Canonical static-safe command:
 
 ```bash
-npm run verify
+npm run verify:safe
 ```
 
-The verify gate should be the one command agents run before claiming completion.
+`npm run verify` is an alias for `npm run verify:safe`. The verify gate
+should be the one command agents run before claiming static completion.
 
 Current verification stages:
 
@@ -164,6 +165,7 @@ Examples:
 - network failure while lyrics are loading
 
 Runtime evidence belongs in the relevant execution plan or release notes.
+It must follow `docs/harness/runtime-evidence.md`.
 
 ## Initial Harness Build Order
 
@@ -189,7 +191,7 @@ The agent should then:
 2. Read relevant docs only.
 3. Create or update an execution plan.
 4. Implement the change.
-5. Run `npm run verify`.
+5. Run `npm run verify:safe`.
 6. Update the plan with verification evidence.
 7. Summarize outcome and remaining risk.
 
