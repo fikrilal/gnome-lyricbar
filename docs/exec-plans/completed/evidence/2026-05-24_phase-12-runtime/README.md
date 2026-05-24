@@ -2,7 +2,7 @@
 
 Date: 2026-05-24  
 Tester: Dante + Codex  
-Git commit: `34b61fb`, then fixes `b534d07`, `5a8841e`, `253e300`, and `b8314c8`  
+Git commit: `34b61fb`, then fixes `b534d07`, `5a8841e`, `253e300`, `b8314c8`, and `0dd0710`  
 Bundle: `dist/lyricbar@fikrilal.github.io.zip`
 
 ## Environment
@@ -142,12 +142,31 @@ Summary:
 - `npm run verify:safe` passed after `b8314c8`:
   - vitest: 21 test files, 178 tests passed
   - build:extension: `dist/lyricbar@fikrilal.github.io.zip`
-- Runtime validation of `b8314c8` still requires another fresh GNOME
-  Shell load, Shell restart, VM, or separate user session. A temporary
-  evidence UUID could not be registered by the already-running Shell
-  without a Shell extension-manager rescan.
-- Runtime evidence stopped before LRCLIB, cache-hit, network-failure,
-  and disable-during-lookup scenarios.
+- After another fresh login, runtime validation of `b8314c8` passed for
+  Spotify hydration:
+  - no MPRIS players present at enable: passed
+  - Spotify started after extension enable: discovered via
+    `player-owner-changed`
+  - Spotify D-Bus metadata exposed title `Meet you at the Graveyard`,
+    artist `Cleffy`, album `Clean Sheets, dirty walls`
+  - LyricBar first emitted the empty cached snapshot, then updated to
+    title `Meet you at the Graveyard` from explicit `GetAll` hydration
+- Lyric lookup then started and reached the LRCLIB provider.
+- LRCLIB lookup failed with:
+
+  ```text
+  JS ERROR: ReferenceError: URLSearchParams is not defined
+  ```
+
+- Fix `0dd0710` removes the `URLSearchParams` dependency from
+  LRCLIB URL construction and preserves the existing query encoding
+  contract. `npm run verify:safe` passed after this fix:
+  - vitest: 21 test files, 178 tests passed
+  - build:extension: `dist/lyricbar@fikrilal.github.io.zip`
+- Runtime validation of `0dd0710` still requires another
+  fresh GNOME Shell load, Shell restart, VM, or separate user session.
+- Runtime evidence stopped before LRCLIB response parsing, cache-hit,
+  network-failure, and disable-during-lookup scenarios.
 - The extension was disabled after the run.
 - `org.gnome.shell disable-user-extensions` was restored to `true`, which
   was the value observed before enabling LyricBar.
