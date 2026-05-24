@@ -15,7 +15,6 @@ class LyricBarIndicatorBase extends PanelMenu.Button {
   /** @override */
   _init() {
     super._init(0.0, 'LyricBar');
-    removeActorChildren(this);
 
     this._lyricBarLabel = new St.Label({
       text: '',
@@ -53,17 +52,6 @@ export const LyricBarIndicator = /** @type {typeof LyricBarIndicatorBase} */ (
 
 /**
  * @param {unknown} actor
- * @returns {void}
- */
-function removeActorChildren(actor) {
-  const remover = Reflect.get(/** @type {object} */ (actor), 'remove_all_children');
-  if (typeof remover === 'function') {
-    remover.call(actor);
-  }
-}
-
-/**
- * @param {unknown} actor
  * @param {boolean} visible
  * @returns {void}
  */
@@ -82,12 +70,18 @@ function setActorVisible(actor, visible) {
  * @returns {void}
  */
 function setLabelText(label, text) {
+  Reflect.set(label, 'text', text);
+
   const setter = Reflect.get(label, 'set_text');
   if (typeof setter === 'function') {
     setter.call(label, text);
-    return;
   }
-  Reflect.set(label, 'text', text);
+
+  const clutterText = Reflect.get(label, 'clutter_text');
+  const clutterSetter = Reflect.get(/** @type {object} */ (clutterText), 'set_text');
+  if (typeof clutterSetter === 'function') {
+    clutterSetter.call(clutterText, text);
+  }
 }
 
 /**
