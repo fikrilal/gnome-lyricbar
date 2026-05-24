@@ -1,3 +1,5 @@
+import { selectLyricLine } from '../lyrics/lrc.js';
+
 /**
  * @import { PlayerSnapshot } from '../mpris/types.js'
  * @import { LyricsProviderResult } from '../lyrics/types.js'
@@ -35,6 +37,27 @@ export function displayStateFromLookup(player, lookup) {
     default:
       return { kind: 'track', track };
   }
+}
+
+/**
+ * @param {PlayerSnapshot | null | undefined} player
+ * @param {Extract<LyricsProviderResult, { kind: 'synced' }>} lookup
+ * @param {number} positionMs
+ * @returns {DisplayState}
+ */
+export function displayStateFromSyncedPosition(player, lookup, positionMs) {
+  if (player === null || player === undefined) {
+    return { kind: 'idle' };
+  }
+
+  /** @type {DisplayTrack} */
+  const track = { title: player.title, artist: player.artist };
+  const line = selectLyricLine(lookup.lines, positionMs);
+  if (line !== null && line.text.trim() !== '') {
+    return { kind: 'lyrics', line: line.text, track };
+  }
+
+  return displayStateFromLookup(player, lookup);
 }
 
 /**

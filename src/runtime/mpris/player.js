@@ -10,6 +10,7 @@ import { applyPropertyChanges, mapMprisProperties, snapshotsEqual } from './play
  * @import { PlayerSnapshot } from '../../domain/mpris/types.js'
  *
  * @typedef {(snapshot: PlayerSnapshot | null) => void} PlayerSnapshotCallback
+ * @typedef {(positionMs: number | null) => void} PlayerPositionCallback
  */
 
 const PLAYER_IFACE = 'org.mpris.MediaPlayer2.Player';
@@ -144,6 +145,49 @@ export class PlayerProxy {
       this.#listeners.delete(callback);
     });
     callback(this.#snapshot);
+  }
+
+  /**
+   * @param {PlayerPositionCallback} callback
+   * @returns {void}
+   */
+  readPosition(callback) {
+    if (!this.#enabled || this.#gone || this.#cancellable === null) {
+      callback(null);
+      return;
+    }
+
+    this.#connection.call(
+      this.#busName,
+      PLAYER_PATH,
+      PROPERTIES_IFACE,
+      'Get',
+      new GLib.Variant('(ss)', [PLAYER_IFACE, 'Position']),
+      new GLib.VariantType('(v)'),
+      Gio.DBusCallFlags.NONE,
+      -1,
+      this.#cancellable,
+      /**
+       * @param {unknown} _source
+       * @param {unknown} result
+       * @returns {void}
+       */
+      (_source, result) => {
+        if (!this.#enabled || this.#gone) {
+          callback(null);
+          return;
+        }
+        try {
+          const reply = this.#connection.call_finish(result);
+          callback(readPositionReply(reply));
+        } catch (error) {
+          if (!isCancelledError(error)) {
+            this.#logger?.debug('position-read-failed', { busName: this.#busName });
+          }
+          callback(null);
+        }
+      },
+    );
   }
 
   /**
@@ -366,6 +410,43 @@ function unpackGetAllReply(variant) {
     return null;
   }
   return /** @type {{ [key: string]: unknown }} */ (properties);
+}
+
+/**
+ * @param {unknown} variant
+ * @returns {number | null}
+ */
+function readPositionReply(variant) {
+  const unpacked = unpackVariantValue(variant);
+  if (!Array.isArray(unpacked) || unpacked.length < 1) {
+    return null;
+  }
+
+  const positionUs = unpackVariantValue(unpacked[0]);
+  if (typeof positionUs !== 'number' || !Number.isFinite(positionUs) || positionUs < 0) {
+    return null;
+  }
+
+  return Math.round(positionUs / 1000);
+}
+
+/**
+ * @param {unknown} value
+ * @returns {unknown}
+ */
+function unpackVariantValue(value) {
+  if (value === null || value === undefined) {
+    return value;
+  }
+
+  const candidate = /** @type {{ deep_unpack?: unknown }} */ (value);
+  if (typeof candidate.deep_unpack === 'function') {
+    return unpackVariantValue(
+      /** @type {{ deep_unpack: () => unknown }} */ (candidate).deep_unpack(),
+    );
+  }
+
+  return value;
 }
 
 /**

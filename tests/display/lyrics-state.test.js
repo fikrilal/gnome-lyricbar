@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { displayStateFromLookup } from '../../src/domain/display/lyrics-state.js';
+import {
+  displayStateFromLookup,
+  displayStateFromSyncedPosition,
+} from '../../src/domain/display/lyrics-state.js';
 
 /**
  * @import { PlayerSnapshot } from '../../src/domain/mpris/types.js'
@@ -127,5 +130,27 @@ describe('displayStateFromLookup', () => {
       kind: 'error',
       track: { title: 'Yellow', artist: 'Coldplay' },
     });
+  });
+});
+
+describe('displayStateFromSyncedPosition', () => {
+  it('selects the synced line at the current playback position', () => {
+    expect(displayStateFromSyncedPosition(snapshot({}), syncedLookup, 5000)).toEqual({
+      kind: 'lyrics',
+      line: 'Look how they shine for you',
+      track: { title: 'Yellow', artist: 'Coldplay' },
+    });
+  });
+
+  it('falls back to the static synced display before the first timestamp', () => {
+    expect(displayStateFromSyncedPosition(snapshot({}), syncedLookup, 500)).toEqual({
+      kind: 'lyrics',
+      line: 'Look at the stars',
+      track: { title: 'Yellow', artist: 'Coldplay' },
+    });
+  });
+
+  it('returns idle when player is missing', () => {
+    expect(displayStateFromSyncedPosition(null, syncedLookup, 5000)).toEqual({ kind: 'idle' });
   });
 });

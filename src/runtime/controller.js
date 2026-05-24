@@ -1,8 +1,12 @@
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import { displayStateFromLookup } from '../domain/display/lyrics-state.js';
+import {
+  displayStateFromLookup,
+  displayStateFromSyncedPosition,
+} from '../domain/display/lyrics-state.js';
 import { displayStateFromPlayer } from '../domain/display/player-state.js';
 import { buildIndicatorViewModel } from '../domain/display/view-model.js';
 import { selectActivePlayer } from '../domain/mpris/selection.js';
@@ -44,6 +48,8 @@ import { SettingsAdapter } from './settings.js';
  *   lifecycle: LifecycleRegistry,
  * }} TrackedProxy
  */
+
+const POSITION_POLL_INTERVAL_MS = 500;
 
 export class LyricBarController {
   /** @type {ExtensionHandle} */
@@ -94,6 +100,12 @@ export class LyricBarController {
   /** @type {LyricsProviderResult | null} */
   #currentLookup = null;
 
+  /** @type {number} */
+  #syncSourceId = 0;
+
+  /** @type {string | null} */
+  #lastSyncedLine = null;
+
   /**
    * @param {ExtensionHandle} extension
    */
@@ -118,6 +130,10 @@ export class LyricBarController {
 
     this.#enabled = true;
     this.#lifecycle = new LifecycleRegistry();
+    this.#lifecycle.addSource(
+      () => this.#syncSourceId,
+      (id) => GLib.source_remove(id),
+    );
     this.#settings = new SettingsAdapter(this.#extension.getSettings(), this.#lifecycle);
     this.#currentSettings = this.#settings.read();
     this.#logger = new RuntimeLogger(
@@ -174,6 +190,7 @@ export class LyricBarController {
     this.#lyricsService = null;
     this.#activePlayer = null;
     this.#currentLookup = null;
+    this.#stopSyncLoop();
     this.#displayState = { kind: 'idle' };
     lifecycle?.dispose();
     this.#indicator = null;
@@ -259,6 +276,7 @@ export class LyricBarController {
       this.#activePlayer = player;
       this.#currentLookup = lookup;
       this.#refreshDisplay();
+      this.#updateSyncLoop();
     });
   }
 
@@ -370,6 +388,7 @@ export class LyricBarController {
     } else {
       this.#refreshDisplay();
     }
+    this.#updateSyncLoop();
   }
 
   /**
@@ -389,6 +408,105 @@ export class LyricBarController {
     }
 
     this.#render();
+  }
+
+  /**
+   * @returns {void}
+   */
+  #updateSyncLoop() {
+    if (!this.#shouldPollSyncedLyrics()) {
+      this.#stopSyncLoop();
+      return;
+    }
+
+    if (this.#syncSourceId !== 0) {
+      return;
+    }
+
+    this.#logger?.debug('sync-loop-start', {
+      intervalMs: POSITION_POLL_INTERVAL_MS,
+      title: this.#activePlayer?.title ?? null,
+    });
+    this.#lastSyncedLine = null;
+    this.#pollSyncedPosition();
+    this.#syncSourceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, POSITION_POLL_INTERVAL_MS, () => {
+      if (!this.#shouldPollSyncedLyrics()) {
+        this.#logger?.debug('sync-loop-stop');
+        this.#syncSourceId = 0;
+        this.#lastSyncedLine = null;
+        return GLib.SOURCE_REMOVE;
+      }
+      this.#pollSyncedPosition();
+      return GLib.SOURCE_CONTINUE;
+    });
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  #shouldPollSyncedLyrics() {
+    return (
+      this.#enabled &&
+      this.#activePlayer?.playbackStatus === 'Playing' &&
+      this.#currentLookup?.kind === 'synced'
+    );
+  }
+
+  /**
+   * @returns {void}
+   */
+  #stopSyncLoop() {
+    if (this.#syncSourceId !== 0) {
+      try {
+        GLib.source_remove(this.#syncSourceId);
+      } catch {
+        // already removed by GLib
+      }
+      this.#logger?.debug('sync-loop-stop');
+      this.#syncSourceId = 0;
+    }
+    this.#lastSyncedLine = null;
+  }
+
+  /**
+   * @returns {void}
+   */
+  #pollSyncedPosition() {
+    const player = this.#activePlayer;
+    const lookup = this.#currentLookup;
+    if (player === null || lookup?.kind !== 'synced') {
+      return;
+    }
+
+    const tracked = this.#proxies.get(player.busName);
+    if (tracked === undefined) {
+      return;
+    }
+
+    tracked.proxy.readPosition((positionMs) => {
+      if (
+        !this.#shouldPollSyncedLyrics() ||
+        this.#activePlayer !== player ||
+        this.#currentLookup !== lookup ||
+        positionMs === null
+      ) {
+        return;
+      }
+
+      const next = displayStateFromSyncedPosition(player, lookup, positionMs);
+      const line = next.kind === 'lyrics' ? next.line : null;
+      if (line === this.#lastSyncedLine) {
+        return;
+      }
+
+      this.#lastSyncedLine = line;
+      this.#logger?.debug('sync-line-selected', {
+        positionMs,
+        text: line,
+      });
+      this.#displayState = next;
+      this.#render();
+    });
   }
 
   /**
