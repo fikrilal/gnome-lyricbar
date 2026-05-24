@@ -6,7 +6,10 @@ import { displayStateFromLookup } from '../domain/display/lyrics-state.js';
 import { displayStateFromPlayer } from '../domain/display/player-state.js';
 import { buildIndicatorViewModel } from '../domain/display/view-model.js';
 import { selectActivePlayer } from '../domain/mpris/selection.js';
-import { shouldRefreshPlayerSelection } from '../domain/settings/change.js';
+import {
+  shouldRefreshPlayerSelection,
+  shouldRepositionPanelIndicator,
+} from '../domain/settings/change.js';
 import { LyricBarIndicator } from '../shell/indicator.js';
 import { normalizePanelPosition } from '../domain/settings/normalize.js';
 import { LifecycleRegistry } from './lifecycle.js';
@@ -47,6 +50,9 @@ export class LyricBarController {
 
   /** @type {IndicatorHandle | null} */
   #indicator = null;
+
+  /** @type {(() => void) | null} */
+  #destroyIndicator = null;
 
   /** @type {LifecycleRegistry | null} */
   #lifecycle = null;
@@ -113,6 +119,9 @@ export class LyricBarController {
     this.#settings.subscribe((settings) => {
       const previousSettings = this.#currentSettings;
       this.#currentSettings = settings;
+      if (previousSettings !== null && shouldRepositionPanelIndicator(previousSettings, settings)) {
+        this.#replaceIndicator();
+      }
       if (previousSettings !== null && shouldRefreshPlayerSelection(previousSettings, settings)) {
         this.#refreshSelection();
         return;
@@ -120,19 +129,7 @@ export class LyricBarController {
       this.#refreshDisplay();
     });
 
-    this.#indicator = /** @type {IndicatorHandle} */ (new LyricBarIndicator());
-    const indicator = this.#indicator;
-    this.#render();
-
-    Main.panel.addToStatusArea(
-      this.#extension.uuid,
-      indicator,
-      0,
-      normalizePanelPosition(this.#currentSettings.panelPosition),
-    );
-    this.#lifecycle.add(() => {
-      indicator.destroy();
-    });
+    this.#mountIndicator();
 
     this.#startLyricsService();
     this.#startMprisDiscovery();
@@ -161,6 +158,54 @@ export class LyricBarController {
     this.#displayState = { kind: 'idle' };
     lifecycle?.dispose();
     this.#indicator = null;
+    this.#destroyIndicator = null;
+  }
+
+  /**
+   * @returns {void}
+   */
+  #replaceIndicator() {
+    if (!this.#enabled) {
+      return;
+    }
+
+    this.#destroyIndicator?.();
+    this.#destroyIndicator = null;
+    this.#mountIndicator();
+  }
+
+  /**
+   * @returns {void}
+   */
+  #mountIndicator() {
+    const lifecycle = this.#lifecycle;
+    if (lifecycle === null || this.#currentSettings === null) {
+      return;
+    }
+
+    const indicator = /** @type {IndicatorHandle} */ (new LyricBarIndicator());
+    let destroyed = false;
+    this.#indicator = indicator;
+    this.#destroyIndicator = () => {
+      if (destroyed) {
+        return;
+      }
+      destroyed = true;
+      indicator.destroy();
+      if (this.#indicator === indicator) {
+        this.#indicator = null;
+      }
+    };
+
+    this.#render();
+
+    Main.panel.addToStatusArea(
+      this.#extension.uuid,
+      indicator,
+      0,
+      normalizePanelPosition(this.#currentSettings.panelPosition),
+    );
+    lifecycle.add(this.#destroyIndicator);
   }
 
   /**

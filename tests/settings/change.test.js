@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { shouldRefreshPlayerSelection } from '../../src/domain/settings/change.js';
+import {
+  shouldRefreshPlayerSelection,
+  shouldRepositionPanelIndicator,
+} from '../../src/domain/settings/change.js';
 
 describe('shouldRefreshPlayerSelection', () => {
   it('returns false when player priority is unchanged', () => {
@@ -24,6 +27,21 @@ describe('shouldRefreshPlayerSelection', () => {
         { ...settings(['spotify']), maxWidth: 480, fallbackMode: 'hidden' },
       ),
     ).toBe(false);
+  });
+});
+
+describe('shouldRepositionPanelIndicator', () => {
+  it('returns false when panel position is unchanged', () => {
+    expect(shouldRepositionPanelIndicator(settings(['spotify']), settings(['vlc']))).toBe(false);
+  });
+
+  it('returns true when panel position changes', () => {
+    expect(
+      shouldRepositionPanelIndicator(
+        { ...settings(['spotify']), panelPosition: 'left' },
+        { ...settings(['spotify']), panelPosition: 'right' },
+      ),
+    ).toBe(true);
   });
 });
 

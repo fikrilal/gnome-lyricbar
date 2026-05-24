@@ -12,6 +12,15 @@ export function shouldRefreshPlayerSelection(previous, next) {
 }
 
 /**
+ * @param {LyricBarSettings} previous
+ * @param {LyricBarSettings} next
+ * @returns {boolean}
+ */
+export function shouldRepositionPanelIndicator(previous, next) {
+  return previous.panelPosition !== next.panelPosition;
+}
+
+/**
  * @param {readonly string[]} left
  * @param {readonly string[]} right
  * @returns {boolean}
