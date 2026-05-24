@@ -34,9 +34,9 @@ class LyricBarIndicatorBase extends PanelMenu.Button {
       return;
     }
 
-    this.visible = viewModel.visible;
-    this._label.text = viewModel.text;
-    this._label.style = `max-width: ${viewModel.maxWidth}px;`;
+    setActorVisible(this, viewModel.visible);
+    setLabelText(this._label, viewModel.text);
+    setActorStyle(this._label, `max-width: ${viewModel.maxWidth}px;`);
   }
 
   /** @override */
@@ -49,3 +49,45 @@ class LyricBarIndicatorBase extends PanelMenu.Button {
 export const LyricBarIndicator = /** @type {typeof LyricBarIndicatorBase} */ (
   GObject.registerClass(LyricBarIndicatorBase)
 );
+
+/**
+ * @param {unknown} actor
+ * @param {boolean} visible
+ * @returns {void}
+ */
+function setActorVisible(actor, visible) {
+  const setter = Reflect.get(/** @type {object} */ (actor), 'set_visible');
+  if (typeof setter === 'function') {
+    setter.call(actor, visible);
+    return;
+  }
+  Reflect.set(/** @type {object} */ (actor), 'visible', visible);
+}
+
+/**
+ * @param {InstanceType<typeof St.Label>} label
+ * @param {string} text
+ * @returns {void}
+ */
+function setLabelText(label, text) {
+  const setter = Reflect.get(label, 'set_text');
+  if (typeof setter === 'function') {
+    setter.call(label, text);
+    return;
+  }
+  Reflect.set(label, 'text', text);
+}
+
+/**
+ * @param {unknown} actor
+ * @param {string} style
+ * @returns {void}
+ */
+function setActorStyle(actor, style) {
+  const setter = Reflect.get(/** @type {object} */ (actor), 'set_style');
+  if (typeof setter === 'function') {
+    setter.call(actor, style);
+    return;
+  }
+  Reflect.set(/** @type {object} */ (actor), 'style', style);
+}
