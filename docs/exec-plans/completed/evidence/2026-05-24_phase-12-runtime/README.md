@@ -2,7 +2,7 @@
 
 Date: 2026-05-24  
 Tester: Dante + Codex  
-Git commit: `34b61fb`, then fixes `b534d07`, `5a8841e`, and `253e300`  
+Git commit: `34b61fb`, then fixes `b534d07`, `5a8841e`, `253e300`, and `b8314c8`  
 Bundle: `dist/lyricbar@fikrilal.github.io.zip`
 
 ## Environment
@@ -133,10 +133,19 @@ Summary:
   not update the player snapshot in that loaded Shell process.
 - Fix `253e300` adds explicit
   `org.freedesktop.DBus.Properties.GetAll` hydration after proxy startup.
-- Retesting `253e300` in the same Shell process still showed the old
-  empty-snapshot behavior, likely due to GJS module caching again. It
-  needs validation after another fresh login, Shell restart, VM, or
-  separate user session.
+- After another fresh login, retesting `253e300` still showed an empty
+  LyricBar snapshot while Spotify exposed populated D-Bus metadata. This
+  disproved the module-cache-only hypothesis.
+- Fix `b8314c8` unwraps nested variant-like values before mapping MPRIS
+  properties. Unit coverage now includes variant-wrapped `GetAll`
+  metadata and variant-wrapped `PropertiesChanged` metadata.
+- `npm run verify:safe` passed after `b8314c8`:
+  - vitest: 21 test files, 178 tests passed
+  - build:extension: `dist/lyricbar@fikrilal.github.io.zip`
+- Runtime validation of `b8314c8` still requires another fresh GNOME
+  Shell load, Shell restart, VM, or separate user session. A temporary
+  evidence UUID could not be registered by the already-running Shell
+  without a Shell extension-manager rescan.
 - Runtime evidence stopped before LRCLIB, cache-hit, network-failure,
   and disable-during-lookup scenarios.
 - The extension was disabled after the run.
