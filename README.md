@@ -1,33 +1,82 @@
 # LyricBar
 
-LyricBar is a GNOME Shell extension that displays synchronized live lyrics in the GNOME top bar for MPRIS-compatible music players.
+LyricBar is a GNOME Shell extension that displays synchronized live lyrics in the top bar for Spotify and other MPRIS-compatible music players.
 
-The project is currently in scaffold stage. The first implementation target is a production-ready GNOME Shell extension for GNOME Shell 46 on Ubuntu 24.04, with Spotify Desktop support through MPRIS and synced lyrics from LRCLIB.
+It is built for GNOME Shell 46 on Ubuntu 24.04, with Spotify Desktop as the primary target. Lyrics are fetched from LRCLIB, cached locally, and rendered as a single glanceable line in the panel.
 
-## Status
+## Features
 
-The repository is being built harness-first:
+- Synced one-line lyric display in the GNOME top bar.
+- Spotify-first MPRIS player selection with configurable player priority.
+- LRCLIB synced lyric lookup with local cache.
+- Fallback modes for tracks without synced lyrics.
+- Preferences for panel position, maximum width, text alignment, fallback behavior, cache, player priority, and debug logging.
+- Small panel menu for quick position/alignment changes and preferences access.
+- Strict local harness: formatting, linting, type checking, architecture checks, unit tests, schema validation, and bundle build.
 
-- documented product and engineering direction
-- agent operating contract
-- executable verification gate
-- minimal GNOME Shell extension scaffold
-- pure logic modules with unit tests
+## Compatibility
 
-## Documentation
+| Target              | Status         |
+| ------------------- | -------------- |
+| GNOME Shell 46      | Supported      |
+| Ubuntu 24.04        | Supported      |
+| Spotify Desktop     | Primary target |
+| Other MPRIS players | Best effort    |
 
-Start with:
+Broader GNOME Shell versions should be added only after runtime testing. GNOME Shell extension APIs are not stable enough for untested version claims.
 
-- [Product overview](docs/product.md)
-- [Engineering proposal](docs/engineering-proposal.md)
-- [Agent harness](docs/harness/agent-harness.md)
+## Install From Source
+
+Requirements:
+
+- GNOME Shell 46
+- Node.js 22+
+- `glib-compile-schemas`
+- `zip`
+
+Build and install:
+
+```bash
+npm ci
+npm run verify
+gnome-extensions install --force dist/lyricbar@fikrilal.github.io.zip
+gnome-extensions enable lyricbar@fikrilal.github.io
+```
+
+If the extension was already enabled, reload just LyricBar:
+
+```bash
+gnome-extensions disable lyricbar@fikrilal.github.io
+gnome-extensions enable lyricbar@fikrilal.github.io
+```
+
+Open preferences:
+
+```bash
+gnome-extensions prefs lyricbar@fikrilal.github.io
+```
+
+Uninstall:
+
+```bash
+gnome-extensions disable lyricbar@fikrilal.github.io
+rm -rf ~/.local/share/gnome-shell/extensions/lyricbar@fikrilal.github.io
+```
+
+## Privacy
+
+LyricBar does not use telemetry and does not require a Spotify account. For lyric lookup, it sends track metadata such as artist, title, album, and duration to LRCLIB. See [Privacy](docs/privacy.md).
+
+## Troubleshooting
+
+If the panel is blank, lyrics do not sync, or the wrong player is selected, see [Troubleshooting](docs/troubleshooting.md).
 
 ## Development
 
 Install dependencies:
 
 ```bash
-npm install
+npm ci
 ```
 
 Run the canonical verification gate:
@@ -36,10 +85,22 @@ Run the canonical verification gate:
 npm run verify
 ```
 
-Build a local extension bundle:
+Build the extension bundle:
 
 ```bash
 npm run build:extension
 ```
 
-The generated bundle is written to `dist/`.
+The generated bundle is written to `dist/lyricbar@fikrilal.github.io.zip`.
+
+## Documentation
+
+- [Product overview](docs/product.md)
+- [Engineering proposal](docs/engineering-proposal.md)
+- [Agent harness](docs/harness/agent-harness.md)
+- [Runtime evidence workflow](docs/harness/runtime-evidence.md)
+- [Release checklist](docs/release-checklist.md)
+
+## License
+
+MIT

@@ -6,6 +6,9 @@ This directory is the source of truth for LyricBar product direction, engineerin
 
 - [Product overview](product.md): product definition, target users, v1 scope, and success criteria.
 - [Engineering proposal](engineering-proposal.md): architecture, stack, module boundaries, testing, CI, release, and risks.
+- [Privacy](privacy.md): network requests, local cache, logs, and data handling.
+- [Troubleshooting](troubleshooting.md): install, runtime, player selection, lyric sync, and preference issues.
+- [Release checklist](release-checklist.md): public release gates and runtime scenarios.
 - [Agent harness](harness/agent-harness.md): agent-first workflow, verification gates, guardrails, and feedback loops.
 - [Nested runtime harness](harness/nested-runtime-harness.md): recommended visual runtime evidence loop with nested GNOME Shell and mock MPRIS.
 - [Runtime agent workflow](harness/runtime-agent-workflow.md): step-by-step nested Shell workflow for R&D agents.
@@ -20,6 +23,9 @@ docs/
   README.md
   product.md
   engineering-proposal.md
+  privacy.md
+  troubleshooting.md
+  release-checklist.md
   harness/
     agent-harness.md
     nested-runtime-harness.md
