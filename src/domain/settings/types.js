@@ -1,10 +1,12 @@
 /**
  * @typedef {'left' | 'center' | 'right'} PanelPosition
+ * @typedef {'left' | 'center' | 'right'} TextAlign
  * @typedef {'track' | 'idle' | 'hidden'} FallbackMode
  *
  * @typedef {Readonly<{
  *   panelPosition?: unknown,
  *   maxWidth?: unknown,
+ *   textAlign?: unknown,
  *   fallbackMode?: unknown,
  *   playerPriority?: unknown,
  *   cacheEnabled?: unknown,
@@ -14,6 +16,7 @@
  * @typedef {Readonly<{
  *   panelPosition: PanelPosition,
  *   maxWidth: number,
+ *   textAlign: TextAlign,
  *   fallbackMode: FallbackMode,
  *   playerPriority: readonly string[],
  *   cacheEnabled: boolean,

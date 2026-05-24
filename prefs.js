@@ -68,6 +68,35 @@ export default class LyricBarPreferences extends ExtensionPreferences {
     });
     settings.bind('max-width', maxWidthRow, 'value', Gio.SettingsBindFlags.DEFAULT);
 
+    // text-align: ComboRow
+    const alignments = ['left', 'center', 'right'];
+    const textAlignRow = new Adw.ComboRow({
+      title: 'Text alignment',
+      subtitle: 'Horizontal alignment of the lyric text within the indicator.',
+      model: new Gtk.StringList({ strings: ['Left', 'Center', 'Right'] }),
+    });
+    const currentAlign = settings.get_string('text-align');
+    const alignIndex = alignments.indexOf(currentAlign);
+    if (alignIndex !== -1) {
+      textAlignRow.selected = alignIndex;
+    }
+    const alignNotifyId = textAlignRow.connect('notify::selected', () => {
+      const { selected } = textAlignRow;
+      if (selected >= 0 && selected < alignments.length) {
+        settings.set_string('text-align', alignments[selected]);
+      }
+    });
+    connections.push([textAlignRow, alignNotifyId]);
+
+    const alignChangedId = settings.connect('changed::text-align', () => {
+      const currentAlign = settings.get_string('text-align');
+      const alignIndex = alignments.indexOf(currentAlign);
+      if (alignIndex !== -1 && textAlignRow.selected !== alignIndex) {
+        textAlignRow.selected = alignIndex;
+      }
+    });
+    connections.push([settings, alignChangedId]);
+
     // fallback-mode: ComboRow
     const fallbackModes = ['track', 'idle', 'hidden'];
     const fallbackModeRow = new Adw.ComboRow({
@@ -101,6 +130,7 @@ export default class LyricBarPreferences extends ExtensionPreferences {
 
     displayGroup.add(panelPositionRow);
     displayGroup.add(maxWidthRow);
+    displayGroup.add(textAlignRow);
     displayGroup.add(fallbackModeRow);
 
     // 2. Behavior Group

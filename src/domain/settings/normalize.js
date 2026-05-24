@@ -4,9 +4,11 @@ const MIN_MAX_WIDTH = 120;
 const MAX_MAX_WIDTH = 720;
 const DEFAULT_FALLBACK_MODE = 'track';
 const DEFAULT_PLAYER_PRIORITY = ['spotify'];
+const DEFAULT_TEXT_ALIGN = 'left';
 
 const PANEL_POSITIONS = new Set(['left', 'center', 'right']);
 const FALLBACK_MODES = new Set(['track', 'idle', 'hidden']);
+const TEXT_ALIGNS = new Set(['left', 'center', 'right']);
 
 /**
  * @import {
@@ -14,6 +16,7 @@ const FALLBACK_MODES = new Set(['track', 'idle', 'hidden']);
  *   LyricBarSettings,
  *   PanelPosition,
  *   RawSettings,
+ *   TextAlign,
  * } from './types.js'
  */
 
@@ -25,6 +28,7 @@ export function normalizeSettings(raw) {
   return {
     panelPosition: normalizePanelPosition(raw.panelPosition),
     maxWidth: normalizeMaxWidth(raw.maxWidth),
+    textAlign: normalizeTextAlign(raw.textAlign),
     fallbackMode: normalizeFallbackMode(raw.fallbackMode),
     playerPriority: normalizePlayerPriority(raw.playerPriority),
     cacheEnabled: normalizeBoolean(raw.cacheEnabled, true),
@@ -89,4 +93,14 @@ export function normalizePlayerPriority(value) {
  */
 function normalizeBoolean(value, fallback) {
   return typeof value === 'boolean' ? value : fallback;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {TextAlign}
+ */
+export function normalizeTextAlign(value) {
+  return typeof value === 'string' && TEXT_ALIGNS.has(value)
+    ? /** @type {TextAlign} */ (value)
+    : DEFAULT_TEXT_ALIGN;
 }

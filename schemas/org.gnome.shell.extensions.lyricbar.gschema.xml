@@ -12,6 +12,11 @@
       <summary>Maximum label width</summary>
       <description>Maximum width in pixels for the top-bar lyric label.</description>
     </key>
+    <key name="text-align" type="s">
+      <default>'left'</default>
+      <summary>Text alignment</summary>
+      <description>Horizontal alignment of the lyric text within the indicator ('left', 'center', or 'right').</description>
+    </key>
     <key name="fallback-mode" type="s">
       <default>'track'</default>
       <summary>Fallback mode</summary>

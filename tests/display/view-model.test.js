@@ -10,6 +10,7 @@ import { buildIndicatorViewModel } from '../../src/domain/display/view-model.js'
 const baseSettings = {
   panelPosition: 'center',
   maxWidth: 360,
+  textAlign: 'left',
   fallbackMode: 'track',
   playerPriority: ['spotify'],
   cacheEnabled: true,
@@ -30,6 +31,7 @@ describe('buildIndicatorViewModel', () => {
       text: 'Hello world',
       visible: true,
       maxWidth: 360,
+      textAlign: 'left',
     });
   });
 
@@ -49,6 +51,7 @@ describe('buildIndicatorViewModel', () => {
       text: '',
       visible: false,
       maxWidth: 240,
+      textAlign: 'left',
     });
   });
 });
