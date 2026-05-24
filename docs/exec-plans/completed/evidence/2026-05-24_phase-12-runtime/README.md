@@ -61,12 +61,14 @@ Do not run these scenarios in the owner's primary GNOME session.
 - [x] Change `panel-position` between left, center, and right.
 - [x] Try Spotify metadata hydration with Spotify already running and playing.
 - [x] Inspect logs for Shell crashes, JS errors, and GLib/GIO criticals.
-- [ ] Enable extension with no active music player.
-- [ ] Enable extension with Spotify already running and playing.
-- [ ] Start Spotify after extension is enabled.
-- [ ] Play a track with LRCLIB synced lyrics.
-- [ ] Skip to a different track.
-- [ ] Pause and resume playback.
+- [x] Enable extension with no active music player.
+- [x] Enable extension with Spotify already running and playing.
+- [x] Start Spotify after extension is enabled.
+- [x] Play a track with LRCLIB synced lyrics.
+- [x] Confirm cache hit after synced lyrics are cached.
+- [x] Skip to a different track.
+- [x] Pause and resume playback.
+- [x] Disable extension after active playback and lyric lookup.
 - [ ] Quit Spotify while extension is enabled.
 - [ ] Change `player-priority` and confirm active selection refreshes.
 - [ ] Disconnect network during lyric lookup.
@@ -163,15 +165,44 @@ Summary:
   contract. `npm run verify:safe` passed after this fix:
   - vitest: 21 test files, 178 tests passed
   - build:extension: `dist/lyricbar@fikrilal.github.io.zip`
-- Runtime validation of `0dd0710` still requires another
-  fresh GNOME Shell load, Shell restart, VM, or separate user session.
-- Runtime evidence stopped before LRCLIB response parsing, cache-hit,
-  network-failure, and disable-during-lookup scenarios.
+- After another fresh login, runtime validation of `0dd0710` passed:
+  - Spotify D-Bus metadata exposed title `The Scientist`, artist
+    `Coldplay`, album `A Rush of Blood to the Head`.
+  - LyricBar hydrated the snapshot with title `The Scientist`.
+  - LRCLIB lookup started for artist `Coldplay`, title `The Scientist`.
+  - LRCLIB returned `kind="synced"` with HTTP `statusCode=200`.
+  - Lyrics cache wrote the synced result.
+- Cache-hit validation passed after disable/re-enable:
+  - LyricBar hydrated `The Scientist`.
+  - Lyrics cache returned `cache-hit kind="synced"`.
+  - No network provider request was needed for the cached track.
+- Track-skip validation passed:
+  - Spotify advanced to title `Mary On A Cross`, artist `Eibell`.
+  - LyricBar emitted a new player snapshot for `Mary On A Cross`.
+  - LRCLIB returned `kind="synced"` with HTTP `statusCode=200`.
+  - Lyrics cache wrote the synced result.
+- Pause/resume validation passed through MPRIS:
+  - `PlaybackStatus` changed to `Paused`.
+  - `PlaybackStatus` changed back to `Playing`.
+- Disable-after-runtime validation passed:
+  - LyricBar disabled cleanly after active Spotify playback and lyric
+    lookups.
+  - No `URLSearchParams` error, LyricBar JS exception, GLib/GIO critical,
+    GObject handler warning, Shell crash, forced logout, or Shell restart
+    occurred in the final runtime pass.
+- Runtime evidence stopped before network-failure,
+  disable-during-in-flight-lookup, Spotify-quit, and `player-priority`
+  scenarios. Network disconnection was not run on the owner's main
+  machine.
 - The extension was disabled after the run.
 - `org.gnome.shell disable-user-extensions` was restored to `true`, which
   was the value observed before enabling LyricBar.
 
-This evidence does not complete Phases 10, 11, or 12.
+This evidence completes the main happy-path runtime behavior for MPRIS
+discovery, LRCLIB synced lookup, cache write, cache hit, track change,
+pause/resume, and disable cleanup. Remaining scenarios should run in a
+disposable GNOME session because they intentionally disturb network or
+player lifecycle state.
 
 ## Logs
 
