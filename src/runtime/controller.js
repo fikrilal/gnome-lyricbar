@@ -2,12 +2,17 @@ import Gio from 'gi://Gio';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
+import { displayStateFromLookup } from '../domain/display/lyrics-state.js';
 import { displayStateFromPlayer } from '../domain/display/player-state.js';
 import { buildIndicatorViewModel } from '../domain/display/view-model.js';
 import { selectActivePlayer } from '../domain/mpris/selection.js';
+import { shouldRefreshPlayerSelection } from '../domain/settings/change.js';
 import { LyricBarIndicator } from '../shell/indicator.js';
 import { normalizePanelPosition } from '../domain/settings/normalize.js';
 import { LifecycleRegistry } from './lifecycle.js';
+import { LyricsCache } from './lyrics/cache.js';
+import { LrclibProvider } from './lyrics/lrclib.js';
+import { LyricsService } from './lyrics/service.js';
 import { MprisService } from './mpris/service.js';
 import { PlayerProxy } from './mpris/player.js';
 import { SettingsAdapter } from './settings.js';
@@ -15,6 +20,7 @@ import { SettingsAdapter } from './settings.js';
 /**
  * @import { DisplayState } from '../domain/display/types.js'
  * @import { IndicatorViewModel } from '../domain/display/view-model.js'
+ * @import { LyricsProviderResult } from '../domain/lyrics/types.js'
  * @import { PlayerSnapshot } from '../domain/mpris/types.js'
  * @import { LyricBarSettings } from '../domain/settings/types.js'
  * @import { GSettingsBackend } from './settings.js'
@@ -69,6 +75,15 @@ export class LyricBarController {
   /** @type {string | null} */
   #lastSelectedBusName = null;
 
+  /** @type {LyricsService | null} */
+  #lyricsService = null;
+
+  /** @type {PlayerSnapshot | null} */
+  #activePlayer = null;
+
+  /** @type {LyricsProviderResult | null} */
+  #currentLookup = null;
+
   /**
    * @param {ExtensionHandle} extension
    */
@@ -96,8 +111,13 @@ export class LyricBarController {
     this.#settings = new SettingsAdapter(this.#extension.getSettings(), this.#lifecycle);
     this.#currentSettings = this.#settings.read();
     this.#settings.subscribe((settings) => {
+      const previousSettings = this.#currentSettings;
       this.#currentSettings = settings;
-      this.#render();
+      if (previousSettings !== null && shouldRefreshPlayerSelection(previousSettings, settings)) {
+        this.#refreshSelection();
+        return;
+      }
+      this.#refreshDisplay();
     });
 
     this.#indicator = /** @type {IndicatorHandle} */ (new LyricBarIndicator());
@@ -114,6 +134,7 @@ export class LyricBarController {
       indicator.destroy();
     });
 
+    this.#startLyricsService();
     this.#startMprisDiscovery();
   }
 
@@ -134,9 +155,37 @@ export class LyricBarController {
     this.#connection = null;
     this.#proxies.clear();
     this.#lastSelectedBusName = null;
+    this.#lyricsService = null;
+    this.#activePlayer = null;
+    this.#currentLookup = null;
     this.#displayState = { kind: 'idle' };
     lifecycle?.dispose();
     this.#indicator = null;
+  }
+
+  /**
+   * @returns {void}
+   */
+  #startLyricsService() {
+    const lifecycle = this.#lifecycle;
+    if (lifecycle === null) {
+      return;
+    }
+
+    const provider = new LrclibProvider(lifecycle);
+    const cache = new LyricsCache(lifecycle, () => ({
+      cacheEnabled: this.#currentSettings?.cacheEnabled ?? true,
+    }));
+
+    this.#lyricsService = new LyricsService(lifecycle, provider, cache);
+    this.#lyricsService.onLookupChanged((player, lookup) => {
+      if (!this.#enabled) {
+        return;
+      }
+      this.#activePlayer = player;
+      this.#currentLookup = lookup;
+      this.#refreshDisplay();
+    });
   }
 
   /**
@@ -231,7 +280,30 @@ export class LyricBarController {
       this.#lastSelectedBusName = active.busName;
     }
 
-    this.#displayState = displayStateFromPlayer(active);
+    this.#activePlayer = active;
+    if (this.#lyricsService !== null) {
+      this.#lyricsService.setActivePlayer(active);
+    } else {
+      this.#refreshDisplay();
+    }
+  }
+
+  /**
+   * @returns {void}
+   */
+  #refreshDisplay() {
+    if (!this.#enabled) {
+      return;
+    }
+
+    if (this.#activePlayer === null) {
+      this.#displayState = displayStateFromPlayer(null);
+    } else if (this.#currentLookup === null) {
+      this.#displayState = displayStateFromPlayer(this.#activePlayer);
+    } else {
+      this.#displayState = displayStateFromLookup(this.#activePlayer, this.#currentLookup);
+    }
+
     this.#render();
   }
 
