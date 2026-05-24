@@ -1,4 +1,5 @@
 import Gio from 'gi://Gio';
+import GObject from 'gi://GObject';
 
 import { applyPropertyChanges, mapMprisProperties, snapshotsEqual } from './player-mapping.js';
 
@@ -223,13 +224,28 @@ export class PlayerProxy {
   #disconnectPropertiesSignal() {
     if (this.#proxy && this.#propertiesSignalId !== 0) {
       try {
-        this.#proxy.disconnect(this.#propertiesSignalId);
+        if (isSignalHandlerConnected(this.#proxy, this.#propertiesSignalId)) {
+          this.#proxy.disconnect(this.#propertiesSignalId);
+        }
       } catch {
         // proxy already gone, nothing to clean up
       }
       this.#propertiesSignalId = 0;
     }
   }
+}
+
+/**
+ * @param {any} target
+ * @param {number} signalId
+ * @returns {boolean}
+ */
+function isSignalHandlerConnected(target, signalId) {
+  const checker = Reflect.get(GObject, 'signal_handler_is_connected');
+  if (typeof checker !== 'function') {
+    return true;
+  }
+  return checker(target, signalId) === true;
 }
 
 /**
