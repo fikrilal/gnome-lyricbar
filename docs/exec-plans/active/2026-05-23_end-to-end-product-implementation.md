@@ -588,6 +588,18 @@ Risk:
 
 - Medium. Filesystem use must stay isolated and recoverable.
 
+Status:
+
+- In Progress.
+- Static implementation complete; runtime evidence intentionally deferred to Phase 12 alongside Phase 10 evidence.
+- Added `src/domain/lyrics/cache-policy.js` exporting `buildCacheFileName`, `buildCacheEntry`, `parseCacheEntry`, plus `CACHE_SCHEMA_VERSION`, `POSITIVE_TTL_MS`, and `NEGATIVE_TTL_MS`. Defensive parser rejects schema mismatch, expired entries, future-dated `savedAt`, and malformed result envelopes.
+- Added `src/runtime/lyrics/cache.js` `LyricsCache` class. Stores one JSON envelope per key under `${user-cache-dir}/lyricbar/cache-v1/`. Reads use `Gio.File.load_contents_async`, writes use a temp + rename pattern via `replace_contents_bytes_async` + `move`. Lazy directory creation; pass-through mode on failure.
+- Honors the `cacheEnabled` setting through a settings-view callback so the cache stays decoupled from the runtime adapter.
+- All cancellables for async file operations registered with `LifecycleRegistry`. Async callbacks short-circuit on disabled state or cancellation.
+- Added `tests/lyrics/cache-policy.test.js` with 17 cases covering filename stability, TTL selection per result kind, live round-trips for synced / plain / instrumental / not-found / error, schema mismatch, missing fields, expired entries, future-clock tampering, and malformed embedded results.
+- Verification: `npm run verify` passed with 16 test files and 144 tests; extension bundle includes `src/domain/lyrics/cache-policy.js` and `src/runtime/lyrics/cache.js`.
+- Sub-plan: `docs/exec-plans/active/2026-05-24_lyrics-cache.md`. Sub-plan stays active until Phase 12 records combined runtime evidence.
+
 ### Phase 12: Lyrics Service Orchestration
 
 Commit:
