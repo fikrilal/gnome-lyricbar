@@ -539,16 +539,9 @@ Risk:
 
 Status:
 
-- In Progress.
-- Static implementation complete; runtime evidence intentionally deferred to Phase 12 where the controller wires the provider into the lyrics service and end-to-end behavior can be exercised against a real LRCLIB endpoint.
-- Added `src/runtime/lyrics/url.js` pure builder for the LRCLIB `GET /api/get` URL with `URLSearchParams`-based percent encoding; rejects empty artist or title; omits zero / negative durations; converts ms to integer seconds.
-- Added `src/runtime/lyrics/http-result.js` pure mapper from `{ statusCode, body, error, timedOut }` into the Phase 9 `LyricsProviderResult`. Handles 200 + JSON, 404, 4xx / 5xx, transport failures, timeouts, and missing status.
-- Added `src/runtime/lyrics/lrclib.js` `LrclibProvider` class. Owns a libsoup 3 `Soup.Session` (or accepts an injected session for tests), per-call `Gio.Cancellable` registered with `LifecycleRegistry`, and a `GLib.timeout_add` watchdog that cancels the call after the configured timeout. User-Agent identifies LyricBar plus the repo URL. Async callback short-circuits when the provider is disabled or the call was cancelled.
-- Extended `types/gjs.d.ts` with a permissive `gi://Soup` declaration to keep the strict typecheck happy without overcommitting to libsoup's Promise-of-everything API.
-- Added `tests/lyrics/url.test.js` (7 cases) and `tests/lyrics/http-result.test.js` (10 cases) covering URL building edge cases, all status-code branches, body parsing failures, transport errors, and timeouts.
-- Property access uses the `Object.hasOwn` + `Reflect.get` helper pattern. Cleanup tracking goes through `LifecycleRegistry.addCancellable` and `LifecycleRegistry.addSource`.
-- Verification: `npm run verify` passed with 15 test files and 127 tests; extension bundle includes `src/runtime/lyrics/{url,http-result,lrclib}.js`.
-- Sub-plan: `docs/exec-plans/active/2026-05-24_lrclib-runtime-provider.md`. Sub-plan stays active until Phase 12 records the combined runtime evidence.
+- Complete.
+- Static implementation complete and runtime evidence recorded in Phase 12.
+- Sub-plan moved to `docs/exec-plans/completed/2026-05-24_lrclib-runtime-provider.md`.
 
 ### Phase 11: Lyrics Cache
 
@@ -590,15 +583,9 @@ Risk:
 
 Status:
 
-- In Progress.
-- Static implementation complete; runtime evidence intentionally deferred to Phase 12 alongside Phase 10 evidence.
-- Added `src/domain/lyrics/cache-policy.js` exporting `buildCacheFileName`, `buildCacheEntry`, `parseCacheEntry`, plus `CACHE_SCHEMA_VERSION`, `POSITIVE_TTL_MS`, and `NEGATIVE_TTL_MS`. Defensive parser rejects schema mismatch, expired entries, future-dated `savedAt`, and malformed result envelopes.
-- Added `src/runtime/lyrics/cache.js` `LyricsCache` class. Stores one JSON envelope per key under `${user-cache-dir}/lyricbar/cache-v1/`. Reads use `Gio.File.load_contents_async`, writes use a temp + rename pattern via `replace_contents_bytes_async` + `move`. Lazy directory creation; pass-through mode on failure.
-- Honors the `cacheEnabled` setting through a settings-view callback so the cache stays decoupled from the runtime adapter.
-- All cancellables for async file operations registered with `LifecycleRegistry`. Async callbacks short-circuit on disabled state or cancellation.
-- Added `tests/lyrics/cache-policy.test.js` with 17 cases covering filename stability, TTL selection per result kind, live round-trips for synced / plain / instrumental / not-found / error, schema mismatch, missing fields, expired entries, future-clock tampering, and malformed embedded results.
-- Verification: `npm run verify` passed with 16 test files and 144 tests; extension bundle includes `src/domain/lyrics/cache-policy.js` and `src/runtime/lyrics/cache.js`.
-- Sub-plan: `docs/exec-plans/active/2026-05-24_lyrics-cache.md`. Sub-plan stays active until Phase 12 records combined runtime evidence.
+- Complete.
+- Static implementation complete and cache write/hit runtime evidence recorded in Phase 12.
+- Sub-plan moved to `docs/exec-plans/completed/2026-05-24_lyrics-cache.md`.
 
 ### Phase 12: Lyrics Service Orchestration
 
@@ -640,6 +627,12 @@ Risk:
 
 - High. This phase combines async, network, and lifecycle behavior.
 
+Status:
+
+- Complete.
+- Service orchestration implemented and happy-path runtime evidence captured in `docs/exec-plans/completed/evidence/2026-05-24_phase-12-runtime/`.
+- Sub-plan moved to `docs/exec-plans/completed/2026-05-24_lyrics-service-orchestration.md`.
+
 ### Phase 13: Lyric Synchronization Loop
 
 Commit:
@@ -677,6 +670,11 @@ Runtime evidence:
 Risk:
 
 - High. Timers inside Shell must be bounded and cleaned up.
+
+Status:
+
+- Complete.
+- Synchronization loop implemented via GLib timeout source polling, matching player position with synced lyric timestamps.
 
 ### Phase 14: Preferences UI
 
