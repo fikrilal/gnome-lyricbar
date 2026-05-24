@@ -16,6 +16,7 @@ import { LifecycleRegistry } from './lifecycle.js';
 import { LyricsCache } from './lyrics/cache.js';
 import { LrclibProvider } from './lyrics/lrclib.js';
 import { LyricsService } from './lyrics/service.js';
+import { RuntimeLogger } from './logger.js';
 import { MprisService } from './mpris/service.js';
 import { PlayerProxy } from './mpris/player.js';
 import { SettingsAdapter } from './settings.js';
@@ -59,6 +60,9 @@ export class LyricBarController {
 
   /** @type {SettingsAdapter | null} */
   #settings = null;
+
+  /** @type {RuntimeLogger | null} */
+  #logger = null;
 
   /** @type {LyricBarSettings | null} */
   #currentSettings = null;
@@ -116,10 +120,24 @@ export class LyricBarController {
     this.#lifecycle = new LifecycleRegistry();
     this.#settings = new SettingsAdapter(this.#extension.getSettings(), this.#lifecycle);
     this.#currentSettings = this.#settings.read();
+    this.#logger = new RuntimeLogger(
+      'LyricBar',
+      () => this.#currentSettings?.debugLogging === true,
+    );
+    this.#logger.debug('controller-enable', { uuid: this.#extension.uuid });
     this.#settings.subscribe((settings) => {
       const previousSettings = this.#currentSettings;
       this.#currentSettings = settings;
+      this.#logger?.debug('settings-changed', {
+        debugLogging: settings.debugLogging,
+        maxWidth: settings.maxWidth,
+        panelPosition: settings.panelPosition,
+      });
       if (previousSettings !== null && shouldRepositionPanelIndicator(previousSettings, settings)) {
+        this.#logger?.debug('indicator-reposition-requested', {
+          from: previousSettings.panelPosition,
+          to: settings.panelPosition,
+        });
         this.#replaceIndicator();
       }
       if (previousSettings !== null && shouldRefreshPlayerSelection(previousSettings, settings)) {
@@ -144,6 +162,7 @@ export class LyricBarController {
     }
 
     this.#enabled = false;
+    this.#logger?.debug('controller-disable');
     const lifecycle = this.#lifecycle;
     this.#lifecycle = null;
     this.#settings = null;
@@ -159,6 +178,7 @@ export class LyricBarController {
     lifecycle?.dispose();
     this.#indicator = null;
     this.#destroyIndicator = null;
+    this.#logger = null;
   }
 
   /**
@@ -169,6 +189,7 @@ export class LyricBarController {
       return;
     }
 
+    this.#logger?.debug('indicator-replace');
     this.#destroyIndicator?.();
     this.#destroyIndicator = null;
     this.#mountIndicator();
@@ -205,6 +226,9 @@ export class LyricBarController {
       0,
       normalizePanelPosition(this.#currentSettings.panelPosition),
     );
+    this.#logger?.debug('indicator-mounted', {
+      panelPosition: this.#currentSettings.panelPosition,
+    });
     lifecycle.add(this.#destroyIndicator);
   }
 
@@ -217,12 +241,17 @@ export class LyricBarController {
       return;
     }
 
-    const provider = new LrclibProvider(lifecycle);
-    const cache = new LyricsCache(lifecycle, () => ({
-      cacheEnabled: this.#currentSettings?.cacheEnabled ?? true,
-    }));
+    const logger = this.#logger?.child('lyrics');
+    const provider = new LrclibProvider(lifecycle, { logger: logger?.child('lrclib') });
+    const cache = new LyricsCache(
+      lifecycle,
+      () => ({
+        cacheEnabled: this.#currentSettings?.cacheEnabled ?? true,
+      }),
+      { logger: logger?.child('cache') },
+    );
 
-    this.#lyricsService = new LyricsService(lifecycle, provider, cache);
+    this.#lyricsService = new LyricsService(lifecycle, provider, cache, { logger });
     this.#lyricsService.onLookupChanged((player, lookup) => {
       if (!this.#enabled) {
         return;
@@ -243,7 +272,9 @@ export class LyricBarController {
     }
 
     this.#connection = Gio.DBus.session;
-    this.#mprisService = new MprisService(this.#connection, lifecycle);
+    this.#mprisService = new MprisService(this.#connection, lifecycle, {
+      logger: this.#logger?.child('mpris'),
+    });
     this.#mprisService.onPlayersChanged((names) => {
       this.#syncPlayers(names);
     });
@@ -260,6 +291,7 @@ export class LyricBarController {
     }
 
     const next = new Set(names);
+    this.#logger?.debug('players-sync', { count: names.length });
     for (const [busName, tracked] of this.#proxies) {
       if (!next.has(busName)) {
         tracked.lifecycle.dispose();
@@ -290,7 +322,9 @@ export class LyricBarController {
     const child = new LifecycleRegistry();
     parent.add(child);
 
-    const proxy = new PlayerProxy(this.#connection, busName, child);
+    const proxy = new PlayerProxy(this.#connection, busName, child, {
+      logger: this.#logger?.child('player'),
+    });
     proxy.onSnapshot(() => {
       this.#refreshSelection();
     });
@@ -324,6 +358,11 @@ export class LyricBarController {
     if (active !== null) {
       this.#lastSelectedBusName = active.busName;
     }
+
+    this.#logger?.debug('active-player-selected', {
+      busName: active?.busName ?? null,
+      title: active?.title ?? null,
+    });
 
     this.#activePlayer = active;
     if (this.#lyricsService !== null) {

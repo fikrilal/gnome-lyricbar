@@ -4,6 +4,7 @@ import { applyPropertyChanges, mapMprisProperties, snapshotsEqual } from './play
 
 /**
  * @import { LifecycleRegistry } from '../lifecycle.js'
+ * @import { RuntimeLogger } from '../logger.js'
  * @import { PlayerSnapshot } from '../../domain/mpris/types.js'
  *
  * @typedef {(snapshot: PlayerSnapshot | null) => void} PlayerSnapshotCallback
@@ -31,6 +32,9 @@ export class PlayerProxy {
   /** @type {any} */
   #cancellable = null;
 
+  /** @type {RuntimeLogger | null} */
+  #logger = null;
+
   /** @type {any} */
   #proxy = null;
 
@@ -47,11 +51,13 @@ export class PlayerProxy {
    * @param {any} connection
    * @param {string} busName
    * @param {LifecycleRegistry} lifecycle
+   * @param {{ logger?: RuntimeLogger | undefined }} [options]
    */
-  constructor(connection, busName, lifecycle) {
+  constructor(connection, busName, lifecycle, options = {}) {
     this.#connection = connection;
     this.#busName = busName;
     this.#lifecycle = lifecycle;
+    this.#logger = options.logger ?? null;
   }
 
   /**
@@ -83,10 +89,12 @@ export class PlayerProxy {
       return;
     }
     this.#enabled = true;
+    this.#logger?.debug('proxy-start', { busName: this.#busName });
 
     this.#cancellable = new Gio.Cancellable();
     this.#lifecycle.addCancellable(() => this.#cancellable);
     this.#lifecycle.add(() => {
+      this.#logger?.debug('proxy-dispose', { busName: this.#busName });
       this.#enabled = false;
       this.#disconnectPropertiesSignal();
       this.#proxy = null;
@@ -111,6 +119,7 @@ export class PlayerProxy {
         }
         try {
           this.#proxy = Gio.DBusProxy.new_finish(result);
+          this.#logger?.debug('proxy-ready', { busName: this.#busName });
           this.#bindProxy(this.#proxy);
         } catch (error) {
           if (!isCancelledError(error)) {
@@ -191,6 +200,10 @@ export class PlayerProxy {
       return;
     }
     this.#snapshot = next;
+    this.#logger?.debug('snapshot-changed', {
+      busName: this.#busName,
+      title: next?.title ?? null,
+    });
     for (const listener of this.#listeners) {
       listener(next);
     }

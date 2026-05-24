@@ -7,6 +7,7 @@ import { buildLrclibUrl } from './url.js';
 
 /**
  * @import { LifecycleRegistry } from '../lifecycle.js'
+ * @import { RuntimeLogger } from '../logger.js'
  * @import { LyricsProviderResult, LyricsQuery } from '../../domain/lyrics/types.js'
  *
  * @typedef {(result: LyricsProviderResult) => void} LyricsLookupCallback
@@ -28,14 +29,18 @@ export class LrclibProvider {
   /** @type {number} */
   #timeoutMs;
 
+  /** @type {RuntimeLogger | null} */
+  #logger = null;
+
   /**
    * @param {LifecycleRegistry} lifecycle
-   * @param {{ session?: any, timeoutMs?: number }} [options]
+   * @param {{ session?: any, timeoutMs?: number, logger?: RuntimeLogger | undefined }} [options]
    */
   constructor(lifecycle, options = {}) {
     this.#lifecycle = lifecycle;
     this.#timeoutMs =
       typeof options.timeoutMs === 'number' ? options.timeoutMs : DEFAULT_TIMEOUT_MS;
+    this.#logger = options.logger ?? null;
 
     if (options.session) {
       this.#session = options.session;
@@ -47,6 +52,7 @@ export class LrclibProvider {
     }
 
     this.#lifecycle.add(() => {
+      this.#logger?.debug('provider-dispose');
       this.#enabled = false;
       try {
         this.#session?.abort?.();
@@ -64,21 +70,29 @@ export class LrclibProvider {
    */
   lookup(query, callback) {
     if (!this.#enabled) {
+      this.#logger?.debug('lookup-skipped', { reason: 'provider-disabled' });
       callback(Object.freeze({ kind: 'error', reason: 'provider disabled' }));
       return;
     }
 
     const url = buildLrclibUrl(query);
     if (url === null) {
+      this.#logger?.debug('lookup-skipped', { reason: 'invalid-query' });
       callback(Object.freeze({ kind: 'not-found' }));
       return;
     }
 
     const message = Soup.Message.new('GET', url);
     if (message === null) {
+      this.#logger?.debug('lookup-skipped', { reason: 'invalid-url' });
       callback(Object.freeze({ kind: 'error', reason: 'invalid lookup url' }));
       return;
     }
+
+    this.#logger?.debug('request-start', {
+      artist: query.artist,
+      title: query.title,
+    });
 
     const cancellable = new Gio.Cancellable();
     this.#lifecycle.addCancellable(() => cancellable);
@@ -121,6 +135,7 @@ export class LrclibProvider {
 
         if (!this.#enabled || cancellable.is_cancelled?.() === true) {
           if (timedOut) {
+            this.#logger?.debug('request-timeout');
             callback(mapHttpResultToProviderResult({ timedOut: true }));
           }
           return;
@@ -131,23 +146,23 @@ export class LrclibProvider {
           const bytes = session.send_and_read_finish(result);
           body = readBytes(bytes);
         } catch (error) {
-          callback(
-            mapHttpResultToProviderResult({
-              statusCode: null,
-              body: null,
-              error: describeError(error),
-            }),
-          );
+          const providerResult = mapHttpResultToProviderResult({
+            statusCode: null,
+            body: null,
+            error: describeError(error),
+          });
+          this.#logger?.debug('request-result', { kind: providerResult.kind, statusCode: null });
+          callback(providerResult);
           return;
         }
 
         const statusCode = readStatusCode(message);
-        callback(
-          mapHttpResultToProviderResult({
-            statusCode,
-            body,
-          }),
-        );
+        const providerResult = mapHttpResultToProviderResult({
+          statusCode,
+          body,
+        });
+        this.#logger?.debug('request-result', { kind: providerResult.kind, statusCode });
+        callback(providerResult);
       },
     );
   }

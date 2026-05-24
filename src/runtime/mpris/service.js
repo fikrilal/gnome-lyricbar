@@ -5,6 +5,7 @@ import { applyNameOwnerChange, filterMprisNames } from './discovery.js';
 
 /**
  * @import { LifecycleRegistry } from '../lifecycle.js'
+ * @import { RuntimeLogger } from '../logger.js'
  * @import { NameOwnerChange } from './discovery.js'
  *
  * @typedef {(names: readonly string[]) => void} PlayersChangedCallback
@@ -33,16 +34,21 @@ export class MprisService {
   /** @type {any} */
   #cancellable = null;
 
+  /** @type {RuntimeLogger | null} */
+  #logger = null;
+
   /** @type {number} */
   #signalId = 0;
 
   /**
    * @param {any} connection
    * @param {LifecycleRegistry} lifecycle
+   * @param {{ logger?: RuntimeLogger | undefined }} [options]
    */
-  constructor(connection, lifecycle) {
+  constructor(connection, lifecycle, options = {}) {
     this.#connection = connection;
     this.#lifecycle = lifecycle;
+    this.#logger = options.logger ?? null;
   }
 
   /**
@@ -60,6 +66,7 @@ export class MprisService {
       return;
     }
     this.#enabled = true;
+    this.#logger?.debug('service-start');
 
     this.#cancellable = new Gio.Cancellable();
     this.#lifecycle.addCancellable(() => this.#cancellable);
@@ -92,6 +99,7 @@ export class MprisService {
       },
     );
     this.#lifecycle.add(() => {
+      this.#logger?.debug('service-dispose');
       this.#enabled = false;
       this.#connection.signal_unsubscribe(this.#signalId);
     });
@@ -120,6 +128,7 @@ export class MprisService {
           const unpacked = reply?.deep_unpack?.();
           const names = Array.isArray(unpacked) ? unpacked[0] : null;
           if (Array.isArray(names)) {
+            this.#logger?.debug('list-names-result', { count: names.length });
             this.#applyInitialNames(names);
           }
         } catch (error) {
@@ -156,6 +165,7 @@ export class MprisService {
    */
   #applyInitialNames(names) {
     const filtered = filterMprisNames(names);
+    this.#logger?.debug('initial-players-filtered', { count: filtered.length });
     let changed = false;
     for (const name of filtered) {
       if (!this.#names.has(name)) {
@@ -177,6 +187,7 @@ export class MprisService {
     if (next === null) {
       return;
     }
+    this.#logger?.debug('player-owner-changed', { name: change.name });
     this.#names = next;
     this.#emit();
   }
@@ -193,6 +204,7 @@ export class MprisService {
    */
   #emit() {
     const snapshot = this.#snapshot();
+    this.#logger?.debug('players-changed', { count: snapshot.length });
     for (const listener of this.#listeners) {
       listener(snapshot);
     }

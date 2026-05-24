@@ -59,6 +59,16 @@ Confirm the extension bundle exists:
 ls -lh dist/lyricbar@fikrilal.github.io.zip
 ```
 
+Enable debug logging only inside the disposable evidence session:
+
+```bash
+gsettings set org.gnome.shell.extensions.lyricbar debug-logging true
+```
+
+Debug logs may include active track metadata such as title, artist,
+bus name, provider result kind, and cache/provider state. They must not
+include lyric bodies.
+
 Start log capture in a separate terminal:
 
 ```bash

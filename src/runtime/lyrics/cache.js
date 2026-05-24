@@ -9,6 +9,7 @@ import {
 
 /**
  * @import { LifecycleRegistry } from '../lifecycle.js'
+ * @import { RuntimeLogger } from '../logger.js'
  * @import { LyricsProviderResult, LyricsQuery } from '../../domain/lyrics/types.js'
  *
  * @typedef {(result: LyricsProviderResult | null) => void} LyricsCacheGetCallback
@@ -40,15 +41,21 @@ export class LyricsCache {
   /** @type {boolean} */
   #enabled = true;
 
+  /** @type {RuntimeLogger | null} */
+  #logger = null;
+
   /**
    * @param {LifecycleRegistry} lifecycle
    * @param {() => CacheSettingsView} readSettings
+   * @param {{ logger?: RuntimeLogger | undefined }} [options]
    */
-  constructor(lifecycle, readSettings) {
+  constructor(lifecycle, readSettings, options = {}) {
     this.#lifecycle = lifecycle;
     this.#readSettings = readSettings;
+    this.#logger = options.logger ?? null;
 
     this.#lifecycle.add(() => {
+      this.#logger?.debug('cache-dispose');
       this.#enabled = false;
     });
   }
@@ -60,12 +67,14 @@ export class LyricsCache {
    */
   get(query, callback) {
     if (!this.#enabled || !this.#readSettings().cacheEnabled) {
+      this.#logger?.debug('cache-get-skipped', { reason: 'disabled' });
       callback(null);
       return;
     }
 
     const file = this.#fileForQuery(query);
     if (file === null) {
+      this.#logger?.debug('cache-get-skipped', { reason: 'no-cache-file' });
       callback(null);
       return;
     }
@@ -90,16 +99,22 @@ export class LyricsCache {
         try {
           const [ok, contents] = file.load_contents_finish(result);
           if (!ok) {
+            this.#logger?.debug('cache-miss', { reason: 'load-failed' });
             callback(null);
             return;
           }
           parsed = JSON.parse(decodeBytes(contents));
         } catch {
+          this.#logger?.debug('cache-miss', { reason: 'read-error' });
           callback(null);
           return;
         }
 
-        callback(parseCacheEntry(parsed, Date.now()));
+        const entry = parseCacheEntry(parsed, Date.now());
+        this.#logger?.debug(entry === null ? 'cache-miss' : 'cache-hit', {
+          kind: entry?.kind ?? null,
+        });
+        callback(entry);
       },
     );
   }
@@ -111,11 +126,13 @@ export class LyricsCache {
    */
   put(query, result) {
     if (!this.#enabled || !this.#readSettings().cacheEnabled) {
+      this.#logger?.debug('cache-put-skipped', { reason: 'disabled' });
       return;
     }
 
     const file = this.#fileForQuery(query);
     if (file === null) {
+      this.#logger?.debug('cache-put-skipped', { reason: 'no-cache-file' });
       return;
     }
 
@@ -124,6 +141,7 @@ export class LyricsCache {
     try {
       payload = JSON.stringify(entry);
     } catch {
+      this.#logger?.debug('cache-put-skipped', { reason: 'serialize-failed' });
       return;
     }
 
@@ -152,7 +170,9 @@ export class LyricsCache {
         try {
           tempFile.replace_contents_finish(writeResult);
           tempFile.move(file, Gio.FileCopyFlags.OVERWRITE, null, null);
+          this.#logger?.debug('cache-write', { kind: result.kind });
         } catch {
+          this.#logger?.debug('cache-write-failed');
           try {
             tempFile.delete(null);
           } catch {
@@ -240,6 +260,7 @@ export class LyricsCache {
     if (this.#cacheDirPath === null) {
       const userCacheDir = GLib.get_user_cache_dir();
       if (typeof userCacheDir !== 'string' || userCacheDir === '') {
+        this.#logger?.debug('cache-dir-failed', { reason: 'missing-user-cache-dir' });
         this.#directoryFailed = true;
         return null;
       }
@@ -252,6 +273,7 @@ export class LyricsCache {
         dir.make_directory_with_parents(null);
       } catch (error) {
         if (!isAlreadyExistsError(error)) {
+          this.#logger?.debug('cache-dir-failed', { reason: 'create-failed' });
           this.#directoryFailed = true;
           return null;
         }

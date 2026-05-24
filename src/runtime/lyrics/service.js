@@ -3,6 +3,7 @@ import { buildTrackIdentityKey } from '../../domain/lyrics/track-identity.js';
 
 /**
  * @import { LifecycleRegistry } from '../lifecycle.js'
+ * @import { RuntimeLogger } from '../logger.js'
  * @import { LyricsProviderResult, LyricsQuery } from '../../domain/lyrics/types.js'
  * @import { PlayerSnapshot } from '../../domain/mpris/types.js'
  *
@@ -49,17 +50,23 @@ export class LyricsService {
   /** @type {LyricsProviderResult | null} */
   #currentLookup = null;
 
+  /** @type {RuntimeLogger | null} */
+  #logger = null;
+
   /**
    * @param {LifecycleRegistry} lifecycle
    * @param {ServiceProvider} provider
    * @param {ServiceCache} cache
+   * @param {{ logger?: RuntimeLogger | undefined }} [options]
    */
-  constructor(lifecycle, provider, cache) {
+  constructor(lifecycle, provider, cache, options = {}) {
     this.#lifecycle = lifecycle;
     this.#provider = provider;
     this.#cache = cache;
+    this.#logger = options.logger ?? null;
 
     this.#lifecycle.add(() => {
+      this.#logger?.debug('service-dispose');
       this.#enabled = false;
       this.#listeners.clear();
     });
@@ -85,9 +92,14 @@ export class LyricsService {
     this.#currentKey = key;
     this.#currentPlayer = player;
     this.#currentLookup = null;
+    this.#logger?.debug('lookup-start', {
+      busName: player?.busName ?? null,
+      title: player?.title ?? null,
+    });
     this.#emit();
 
     if (player === null || key === null) {
+      this.#logger?.debug('lookup-skipped', { reason: 'no-active-player' });
       return;
     }
 
@@ -99,20 +111,25 @@ export class LyricsService {
     });
 
     if (query.title === '' || query.artist === '') {
+      this.#logger?.debug('lookup-skipped', { reason: 'incomplete-metadata' });
       this.#applyResult(generation, key, Object.freeze({ kind: 'not-found' }));
       return;
     }
 
     this.#cache.get(query, (cached) => {
       if (!this.#shouldApply(generation, key)) {
+        this.#logger?.debug('lookup-stale', { stage: 'cache' });
         return;
       }
       if (cached !== null) {
+        this.#logger?.debug('cache-result', { kind: cached.kind, source: 'hit' });
         this.#applyResult(generation, key, cached);
         return;
       }
+      this.#logger?.debug('cache-result', { source: 'miss' });
       this.#provider.lookup(query, (result) => {
         if (!this.#shouldApply(generation, key)) {
+          this.#logger?.debug('lookup-stale', { stage: 'provider' });
           return;
         }
         try {
@@ -120,6 +137,7 @@ export class LyricsService {
         } catch {
           // best-effort; cache failure must not break the live emission
         }
+        this.#logger?.debug('provider-result', { kind: result.kind });
         this.#applyResult(generation, key, result);
       });
     });
