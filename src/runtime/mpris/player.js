@@ -170,10 +170,6 @@ export class PlayerProxy {
         this.#applyChanges(changes);
       },
     );
-    this.#lifecycle.addSignal(
-      () => this.#proxy,
-      () => this.#propertiesSignalId,
-    );
   }
 
   /**
