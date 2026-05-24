@@ -488,6 +488,18 @@ Risk:
 
 - Low. Pure logic only.
 
+Status:
+
+- Complete.
+- Static implementation landed in `feat(lyrics): add lrclib response parsing`.
+- Added `src/domain/lyrics/provider-result.js` exporting `parseLrclibResponse(unknown): LyricsProviderResult`. Defensive parser that distinguishes `synced`, `plain`, `instrumental`, `not-found`, and `error` results. Falls back from synced to plain when no timestamped lines are parseable.
+- Extended `src/domain/lyrics/types.js` with `ProviderTrackInfo` and the `LyricsProviderResult` discriminated union; existing typedefs are unchanged.
+- Reuses the existing `parseLrc` parser for synced lyric lines; no duplication of timestamp logic.
+- Added `tests/lyrics/provider-result.test.js` with 13 cases covering combined synced + plain, synced only, plain only, instrumental, 404 not-found, empty body, null and undefined input, non-object input, 500-level provider errors, synced-falls-back-to-plain, synced-with-no-fallback, a realistic LRCLIB-style fixture, and invalid durations.
+- Property access uses the `Reflect.get` helper pattern that satisfies both `noPropertyAccessFromIndexSignature` and the `dot-notation` ESLint rule.
+- Verification: `npm run verify` passed with 13 test files and 110 tests; extension bundle includes `src/domain/lyrics/provider-result.js`.
+- Sub-plan: `docs/exec-plans/active/2026-05-23_lrclib-response-parsing.md`. Will move to `completed/` after the parent plan promotion.
+
 ### Phase 10: LRCLIB Runtime Provider
 
 Commit:
