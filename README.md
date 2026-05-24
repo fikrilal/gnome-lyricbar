@@ -4,6 +4,10 @@ LyricBar is a GNOME Shell extension that displays synchronized live lyrics in th
 
 It is built for GNOME Shell 46 on Ubuntu 24.04, with Spotify Desktop as the primary target. Lyrics are fetched from LRCLIB, cached locally, and rendered as a single glanceable line in the panel.
 
+![LyricBar screenshot](docs/assets/lyricbar-panel.png)
+
+![LyricBar demo](docs/assets/lyricbar-demo.gif)
+
 ## Features
 
 - Synced one-line lyric display in the GNOME top bar.
@@ -27,34 +31,10 @@ Broader GNOME Shell versions should be added only after runtime testing. GNOME S
 
 ## Install
 
-Install the latest GitHub release:
+Run:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/scripts/install.sh | bash
-```
-
-Install a pinned release:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/scripts/install.sh | bash -s -- v0.1.0
-```
-
-Inspect the installer before running it:
-
-```bash
-curl -fsSLO https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/scripts/install.sh
-less install.sh
-bash install.sh
-```
-
-Manual install from a release asset:
-
-```bash
-curl -fL -o lyricbar@fikrilal.github.io.zip \
-  https://github.com/fikrilal/gnome-lyricbar/releases/latest/download/lyricbar@fikrilal.github.io.zip
-
-gnome-extensions install --force lyricbar@fikrilal.github.io.zip
-gnome-extensions enable lyricbar@fikrilal.github.io
 ```
 
 Open preferences:
@@ -63,7 +43,14 @@ Open preferences:
 gnome-extensions prefs lyricbar@fikrilal.github.io
 ```
 
-## Build From Source
+Uninstall:
+
+```bash
+gnome-extensions disable lyricbar@fikrilal.github.io
+rm -rf ~/.local/share/gnome-shell/extensions/lyricbar@fikrilal.github.io
+```
+
+## Development
 
 Requirements:
 
@@ -81,19 +68,7 @@ gnome-extensions install --force dist/lyricbar@fikrilal.github.io.zip
 gnome-extensions enable lyricbar@fikrilal.github.io
 ```
 
-If the extension was already enabled, reload just LyricBar:
-
-```bash
-gnome-extensions disable lyricbar@fikrilal.github.io
-gnome-extensions enable lyricbar@fikrilal.github.io
-```
-
-Uninstall:
-
-```bash
-gnome-extensions disable lyricbar@fikrilal.github.io
-rm -rf ~/.local/share/gnome-shell/extensions/lyricbar@fikrilal.github.io
-```
+The generated bundle is written to `dist/lyricbar@fikrilal.github.io.zip`.
 
 ## Privacy
 
@@ -102,28 +77,6 @@ LyricBar does not use telemetry and does not require a Spotify account. For lyri
 ## Troubleshooting
 
 If the panel is blank, lyrics do not sync, or the wrong player is selected, see [Troubleshooting](docs/troubleshooting.md).
-
-## Development
-
-Install dependencies:
-
-```bash
-npm ci
-```
-
-Run the canonical verification gate:
-
-```bash
-npm run verify
-```
-
-Build the extension bundle:
-
-```bash
-npm run build:extension
-```
-
-The generated bundle is written to `dist/lyricbar@fikrilal.github.io.zip`.
 
 ## Documentation
 
