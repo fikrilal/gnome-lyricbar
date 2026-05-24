@@ -34,6 +34,11 @@ declare module 'gi://Gtk' {
   export default Gtk;
 }
 
+declare module 'gi://Soup' {
+  const Soup: any;
+  export default Soup;
+}
+
 declare module 'gi://St' {
   export class Label {
     constructor(config: { text: string; y_align?: unknown; style_class?: string });

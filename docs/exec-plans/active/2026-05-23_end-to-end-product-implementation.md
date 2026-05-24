@@ -537,6 +537,19 @@ Risk:
 
 - High. Network callbacks inside Shell require careful guards.
 
+Status:
+
+- In Progress.
+- Static implementation complete; runtime evidence intentionally deferred to Phase 12 where the controller wires the provider into the lyrics service and end-to-end behavior can be exercised against a real LRCLIB endpoint.
+- Added `src/runtime/lyrics/url.js` pure builder for the LRCLIB `GET /api/get` URL with `URLSearchParams`-based percent encoding; rejects empty artist or title; omits zero / negative durations; converts ms to integer seconds.
+- Added `src/runtime/lyrics/http-result.js` pure mapper from `{ statusCode, body, error, timedOut }` into the Phase 9 `LyricsProviderResult`. Handles 200 + JSON, 404, 4xx / 5xx, transport failures, timeouts, and missing status.
+- Added `src/runtime/lyrics/lrclib.js` `LrclibProvider` class. Owns a libsoup 3 `Soup.Session` (or accepts an injected session for tests), per-call `Gio.Cancellable` registered with `LifecycleRegistry`, and a `GLib.timeout_add` watchdog that cancels the call after the configured timeout. User-Agent identifies LyricBar plus the repo URL. Async callback short-circuits when the provider is disabled or the call was cancelled.
+- Extended `types/gjs.d.ts` with a permissive `gi://Soup` declaration to keep the strict typecheck happy without overcommitting to libsoup's Promise-of-everything API.
+- Added `tests/lyrics/url.test.js` (7 cases) and `tests/lyrics/http-result.test.js` (10 cases) covering URL building edge cases, all status-code branches, body parsing failures, transport errors, and timeouts.
+- Property access uses the `Object.hasOwn` + `Reflect.get` helper pattern. Cleanup tracking goes through `LifecycleRegistry.addCancellable` and `LifecycleRegistry.addSource`.
+- Verification: `npm run verify` passed with 15 test files and 127 tests; extension bundle includes `src/runtime/lyrics/{url,http-result,lrclib}.js`.
+- Sub-plan: `docs/exec-plans/active/2026-05-24_lrclib-runtime-provider.md`. Sub-plan stays active until Phase 12 records the combined runtime evidence.
+
 ### Phase 11: Lyrics Cache
 
 Commit:
