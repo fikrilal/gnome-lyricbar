@@ -1,5 +1,6 @@
 import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
+import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
@@ -9,6 +10,12 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
  */
 
 class LyricBarIndicatorBase extends PanelMenu.Button {
+  /** @type {InstanceType<typeof St.BoxLayout> | null} */
+  _lyricBarBox = null;
+
+  /** @type {InstanceType<typeof St.Bin> | null} */
+  _lyricBarBin = null;
+
   /** @type {InstanceType<typeof St.Label> | null} */
   _lyricBarLabel = null;
 
@@ -16,13 +23,22 @@ class LyricBarIndicatorBase extends PanelMenu.Button {
   _init() {
     super._init(0.0, 'LyricBar');
 
+    this._lyricBarBox = new St.BoxLayout({
+      style_class: 'panel-status-indicators-box lyricbar-container',
+    });
+    this._lyricBarBin = new St.Bin({
+      y_align: Clutter.ActorAlign.CENTER,
+    });
     this._lyricBarLabel = new St.Label({
       text: '',
       y_align: Clutter.ActorAlign.CENTER,
       style_class: 'lyricbar-label',
     });
+    setSingleLineMode(this._lyricBarLabel);
 
-    this.add_child(this._lyricBarLabel);
+    this._lyricBarBin.set_child(this._lyricBarLabel);
+    this._lyricBarBox.add_child(this._lyricBarBin);
+    this.add_child(this._lyricBarBox);
     this.label_actor = this._lyricBarLabel;
   }
 
@@ -37,14 +53,19 @@ class LyricBarIndicatorBase extends PanelMenu.Button {
 
     setActorVisible(this, viewModel.visible);
     setLabelText(this._lyricBarLabel, viewModel.text);
-    setActorStyle(this._lyricBarLabel, `max-width: ${viewModel.maxWidth}px; min-width: 1px;`);
+    setActorWidth(this._lyricBarLabel, viewModel.maxWidth);
+    setActorStyle(this._lyricBarLabel, `width: ${viewModel.maxWidth}px; min-width: 1px;`);
     queueRelayout(this._lyricBarLabel);
+    queueRelayout(this._lyricBarBin);
+    queueRelayout(this._lyricBarBox);
     queueRelayout(this);
   }
 
   /** @override */
   destroy() {
     this._lyricBarLabel = null;
+    this._lyricBarBin = null;
+    this._lyricBarBox = null;
     super.destroy();
   }
 }
@@ -99,6 +120,44 @@ function setActorStyle(actor, style) {
     return;
   }
   Reflect.set(/** @type {object} */ (actor), 'style', style);
+}
+
+/**
+ * @param {unknown} actor
+ * @param {number} width
+ * @returns {void}
+ */
+function setActorWidth(actor, width) {
+  const setter = Reflect.get(/** @type {object} */ (actor), 'set_width');
+  if (typeof setter === 'function') {
+    setter.call(actor, width);
+    return;
+  }
+  Reflect.set(/** @type {object} */ (actor), 'width', width);
+}
+
+/**
+ * @param {InstanceType<typeof St.Label>} label
+ * @returns {void}
+ */
+function setSingleLineMode(label) {
+  const clutterText = Reflect.get(label, 'clutter_text');
+  if (clutterText === null || clutterText === undefined) {
+    return;
+  }
+
+  const setSingleLine = Reflect.get(/** @type {object} */ (clutterText), 'set_single_line_mode');
+  if (typeof setSingleLine === 'function') {
+    setSingleLine.call(clutterText, true);
+  }
+
+  const setEllipsize = Reflect.get(/** @type {object} */ (clutterText), 'set_ellipsize');
+  if (typeof setEllipsize === 'function') {
+    setEllipsize.call(clutterText, Pango.EllipsizeMode.END);
+    return;
+  }
+
+  Reflect.set(/** @type {object} */ (clutterText), 'ellipsize', Pango.EllipsizeMode.END);
 }
 
 /**

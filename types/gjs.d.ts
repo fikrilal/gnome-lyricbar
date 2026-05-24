@@ -34,6 +34,15 @@ declare module 'gi://Gtk' {
   export default Gtk;
 }
 
+declare module 'gi://Pango' {
+  const Pango: {
+    EllipsizeMode: {
+      END: unknown;
+    };
+  };
+  export default Pango;
+}
+
 declare module 'gi://Soup' {
   const Soup: any;
   export default Soup;

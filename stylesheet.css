@@ -1,3 +1,7 @@
+.lyricbar-container {
+  spacing: 4px;
+}
+
 .lyricbar-label {
   color: #ffffff;
   min-width: 1px;
