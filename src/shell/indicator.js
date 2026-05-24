@@ -10,19 +10,20 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 
 class LyricBarIndicatorBase extends PanelMenu.Button {
   /** @type {InstanceType<typeof St.Label> | null} */
-  _label = null;
+  #label = null;
 
   /** @override */
   _init() {
     super._init(0.0, 'LyricBar');
+    removeActorChildren(this);
 
-    this._label = new St.Label({
-      text: 'LyricBar',
+    this.#label = new St.Label({
+      text: '',
       y_align: Clutter.ActorAlign.CENTER,
       style_class: 'lyricbar-label',
     });
 
-    this.add_child(this._label);
+    this.add_child(this.#label);
   }
 
   /**
@@ -30,18 +31,18 @@ class LyricBarIndicatorBase extends PanelMenu.Button {
    * @returns {void}
    */
   render(viewModel) {
-    if (!this._label) {
+    if (!this.#label) {
       return;
     }
 
     setActorVisible(this, viewModel.visible);
-    setLabelText(this._label, viewModel.text);
-    setActorStyle(this._label, `max-width: ${viewModel.maxWidth}px;`);
+    setLabelText(this.#label, viewModel.text);
+    setActorStyle(this.#label, `max-width: ${viewModel.maxWidth}px;`);
   }
 
   /** @override */
   destroy() {
-    this._label = null;
+    this.#label = null;
     super.destroy();
   }
 }
@@ -49,6 +50,17 @@ class LyricBarIndicatorBase extends PanelMenu.Button {
 export const LyricBarIndicator = /** @type {typeof LyricBarIndicatorBase} */ (
   GObject.registerClass(LyricBarIndicatorBase)
 );
+
+/**
+ * @param {unknown} actor
+ * @returns {void}
+ */
+function removeActorChildren(actor) {
+  const remover = Reflect.get(/** @type {object} */ (actor), 'remove_all_children');
+  if (typeof remover === 'function') {
+    remover.call(actor);
+  }
+}
 
 /**
  * @param {unknown} actor

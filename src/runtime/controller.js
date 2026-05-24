@@ -399,6 +399,11 @@ export class LyricBarController {
       return;
     }
 
-    this.#indicator.render(buildIndicatorViewModel(this.#displayState, this.#currentSettings));
+    const viewModel = buildIndicatorViewModel(this.#displayState, this.#currentSettings);
+    this.#logger?.debug('indicator-render', {
+      text: viewModel.text,
+      visible: viewModel.visible,
+    });
+    this.#indicator.render(viewModel);
   }
 }
