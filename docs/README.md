@@ -7,6 +7,8 @@ This directory is the source of truth for LyricBar product direction, engineerin
 - [Product overview](product.md): product definition, target users, v1 scope, and success criteria.
 - [Engineering proposal](engineering-proposal.md): architecture, stack, module boundaries, testing, CI, release, and risks.
 - [Agent harness](harness/agent-harness.md): agent-first workflow, verification gates, guardrails, and feedback loops.
+- [Nested runtime harness](harness/nested-runtime-harness.md): recommended visual runtime evidence loop with nested GNOME Shell and mock MPRIS.
+- [Runtime agent workflow](harness/runtime-agent-workflow.md): step-by-step nested Shell workflow for R&D agents.
 - [Execution plans](exec-plans/README.md): planning workflow for non-trivial agent work.
 - [Execution plan template](exec-plans/_template.md): required structure for non-trivial agent work plans.
 - [Technical debt tracker](exec-plans/tech-debt-tracker.md): unresolved harness, product, and architecture debt.
@@ -20,6 +22,8 @@ docs/
   engineering-proposal.md
   harness/
     agent-harness.md
+    nested-runtime-harness.md
+    runtime-agent-workflow.md
   exec-plans/
     README.md
     _template.md
