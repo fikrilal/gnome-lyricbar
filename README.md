@@ -25,7 +25,45 @@ It is built for GNOME Shell 46 on Ubuntu 24.04, with Spotify Desktop as the prim
 
 Broader GNOME Shell versions should be added only after runtime testing. GNOME Shell extension APIs are not stable enough for untested version claims.
 
-## Install From Source
+## Install
+
+Install the latest GitHub release:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/scripts/install.sh | bash
+```
+
+Install a pinned release:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/scripts/install.sh | bash -s -- v0.1.0
+```
+
+Inspect the installer before running it:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/scripts/install.sh
+less install.sh
+bash install.sh
+```
+
+Manual install from a release asset:
+
+```bash
+curl -fL -o lyricbar@fikrilal.github.io.zip \
+  https://github.com/fikrilal/gnome-lyricbar/releases/latest/download/lyricbar@fikrilal.github.io.zip
+
+gnome-extensions install --force lyricbar@fikrilal.github.io.zip
+gnome-extensions enable lyricbar@fikrilal.github.io
+```
+
+Open preferences:
+
+```bash
+gnome-extensions prefs lyricbar@fikrilal.github.io
+```
+
+## Build From Source
 
 Requirements:
 
@@ -48,12 +86,6 @@ If the extension was already enabled, reload just LyricBar:
 ```bash
 gnome-extensions disable lyricbar@fikrilal.github.io
 gnome-extensions enable lyricbar@fikrilal.github.io
-```
-
-Open preferences:
-
-```bash
-gnome-extensions prefs lyricbar@fikrilal.github.io
 ```
 
 Uninstall:

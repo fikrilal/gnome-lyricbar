@@ -49,7 +49,19 @@ It should not include tests, docs, `.git`, `node_modules`, screenshots, or local
 
 ## Clean Install
 
-Run:
+Test the public installer:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/scripts/install.sh | bash
+```
+
+Test a pinned release:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/scripts/install.sh | bash -s -- v0.1.0
+```
+
+Manual release-asset install:
 
 ```bash
 gnome-extensions install --force dist/lyricbar@fikrilal.github.io.zip
