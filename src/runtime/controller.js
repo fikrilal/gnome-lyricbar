@@ -235,8 +235,6 @@ export class LyricBarController {
       }
     };
 
-    this.#render();
-
     Main.panel.addToStatusArea(
       this.#extension.uuid,
       indicator,
@@ -246,6 +244,7 @@ export class LyricBarController {
     this.#logger?.debug('indicator-mounted', {
       panelPosition: this.#currentSettings.panelPosition,
     });
+    this.#render();
     lifecycle.add(this.#destroyIndicator);
   }
 
