@@ -9,20 +9,36 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
  */
 
 class LyricBarIndicatorBase extends PanelMenu.Button {
+  /** @type {InstanceType<typeof St.Bin> | null} */
+  _lyricBarBin = null;
+
+  /** @type {InstanceType<typeof St.BoxLayout> | null} */
+  _lyricBarContainer = null;
+
   /** @type {InstanceType<typeof St.Label> | null} */
   _lyricBarLabel = null;
 
   /** @override */
   _init() {
-    super._init(0.0, 'LyricBar');
+    super._init(0.0, null, true);
 
+    this._lyricBarBin = new St.Bin({
+      style_class: 'lyricbar-bin',
+      y_align: Clutter.ActorAlign.CENTER,
+    });
+    this._lyricBarContainer = new St.BoxLayout({
+      style_class: 'panel-status-menu-box lyricbar-container',
+    });
     this._lyricBarLabel = new St.Label({
       text: '',
       y_align: Clutter.ActorAlign.CENTER,
       style_class: 'lyricbar-label',
     });
 
-    this.add_child(this._lyricBarLabel);
+    this._lyricBarContainer.add_child(this._lyricBarLabel);
+    this._lyricBarBin.set_child(this._lyricBarContainer);
+    this.add_child(this._lyricBarBin);
+    this.label_actor = this._lyricBarLabel;
   }
 
   /**
@@ -42,6 +58,8 @@ class LyricBarIndicatorBase extends PanelMenu.Button {
   /** @override */
   destroy() {
     this._lyricBarLabel = null;
+    this._lyricBarContainer = null;
+    this._lyricBarBin = null;
     super.destroy();
   }
 }

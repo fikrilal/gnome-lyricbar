@@ -40,6 +40,18 @@ declare module 'gi://Soup' {
 }
 
 declare module 'gi://St' {
+  export class Bin {
+    constructor(config?: { style_class?: string; y_align?: unknown });
+
+    set_child(actor: unknown): void;
+  }
+
+  export class BoxLayout {
+    constructor(config?: { style_class?: string });
+
+    add_child(actor: unknown): void;
+  }
+
   export class Label {
     constructor(config: { text: string; y_align?: unknown; style_class?: string });
 
@@ -48,6 +60,8 @@ declare module 'gi://St' {
   }
 
   const St: {
+    Bin: typeof Bin;
+    BoxLayout: typeof BoxLayout;
     Label: typeof Label;
   };
   export default St;
@@ -79,9 +93,10 @@ declare module 'resource:///org/gnome/shell/ui/main.js' {
 
 declare module 'resource:///org/gnome/shell/ui/panelMenu.js' {
   export class Button {
+    label_actor: unknown;
     visible: boolean;
-    constructor(menuAlignment?: number, nameText?: string);
-    _init(menuAlignment: number, nameText?: string): void;
+    constructor(menuAlignment?: number, nameText?: string | null, dontCreateMenu?: boolean);
+    _init(menuAlignment: number, nameText?: string | null, dontCreateMenu?: boolean): void;
     add_child(actor: unknown): void;
     destroy(): void;
   }
