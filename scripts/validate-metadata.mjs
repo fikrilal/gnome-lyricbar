@@ -45,9 +45,14 @@ if (metadata.uuid !== 'lyricbar@fikrilal.github.io') {
   failures.push('metadata.json uuid must remain stable: lyricbar@fikrilal.github.io');
 }
 
-if (!metadata['shell-version']?.includes('46')) {
+const supportedShellVersions = ['46', '47', '48', '49'];
+const missingSupportedShellVersions = supportedShellVersions.filter(
+  (version) => !metadata['shell-version']?.includes(version),
+);
+
+if (missingSupportedShellVersions.length > 0) {
   failures.push(
-    'metadata.json must explicitly support GNOME Shell 46 for the first release target.',
+    `metadata.json must explicitly support GNOME Shell ${supportedShellVersions.join(', ')}.`,
   );
 }
 
