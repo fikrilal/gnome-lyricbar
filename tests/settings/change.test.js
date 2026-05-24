@@ -53,6 +53,7 @@ function settings(playerPriority) {
   return {
     panelPosition: 'center',
     maxWidth: 360,
+    textAlign: 'left',
     fallbackMode: 'track',
     playerPriority,
     cacheEnabled: true,

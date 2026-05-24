@@ -8,6 +8,7 @@ import { formatDisplayState } from './state.js';
  *   text: string,
  *   visible: boolean,
  *   maxWidth: number,
+ *   textAlign: import('../settings/types.js').TextAlign,
  * }>} IndicatorViewModel
  */
 
@@ -23,5 +24,6 @@ export function buildIndicatorViewModel(state, settings) {
     text: display.text,
     visible: display.visible,
     maxWidth: settings.maxWidth,
+    textAlign: settings.textAlign,
   };
 }

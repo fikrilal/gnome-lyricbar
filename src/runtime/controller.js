@@ -14,7 +14,7 @@ import {
   shouldRefreshPlayerSelection,
   shouldRepositionPanelIndicator,
 } from '../domain/settings/change.js';
-import { LyricBarIndicator } from '../shell/indicator.js';
+import { LyricBarIndicator, LyricBarSettingsIndicator } from '../shell/indicator.js';
 import { normalizePanelPosition } from '../domain/settings/normalize.js';
 import { LifecycleRegistry } from './lifecycle.js';
 import { LyricsCache } from './lyrics/cache.js';
@@ -36,6 +36,7 @@ import { SettingsAdapter } from './settings.js';
  * @typedef {Readonly<{
  *   uuid: string,
  *   getSettings(): GSettingsBackend,
+ *   openPreferences(): void,
  * }>} ExtensionHandle
  *
  * @typedef {Readonly<{
@@ -60,6 +61,12 @@ export class LyricBarController {
 
   /** @type {(() => void) | null} */
   #destroyIndicator = null;
+
+  /** @type {any | null} */
+  #settingsIndicator = null;
+
+  /** @type {(() => void) | null} */
+  #destroySettingsIndicator = null;
 
   /** @type {LifecycleRegistry | null} */
   #lifecycle = null;
@@ -164,6 +171,7 @@ export class LyricBarController {
     });
 
     this.#mountIndicator();
+    this.#mountSettingsIndicator();
 
     this.#startLyricsService();
     this.#startMprisDiscovery();
@@ -195,6 +203,8 @@ export class LyricBarController {
     lifecycle?.dispose();
     this.#indicator = null;
     this.#destroyIndicator = null;
+    this.#settingsIndicator = null;
+    this.#destroySettingsIndicator = null;
     this.#logger = null;
   }
 
@@ -246,6 +256,37 @@ export class LyricBarController {
     });
     this.#render();
     lifecycle.add(this.#destroyIndicator);
+  }
+
+  /**
+   * @returns {void}
+   */
+  #mountSettingsIndicator() {
+    const lifecycle = this.#lifecycle;
+    if (lifecycle === null) {
+      return;
+    }
+
+    const settingsIndicator = new LyricBarSettingsIndicator(
+      this.#extension.getSettings(),
+      this.#extension,
+    );
+    let destroyed = false;
+    this.#settingsIndicator = settingsIndicator;
+    this.#destroySettingsIndicator = () => {
+      if (destroyed) {
+        return;
+      }
+      destroyed = true;
+      settingsIndicator.destroy();
+      if (this.#settingsIndicator === settingsIndicator) {
+        this.#settingsIndicator = null;
+      }
+    };
+
+    Main.panel.addToStatusArea(`${this.#extension.uuid}-settings`, settingsIndicator, 0, 'right');
+    this.#logger?.debug('settings-indicator-mounted');
+    lifecycle.add(this.#destroySettingsIndicator);
   }
 
   /**

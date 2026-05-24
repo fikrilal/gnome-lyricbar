@@ -17,6 +17,7 @@ import { normalizeSettings } from '../domain/settings/normalize.js';
 const SETTING_KEYS = [
   'panel-position',
   'max-width',
+  'text-align',
   'fallback-mode',
   'player-priority',
   'cache-enabled',
@@ -43,6 +44,7 @@ export class SettingsAdapter {
     return normalizeSettings({
       panelPosition: this.#settings.get_string('panel-position'),
       maxWidth: this.#settings.get_int('max-width'),
+      textAlign: this.#settings.get_string('text-align'),
       fallbackMode: this.#settings.get_string('fallback-mode'),
       playerPriority: this.#settings.get_strv('player-priority'),
       cacheEnabled: this.#settings.get_boolean('cache-enabled'),

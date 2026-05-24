@@ -5,11 +5,17 @@ import { SettingsAdapter } from '../../src/runtime/settings.js';
 
 describe('SettingsAdapter', () => {
   it('reads normalized settings from GSettings backend', () => {
-    const adapter = new SettingsAdapter(createSettingsBackend(), new LifecycleRegistry());
+    const adapter = new SettingsAdapter(
+      createSettingsBackend({
+        textAlign: 'right',
+      }),
+      new LifecycleRegistry(),
+    );
 
     expect(adapter.read()).toEqual({
       panelPosition: 'center',
       maxWidth: 360,
+      textAlign: 'right',
       fallbackMode: 'track',
       playerPriority: ['spotify'],
       cacheEnabled: true,
@@ -25,20 +31,24 @@ describe('SettingsAdapter', () => {
 
     adapter.subscribe(callback);
 
-    expect(backend.connect).toHaveBeenCalledTimes(6);
+    expect(backend.connect).toHaveBeenCalledTimes(7);
     backend.emit('changed::max-width');
 
     expect(callback).toHaveBeenCalledWith(adapter.read());
 
     lifecycle.dispose();
 
-    expect(backend.disconnect).toHaveBeenCalledTimes(6);
-    expect(backend.disconnect).toHaveBeenNthCalledWith(1, 6);
-    expect(backend.disconnect).toHaveBeenNthCalledWith(6, 1);
+    expect(backend.disconnect).toHaveBeenCalledTimes(7);
+    expect(backend.disconnect).toHaveBeenNthCalledWith(1, 7);
+    expect(backend.disconnect).toHaveBeenNthCalledWith(7, 1);
   });
 });
 
-function createSettingsBackend() {
+/**
+ * @param {{ textAlign?: string }} [overrides]
+ * @returns {import('../../src/runtime/settings.js').GSettingsBackend & { emit(signal: string): void }}
+ */
+function createSettingsBackend(overrides = {}) {
   let nextSignalId = 1;
   /** @type {Map<string, Array<() => void>>} */
   const handlers = new Map();
@@ -47,6 +57,9 @@ function createSettingsBackend() {
     get_string: vi.fn((key) => {
       if (key === 'panel-position') {
         return 'center';
+      }
+      if (key === 'text-align') {
+        return overrides.textAlign ?? 'left';
       }
       if (key === 'fallback-mode') {
         return 'track';

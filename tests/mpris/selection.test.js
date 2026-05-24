@@ -43,6 +43,32 @@ describe('selectActivePlayer', () => {
     expect(selected?.busName).toBe('org.mpris.MediaPlayer2.firefox.instance1');
   });
 
+  it('prioritizes preferred players when multiple players are playing', () => {
+    const selected = selectActivePlayer(
+      [
+        snapshot('org.mpris.MediaPlayer2.chromium.instance1', 'Playing'),
+        snapshot('org.mpris.MediaPlayer2.spotify', 'Playing'),
+      ],
+      null,
+      ['spotify'],
+    );
+
+    expect(selected?.busName).toBe('org.mpris.MediaPlayer2.spotify');
+  });
+
+  it('does not let a paused preferred player beat a playing non-preferred player', () => {
+    const selected = selectActivePlayer(
+      [
+        snapshot('org.mpris.MediaPlayer2.chromium.instance1', 'Playing'),
+        snapshot('org.mpris.MediaPlayer2.spotify', 'Paused'),
+      ],
+      null,
+      ['spotify'],
+    );
+
+    expect(selected?.busName).toBe('org.mpris.MediaPlayer2.chromium.instance1');
+  });
+
   it('breaks ties between playing players deterministically by bus name', () => {
     const selected = selectActivePlayer([
       snapshot('org.mpris.MediaPlayer2.vlc', 'Playing'),

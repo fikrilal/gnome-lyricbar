@@ -6,6 +6,7 @@ import {
   normalizePanelPosition,
   normalizePlayerPriority,
   normalizeSettings,
+  normalizeTextAlign,
 } from '../../src/domain/settings/normalize.js';
 
 describe('normalizeSettings', () => {
@@ -14,6 +15,7 @@ describe('normalizeSettings', () => {
       normalizeSettings({
         panelPosition: 'left',
         maxWidth: 420,
+        textAlign: 'center',
         fallbackMode: 'hidden',
         playerPriority: ['spotify', 'firefox'],
         cacheEnabled: false,
@@ -22,6 +24,7 @@ describe('normalizeSettings', () => {
     ).toEqual({
       panelPosition: 'left',
       maxWidth: 420,
+      textAlign: 'center',
       fallbackMode: 'hidden',
       playerPriority: ['spotify', 'firefox'],
       cacheEnabled: false,
@@ -34,6 +37,7 @@ describe('normalizeSettings', () => {
       normalizeSettings({
         panelPosition: 'bad',
         maxWidth: 'wide',
+        textAlign: 'bad',
         fallbackMode: 'loud',
         playerPriority: 'spotify',
         cacheEnabled: 'yes',
@@ -42,6 +46,7 @@ describe('normalizeSettings', () => {
     ).toEqual({
       panelPosition: 'center',
       maxWidth: 360,
+      textAlign: 'left',
       fallbackMode: 'track',
       playerPriority: ['spotify'],
       cacheEnabled: true,
@@ -90,5 +95,15 @@ describe('normalizePlayerPriority', () => {
       'spotify',
       'firefox',
     ]);
+  });
+});
+
+describe('normalizeTextAlign', () => {
+  it('accepts known text aligns', () => {
+    expect(normalizeTextAlign('center')).toBe('center');
+  });
+
+  it('rejects unknown text aligns', () => {
+    expect(normalizeTextAlign('top')).toBe('left');
   });
 });

@@ -13,7 +13,7 @@ export function selectActivePlayer(players, previousBusName = null, preferredFra
     return null;
   }
 
-  const playing = findFirstPlaying(players);
+  const playing = selectPreferredPlaying(players, preferredFragments);
   if (playing) {
     return playing;
   }
@@ -37,12 +37,20 @@ export function selectActivePlayer(players, previousBusName = null, preferredFra
 
 /**
  * @param {readonly PlayerSnapshot[]} players
+ * @param {readonly string[]} preferredFragments
  * @returns {PlayerSnapshot | null}
  */
-function findFirstPlaying(players) {
+function selectPreferredPlaying(players, preferredFragments) {
   const playing = players.filter((player) => player.playbackStatus === 'Playing');
   if (playing.length === 0) {
     return null;
+  }
+
+  for (const fragment of preferredFragments) {
+    const preferred = findByFragment(playing, fragment);
+    if (preferred) {
+      return preferred;
+    }
   }
 
   return sortByBusName(playing)[0] ?? null;
