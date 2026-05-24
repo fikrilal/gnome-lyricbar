@@ -20,7 +20,7 @@ const KEY_TRACK_ID = 'mpris:trackid';
  * @returns {PlayerSnapshot | null}
  */
 export function mapMprisProperties(busName, properties) {
-  const bag = properties ?? {};
+  const bag = readPropertyBag(properties);
   const metadata = readMetadata(get(bag, KEY_METADATA));
 
   return normalizePlayerSnapshot({
@@ -43,6 +43,7 @@ export function applyPropertyChanges(snapshot, changes) {
   if (changes === null || changes === undefined) {
     return snapshot;
   }
+  const bag = readPropertyBag(changes);
 
   /**
    * @type {{
@@ -65,8 +66,8 @@ export function applyPropertyChanges(snapshot, changes) {
     playbackStatus: snapshot.playbackStatus,
   };
 
-  if (Object.hasOwn(changes, KEY_METADATA)) {
-    const metadata = readMetadata(get(changes, KEY_METADATA));
+  if (Object.hasOwn(bag, KEY_METADATA)) {
+    const metadata = readMetadata(get(bag, KEY_METADATA));
     merged.title = metadata.title;
     merged.artist = metadata.artist;
     merged.album = metadata.album;
@@ -74,8 +75,8 @@ export function applyPropertyChanges(snapshot, changes) {
     merged.trackId = metadata.trackId;
   }
 
-  if (Object.hasOwn(changes, KEY_PLAYBACK_STATUS)) {
-    merged.playbackStatus = get(changes, KEY_PLAYBACK_STATUS);
+  if (Object.hasOwn(bag, KEY_PLAYBACK_STATUS)) {
+    merged.playbackStatus = get(bag, KEY_PLAYBACK_STATUS);
   }
 
   return normalizePlayerSnapshot(merged);
@@ -116,7 +117,7 @@ export function snapshotsEqual(a, b) {
  * }}
  */
 function readMetadata(value) {
-  const bag = isPropertyBag(value) ? value : {};
+  const bag = readPropertyBag(value);
 
   return {
     title: get(bag, KEY_TITLE),
@@ -125,6 +126,15 @@ function readMetadata(value) {
     durationMs: microsecondsToMilliseconds(get(bag, KEY_LENGTH)),
     trackId: get(bag, KEY_TRACK_ID),
   };
+}
+
+/**
+ * @param {unknown} value
+ * @returns {PropertyBag}
+ */
+function readPropertyBag(value) {
+  const unpacked = unpackVariantTree(value);
+  return isPropertyBag(unpacked) ? unpacked : {};
 }
 
 /**
@@ -165,7 +175,7 @@ function microsecondsToMilliseconds(value) {
  * @returns {unknown}
  */
 function get(bag, key) {
-  return Object.hasOwn(bag, key) ? Reflect.get(bag, key) : undefined;
+  return Object.hasOwn(bag, key) ? unpackVariantTree(Reflect.get(bag, key)) : undefined;
 }
 
 /**
@@ -174,4 +184,39 @@ function get(bag, key) {
  */
 function isPropertyBag(value) {
   return typeof value === 'object' && value !== null;
+}
+
+/**
+ * GVariant dictionaries returned by D-Bus can contain nested Variant values,
+ * especially for `a{sv}` replies from org.freedesktop.DBus.Properties.GetAll.
+ *
+ * @param {unknown} value
+ * @returns {unknown}
+ */
+function unpackVariantTree(value) {
+  if (value === null || value === undefined) {
+    return value;
+  }
+
+  const maybeVariant = /** @type {{ deep_unpack?: unknown }} */ (value);
+  if (typeof maybeVariant.deep_unpack === 'function') {
+    return unpackVariantTree(
+      /** @type {{ deep_unpack: () => unknown }} */ (maybeVariant).deep_unpack(),
+    );
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => unpackVariantTree(item));
+  }
+
+  if (typeof value !== 'object') {
+    return value;
+  }
+
+  /** @type {{ [key: string]: unknown }} */
+  const result = {};
+  for (const [key, entryValue] of Object.entries(value)) {
+    result[key] = unpackVariantTree(entryValue);
+  }
+  return result;
 }

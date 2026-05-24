@@ -8,6 +8,18 @@ import {
 
 const BUS_NAME = 'org.mpris.MediaPlayer2.spotify';
 
+/**
+ * @param {unknown} value
+ * @returns {{ deep_unpack: () => unknown }}
+ */
+function variant(value) {
+  return {
+    deep_unpack() {
+      return value;
+    },
+  };
+}
+
 describe('mapMprisProperties', () => {
   it('maps a fully populated property bag into a normalized snapshot', () => {
     expect(
@@ -28,6 +40,29 @@ describe('mapMprisProperties', () => {
       album: 'Album',
       durationMs: 201000,
       trackId: '/com/spotify/track/abc',
+      playbackStatus: 'Playing',
+    });
+  });
+
+  it('unwraps nested variant values from D-Bus GetAll replies', () => {
+    expect(
+      mapMprisProperties(BUS_NAME, {
+        PlaybackStatus: variant('Playing'),
+        Metadata: variant({
+          'xesam:title': variant('Daylight'),
+          'xesam:artist': variant([variant('David Kushner')]),
+          'xesam:album': variant('The Dichotomy'),
+          'mpris:length': variant(212_953_000),
+          'mpris:trackid': variant('/com/spotify/track/4Gg1tYCl7rWR4laKbdtPA4'),
+        }),
+      }),
+    ).toEqual({
+      busName: BUS_NAME,
+      title: 'Daylight',
+      artist: 'David Kushner',
+      album: 'The Dichotomy',
+      durationMs: 212953,
+      trackId: '/com/spotify/track/4Gg1tYCl7rWR4laKbdtPA4',
       playbackStatus: 'Playing',
     });
   });
@@ -115,6 +150,29 @@ describe('applyPropertyChanges', () => {
     ).toEqual({
       ...base,
       playbackStatus: 'Paused',
+    });
+  });
+
+  it('unwraps nested variant values from changed properties', () => {
+    expect(
+      applyPropertyChanges(base, {
+        Metadata: variant({
+          'xesam:title': variant('Home'),
+          'xesam:artist': variant([variant('Edith Whiskers')]),
+          'xesam:album': variant('Stop Stealing The Covers!'),
+          'mpris:length': variant(195_000_000),
+          'mpris:trackid': variant('/com/spotify/track/new'),
+        }),
+        PlaybackStatus: variant('Playing'),
+      }),
+    ).toEqual({
+      busName: BUS_NAME,
+      title: 'Home',
+      artist: 'Edith Whiskers',
+      album: 'Stop Stealing The Covers!',
+      durationMs: 195000,
+      trackId: '/com/spotify/track/new',
+      playbackStatus: 'Playing',
     });
   });
 
