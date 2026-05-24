@@ -15,13 +15,15 @@ export function buildLrclibUrl(query) {
     return null;
   }
 
-  const params = new URLSearchParams();
-  params.set('artist_name', artist);
-  params.set('track_name', title);
+  /** @type {[string, string][]} */
+  const params = [
+    ['artist_name', artist],
+    ['track_name', title],
+  ];
 
   const album = normalize(query.album);
   if (album !== '') {
-    params.set('album_name', album);
+    params.push(['album_name', album]);
   }
 
   if (
@@ -29,10 +31,10 @@ export function buildLrclibUrl(query) {
     Number.isFinite(query.durationMs) &&
     query.durationMs > 0
   ) {
-    params.set('duration', String(Math.round(query.durationMs / 1000)));
+    params.push(['duration', String(Math.round(query.durationMs / 1000))]);
   }
 
-  return `${ENDPOINT}?${params.toString()}`;
+  return `${ENDPOINT}?${encodeFormQuery(params)}`;
 }
 
 /**
@@ -44,4 +46,25 @@ function normalize(value) {
     return '';
   }
   return value.trim();
+}
+
+/**
+ * GJS does not expose browser URLSearchParams, so encode the small LRCLIB
+ * query shape directly using application/x-www-form-urlencoded spacing.
+ *
+ * @param {readonly (readonly [string, string])[]} params
+ * @returns {string}
+ */
+function encodeFormQuery(params) {
+  return params
+    .map(([key, value]) => `${encodeFormComponent(key)}=${encodeFormComponent(value)}`)
+    .join('&');
+}
+
+/**
+ * @param {string} value
+ * @returns {string}
+ */
+function encodeFormComponent(value) {
+  return encodeURIComponent(value).replaceAll("'", '%27').replaceAll('%20', '+');
 }
