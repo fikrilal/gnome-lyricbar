@@ -35,7 +35,6 @@ Additional checks, if any:
 
 ```bash
 # npm audit
-# npm run commitlint -- --from <base> --to <head>
 ```
 
 ## Runtime Evidence
@@ -58,7 +57,6 @@ Required when UI behavior, runtime behavior, or error handling changed.
 
 ## Checklist
 
-- [ ] I used a semantic scoped commit message: `type(scope): message`.
 - [ ] I updated docs or harness rules when behavior/policy changed.
 - [ ] I added or updated tests for pure logic changes.
 - [ ] I recorded runtime evidence when static checks are not enough.
