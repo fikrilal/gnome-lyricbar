@@ -5,6 +5,8 @@ readonly EXTENSION_UUID="lyricbar@fikrilal.github.io"
 readonly REPOSITORY="fikrilal/gnome-lyricbar"
 readonly ASSET_NAME="${EXTENSION_UUID}.zip"
 readonly DEFAULT_VERSION="latest"
+readonly EXTENSION_DIR="${HOME}/.local/share/gnome-shell/extensions/${EXTENSION_UUID}"
+readonly SUPPORTED_SHELL_MAJOR_VERSIONS="46 47 48 49"
 
 VERSION="${LYRICBAR_VERSION:-${1:-$DEFAULT_VERSION}}"
 
@@ -44,13 +46,15 @@ require_command gnome-shell
 require_command gnome-extensions
 
 shell_version="$(gnome-shell --version 2>/dev/null || true)"
-case "$shell_version" in
-  *" 46."* | *" 46"*) ;;
-  *)
-    printf 'LyricBar supports GNOME Shell 46. Detected: %s\n' "${shell_version:-unknown}" >&2
-    printf 'Continuing anyway; untested GNOME Shell versions may fail.\n' >&2
-    ;;
-esac
+shell_major_version="$(printf '%s\n' "$shell_version" | sed -nE 's/^GNOME Shell ([0-9]+).*/\1/p')"
+
+if [[ -z "$shell_major_version" ]]; then
+  printf 'LyricBar could not detect the GNOME Shell major version. Detected: %s\n' "${shell_version:-unknown}" >&2
+  printf 'Continuing anyway; install may fail if this GNOME Shell version is unsupported.\n' >&2
+elif [[ " ${SUPPORTED_SHELL_MAJOR_VERSIONS} " != *" ${shell_major_version} "* ]]; then
+  printf 'LyricBar supports GNOME Shell %s. Detected: %s\n' "$SUPPORTED_SHELL_MAJOR_VERSIONS" "$shell_version" >&2
+  printf 'Continuing anyway; untested GNOME Shell versions may fail.\n' >&2
+fi
 
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
@@ -66,8 +70,33 @@ fi
 
 printf 'Installing %s...\n' "$EXTENSION_UUID"
 gnome-extensions install --force "$zip_path"
-gnome-extensions enable "$EXTENSION_UUID"
 
-printf '\nLyricBar installed and enabled.\n'
+if [[ ! -d "$EXTENSION_DIR" ]]; then
+  printf '\nLyricBar install failed: expected extension directory was not created:\n' >&2
+  printf '  %s\n' "$EXTENSION_DIR" >&2
+  exit 1
+fi
+
+for _ in 1 2 3 4 5; do
+  if gnome-extensions info "$EXTENSION_UUID" >/dev/null 2>&1; then
+    break
+  fi
+  sleep 1
+done
+
+if gnome-extensions info "$EXTENSION_UUID" >/dev/null 2>&1; then
+  if gnome-extensions enable "$EXTENSION_UUID"; then
+    printf '\nLyricBar installed and enabled.\n'
+  else
+    printf '\nLyricBar installed, but GNOME Shell did not enable it automatically.\n'
+    printf 'Log out and log back in, then run:\n'
+    printf '  gnome-extensions enable %s\n' "$EXTENSION_UUID"
+  fi
+else
+  printf '\nLyricBar installed, but GNOME Shell has not registered it yet.\n'
+  printf 'Log out and log back in, then run:\n'
+  printf '  gnome-extensions enable %s\n' "$EXTENSION_UUID"
+fi
+
 printf 'Open preferences with:\n'
 printf '  gnome-extensions prefs %s\n' "$EXTENSION_UUID"
