@@ -10,15 +10,6 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
  */
 
 class LyricBarIndicatorBase extends PanelMenu.Button {
-  /** @type {InstanceType<typeof St.BoxLayout> | null} */
-  _lyricBarBox = null;
-
-  /** @type {InstanceType<typeof St.Bin> | null} */
-  _lyricBarBin = null;
-
-  /** @type {InstanceType<typeof St.Label> | null} */
-  _lyricBarLabel = null;
-
   /** @override */
   _init() {
     super._init(0.0, 'LyricBar');
