@@ -5,6 +5,10 @@ import Gtk from 'gi://Gtk';
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 export default class LyricBarPreferences extends ExtensionPreferences {
+  /**
+   * @param {{ add(page: unknown): void }} window
+   * @returns {void}
+   */
   fillPreferencesWindow(window) {
     const settings = this.getSettings();
 

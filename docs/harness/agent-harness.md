@@ -112,13 +112,14 @@ Tiny docs edits do not need plans.
 
 ### Verification Scripts
 
-Canonical command:
+Canonical static-safe command:
 
 ```bash
-npm run verify
+npm run verify:safe
 ```
 
-The verify gate should be the one command agents run before claiming completion.
+`npm run verify` is an alias for `npm run verify:safe`. The verify gate
+should be the one command agents run before claiming static completion.
 
 Current verification stages:
 
@@ -141,6 +142,10 @@ Initial checks:
 - `src/domain/` must not import `gi://` modules.
 - `src/domain/` must not use D-Bus, filesystem, network, or timer APIs.
 - runtime code must not call `Gio.bus_watch_name` with wildcard names.
+- Shell runtime `connect(...)` calls require tracked `disconnect(...)` cleanup.
+- Shell runtime `GLib.timeout_add(...)` calls require tracked `GLib.source_remove(...)` cleanup.
+- Shell runtime `Gio.bus_watch_name(...)` calls require tracked `Gio.bus_unwatch_name(...)` cleanup.
+- Shell runtime `Gio.Cancellable` usage requires explicit cancellation on disable.
 - production source must not use `console.log`.
 
 These checks are intentionally simple. They catch easy drift early and give agents immediate feedback.
@@ -160,6 +165,7 @@ Examples:
 - network failure while lyrics are loading
 
 Runtime evidence belongs in the relevant execution plan or release notes.
+It must follow `docs/harness/runtime-evidence.md`.
 
 ## Initial Harness Build Order
 
@@ -185,7 +191,7 @@ The agent should then:
 2. Read relevant docs only.
 3. Create or update an execution plan.
 4. Implement the change.
-5. Run `npm run verify`.
+5. Run `npm run verify:safe`.
 6. Update the plan with verification evidence.
 7. Summarize outcome and remaining risk.
 

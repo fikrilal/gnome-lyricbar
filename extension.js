@@ -1,24 +1,18 @@
-import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
-import { LyricBarIndicator } from './src/shell/indicator.js';
+import { LyricBarController } from './src/runtime/controller.js';
 
 export default class LyricBarExtension extends Extension {
-  enable() {
-    if (this._indicator) {
-      return;
-    }
+  /** @type {LyricBarController | null} */
+  #controller = null;
 
-    this._indicator = new LyricBarIndicator();
-    Main.panel.addToStatusArea(this.uuid, this._indicator, 0, 'center');
+  enable() {
+    this.#controller ??= new LyricBarController(this);
+    this.#controller.enable();
   }
 
   disable() {
-    if (!this._indicator) {
-      return;
-    }
-
-    this._indicator.destroy();
-    this._indicator = null;
+    this.#controller?.disable();
+    this.#controller = null;
   }
 }

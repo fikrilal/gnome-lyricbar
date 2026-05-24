@@ -1,0 +1,2 @@
+--- post-quit mpris ---
+org.mpris.MediaPlayer2.chromium.instance117548

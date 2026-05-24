@@ -1,0 +1,1009 @@
+# Plan: End-To-End Product Implementation
+
+Date: 2026-05-23  
+Owner: Dante  
+Status: active  
+Risk class: high  
+Related issue/PR: N/A
+
+## Objective
+
+Implement LyricBar end to end as a production-grade GNOME Shell extension that displays synchronized live lyrics in the GNOME top bar for Spotify and other MPRIS-compatible players.
+
+The implementation should progress through commit-sized phases. Each phase must be independently reviewable, mechanically verified, and scoped so an agent can complete it without relying on hidden chat context.
+
+## Constraints
+
+- Architectural constraints:
+  - GNOME Shell runtime code uses GJS JavaScript.
+  - Pure logic stays under `src/domain/` and must remain platform-free.
+  - GNOME Shell, GJS, D-Bus, filesystem, network, settings, and UI APIs stay outside `src/domain/`.
+  - Runtime code must explicitly clean up signal handlers, D-Bus subscriptions, timeouts, cancellables, and actors on disable.
+  - Async callbacks must be guarded so they cannot mutate destroyed extension state.
+  - MPRIS discovery must use exact D-Bus names and `NameOwnerChanged`; never use wildcard names with `Gio.bus_watch_name`.
+- Product/runtime constraints:
+  - Initial supported platform is GNOME Shell 46 on Ubuntu 24.04.
+  - Spotify Desktop support comes through MPRIS, not private Spotify APIs.
+  - Synced lyrics come from LRCLIB in v1.
+  - Lyric lookup sends track metadata to LRCLIB; privacy docs must make this explicit.
+  - Do not install or reload the extension on a user desktop without explicit approval.
+- Out of scope for v1:
+  - Playback controls.
+  - Full lyrics window.
+  - Karaoke highlighting.
+  - Spotify account integration.
+  - Lyrics editing.
+  - Non-GNOME desktop support.
+
+## Acceptance Criteria
+
+1. LyricBar can be built into a GNOME extension zip with `npm run build:extension`.
+2. LyricBar can detect MPRIS players, select the active player, and track metadata/playback state.
+3. LyricBar can fetch, cache, parse, and synchronize LRCLIB synced lyrics.
+4. LyricBar renders one compact lyric line in the GNOME top bar with graceful fallback states.
+5. Preferences cover max width, panel position, fallback mode, cache enabled, and debug logging.
+6. Diagnostics make missing players, missing lyrics, provider failures, and lifecycle state understandable.
+7. CI and local `npm run verify` stay green at every phase.
+8. Medium/high-risk phases record runtime evidence before completion.
+
+## Commit Rule
+
+Each phase should land as one commit or one small PR. Use semantic scoped commit messages:
+
+```text
+type(scope): message
+```
+
+Allowed examples:
+
+```text
+feat(mpris): add player discovery service
+feat(lyrics): add lrclib provider
+feat(shell): render lyric display state
+fix(lifecycle): guard async callbacks after disable
+test(domain): cover lyric timeline selection
+docs(product): document privacy behavior
+ci(harness): add release bundle checks
+```
+
+## Implementation Phases
+
+### Phase 1: Runtime Lifecycle Foundation
+
+Commit:
+
+```text
+feat(lifecycle): add runtime controller foundation
+```
+
+Goal:
+
+Create the extension runtime composition root without adding MPRIS or network behavior.
+
+Implementation:
+
+- Add `src/runtime/controller.js`.
+- Add `src/runtime/lifecycle.js` or equivalent cleanup registry.
+- Move Shell indicator ownership behind the controller.
+- Add explicit `enable()` and `disable()` paths.
+- Track cleanup disposables for future D-Bus signals, settings signals, timeouts, and cancellables.
+- Ensure repeated enable/disable calls are idempotent.
+
+Acceptance:
+
+- Existing smoke indicator still renders static text.
+- `disable()` destroys the indicator and clears references.
+- Unit tests cover cleanup registry behavior where possible.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Not required unless the extension is manually installed.
+
+Risk:
+
+- Medium. This touches Shell lifecycle structure but should not add D-Bus/network behavior.
+
+Status:
+
+- Complete.
+- Added `src/runtime/lifecycle.js` cleanup registry.
+- Added `src/runtime/controller.js` runtime composition root.
+- Moved indicator ownership from `extension.js` into the controller.
+- Added lifecycle unit tests.
+- Verification: `npm run verify` passed with 4 test files and 19 tests.
+
+### Phase 2: Display State Domain Model
+
+Commit:
+
+```text
+feat(domain): add display state model
+```
+
+Goal:
+
+Define the state machine that converts product/runtime conditions into top-bar display text.
+
+Implementation:
+
+- Add domain types for display states:
+  - `idle`
+  - `loading`
+  - `track`
+  - `lyrics`
+  - `hidden`
+  - `error`
+- Add pure formatting logic for fallback behavior.
+- Add tests for long text, empty text, missing track metadata, and fallback mode behavior.
+
+Acceptance:
+
+- Display state decisions are testable without GNOME Shell.
+- No UI code contains product fallback rules.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Not required.
+
+Risk:
+
+- Low. Pure logic only.
+
+Status:
+
+- Complete.
+- Added `src/domain/display/state.js` display-state formatter.
+- Added `src/domain/display/types.js` display-state JSDoc contracts.
+- Added display-state unit tests for lyrics, track fallback, idle, hidden, loading, error, and long text.
+- Verification: `npm run verify` passed with 5 test files and 34 tests.
+
+### Phase 3: Settings Adapter
+
+Commit:
+
+```text
+feat(shell): add settings adapter
+```
+
+Goal:
+
+Expose GSettings through a small runtime adapter with validated values and defaults.
+
+Implementation:
+
+- Add `src/runtime/settings.js`.
+- Read `panel-position`, `max-width`, `fallback-mode`, `player-priority`, `cache-enabled`, and `debug-logging`.
+- Validate enum-like values at the boundary.
+- Subscribe to settings changes with tracked disconnect cleanup.
+- Add tests for pure settings normalization if separated from GJS.
+
+Acceptance:
+
+- Invalid setting values fall back safely.
+- Settings signal cleanup is tracked.
+- Architecture guardrails pass.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Not required unless preferences are manually opened.
+
+Risk:
+
+- Medium. GSettings integration can break extension load if schema handling is wrong.
+
+Status:
+
+- Complete.
+- Added `src/domain/settings/normalize.js` and `src/domain/settings/types.js`.
+- Added `src/runtime/settings.js` GSettings adapter with lifecycle-tracked signal cleanup.
+- Controller now reads settings, subscribes to settings changes, and applies `panel-position` on startup.
+- Added settings normalization and runtime adapter tests.
+- Verification: `npm run verify` passed with 7 test files and 46 tests.
+
+### Phase 4: Panel Indicator Rendering
+
+Commit:
+
+```text
+feat(shell): render top bar display states
+```
+
+Goal:
+
+Render the display state model in the GNOME top bar.
+
+Implementation:
+
+- Update `src/shell/indicator.js` to accept display state updates.
+- Apply max-width styling through settings.
+- Use single-line text with ellipsis.
+- Add subtle idle/fallback display behavior.
+- Avoid nested menus or playback controls.
+
+Acceptance:
+
+- Indicator API accepts display state objects, not raw scattered strings.
+- Label remains single-line and bounded.
+- No business logic is embedded in the Shell actor.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Required before completion if manually installed:
+  - enable extension
+  - disable extension
+  - confirm no Shell errors related to LyricBar
+
+Risk:
+
+- Medium. Shell UI changes run inside GNOME Shell.
+
+Status:
+
+- Complete.
+- Added `src/domain/display/view-model.js` to convert display state plus settings into an indicator view model.
+- Updated `src/shell/indicator.js` to render view models instead of raw strings.
+- Updated controller to render idle display state through domain display formatting.
+- Indicator applies configured max width via inline label style and visible/hidden state through the actor.
+- Added view-model unit tests.
+- Verification: `npm run verify` passed with 8 test files and 48 tests.
+
+### Phase 5: MPRIS Domain Selection
+
+Commit:
+
+```text
+feat(mpris): harden player selection policy
+```
+
+Goal:
+
+Complete pure MPRIS selection and metadata normalization before touching D-Bus.
+
+Implementation:
+
+- Expand `src/domain/mpris/selection.js`.
+- Add metadata normalization for title, artist, album, duration, track id, playback status, and bus name.
+- Define player snapshot shapes.
+- Add tests for:
+  - multiple playing players
+  - previous selected player
+  - preferred player fragments
+  - invalid players
+  - deterministic sorted fallback
+  - missing metadata
+
+Acceptance:
+
+- Active player choice is deterministic and fully covered by tests.
+- No runtime/GJS imports in domain code.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Not required.
+
+Risk:
+
+- Low. Pure logic only.
+
+Status:
+
+- Complete.
+- Expanded `src/domain/mpris/types.js` with normalized `PlayerSnapshot` covering bus name, title, artist, album, duration, track id, and constrained `PlaybackStatus`.
+- Added `src/domain/mpris/normalize.js` with `normalizePlayerSnapshot` and `normalizePlayerSnapshots` helpers that reject non-MPRIS bus names, drop unknown playback statuses to `Stopped`, and clamp non-finite/negative durations and blank track ids to null.
+- Tightened `src/domain/mpris/selection.js` so it operates on validated snapshots, breaks ties between playing players deterministically, ignores stale previous bus names, matches preferred fragments case-insensitively, honors fragment order, and falls back to sorted bus name.
+- Added selection tests covering empty input, multiple playing players, lost previous player, fragment order, case-insensitive fragments, and sorted fallback. Added normalize tests covering full and partial metadata, invalid bus names, invalid playback statuses, invalid durations, and blank track ids.
+- Verification: `npm run verify` passed with 9 test files and 66 tests.
+
+### Phase 6: MPRIS D-Bus Player Discovery
+
+Commit:
+
+```text
+feat(mpris): add dbus player discovery
+```
+
+Goal:
+
+Discover MPRIS-compatible players safely through session D-Bus.
+
+Implementation:
+
+- Add `src/runtime/mpris/service.js`.
+- Call `org.freedesktop.DBus.ListNames`.
+- Filter names beginning with `org.mpris.MediaPlayer2.`.
+- Watch `NameOwnerChanged` on `org.freedesktop.DBus`.
+- Re-scan when MPRIS names appear/disappear.
+- Do not use wildcard `Gio.bus_watch_name`.
+- Track all D-Bus subscriptions for cleanup.
+
+Acceptance:
+
+- Discovery handles zero players.
+- Discovery handles player launch/quit.
+- No wildcard D-Bus watcher usage.
+- Architecture cleanup guardrails pass.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Required:
+  - no player running
+  - Spotify started after extension
+  - Spotify quit while extension is active
+  - DBus names listed for evidence
+
+Risk:
+
+- High. D-Bus watcher bugs can affect Shell stability.
+
+Status:
+
+- Complete.
+- Static implementation landed in `feat(mpris): add dbus player discovery`.
+- Added `src/runtime/mpris/discovery.js` pure helpers: `isMprisBusName`, `filterMprisNames`, `diffBusNames`, `applyNameOwnerChange`. All testable without GJS.
+- Added `src/runtime/mpris/service.js` `MprisService` class. Subscribes to `org.freedesktop.DBus.NameOwnerChanged` on the session bus and seeds initial state with a single `ListNames` call. Tracks the signal subscription via `signal_unsubscribe` and the initial-call `Gio.Cancellable` through `LifecycleRegistry`. Async callbacks check a guarded `enabled` flag and ignore replies after disable. No wildcard `bus_watch_name` usage anywhere.
+- Added `tests/mpris/discovery.test.js` covering MPRIS prefix filtering (including the bare prefix), set diff with sorted output, and `NameOwnerChanged` reduction (added on new owner, removed on empty owner, no-op on owner-transfer or duplicate state).
+- Verification: `npm run verify` passed with 10 test files and 81 tests; extension bundle includes `src/runtime/mpris/`.
+- Runtime evidence: captured live on GNOME Shell 46.0 / Ubuntu 24.04.4 X11 alongside Phases 7 and 8. Six of seven scenarios exercised live; Scenario 1 covered by unit tests. Zero JS errors across the run. Artifacts at `docs/exec-plans/completed/evidence/2026-05-23_phase-8/`.
+- Sub-plan moved to `docs/exec-plans/completed/2026-05-23_mpris-player-discovery.md`.
+
+### Phase 7: MPRIS Player Proxy
+
+Commit:
+
+```text
+feat(mpris): track player metadata and playback state
+```
+
+Goal:
+
+Wrap one MPRIS player and emit normalized snapshots for controller use.
+
+Implementation:
+
+- Add `src/runtime/mpris/player.js`.
+- Create player proxy for exact bus names only.
+- Read `Metadata`, `PlaybackStatus`, and `Position`.
+- Subscribe to property changes.
+- Handle player disappearance during requests.
+- Disconnect proxy signal handlers on dispose.
+
+Acceptance:
+
+- Snapshot updates when track changes.
+- Snapshot updates when playback pauses/resumes.
+- Missing metadata is handled gracefully.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Required:
+  - play Spotify track
+  - pause/resume
+  - skip track
+  - quit Spotify during playback
+
+Risk:
+
+- High. D-Bus proxy lifecycle and Shell cleanup must be correct.
+
+Status:
+
+- Complete.
+- Static implementation landed in `feat(mpris): track player metadata and playback state`.
+- Added `src/runtime/mpris/player-mapping.js` pure mapper: `mapMprisProperties` builds a `PlayerSnapshot` from a raw MPRIS property bag (using the Phase 5 normalizer), `applyPropertyChanges` folds incremental property changes into an existing snapshot, `snapshotsEqual` performs change detection on the fields LyricBar consumes.
+- Added `src/runtime/mpris/player.js` `PlayerProxy` class. Builds a `Gio.DBusProxy` for `org.mpris.MediaPlayer2.Player` on an exact bus name, seeds the snapshot from cached properties, listens for `g-properties-changed`, and emits only when `snapshotsEqual` returns false. Tracks the proxy signal, the construction `Gio.Cancellable`, and listener registrations through `LifecycleRegistry`. Player disappearance emits `null` once and stops further activity.
+- Added `tests/mpris/player-mapping.test.js` covering full property-bag mapping (including microsecond-to-millisecond duration conversion and multi-artist arrays), missing-property fallbacks, non-MPRIS bus names, blank track ids and non-finite durations, partial change merges, change-set with no relevant keys, snapshot equality, and null comparisons.
+- Verification: `npm run verify` passed with 11 test files and 92 tests; extension bundle includes `src/runtime/mpris/player.js` and `player-mapping.js`.
+- Runtime evidence: captured live on GNOME Shell 46.0 / Ubuntu 24.04.4 X11 alongside Phases 6 and 8. Track skip, pause/resume, and Spotify quit all flowed through the proxy without errors. Artifacts at `docs/exec-plans/completed/evidence/2026-05-23_phase-8/`.
+- Sub-plan moved to `docs/exec-plans/completed/2026-05-23_mpris-player-proxy.md`.
+
+### Phase 8: Controller MPRIS Integration
+
+Commit:
+
+```text
+feat(mpris): connect active player to controller
+```
+
+Goal:
+
+Connect MPRIS discovery/player snapshots to the runtime controller and indicator fallback states.
+
+Implementation:
+
+- Controller receives player list updates.
+- Controller selects active player through domain policy.
+- Controller updates display state:
+  - idle when no player
+  - track when player has metadata but no lyrics yet
+  - loading when lyric lookup starts in later phases
+- No lyrics/network behavior yet.
+
+Acceptance:
+
+- Top bar can show track fallback for active player.
+- No lyrics provider calls exist yet.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Required:
+  - Spotify track shown as fallback
+  - no-player state shown
+  - pause/resume does not break UI
+
+Risk:
+
+- High. This is the first end-to-end runtime data path.
+
+Status:
+
+- Complete.
+- Static implementation landed in `feat(mpris): connect active player to controller`.
+- Added `src/domain/display/player-state.js` `displayStateFromPlayer` pure mapper from `PlayerSnapshot | null` to `DisplayState`.
+- Updated `src/runtime/controller.js` to acquire `Gio.DBus.session`, build an `MprisService`, and manage a `Map<string, TrackedProxy>` of `PlayerProxy` instances. Each proxy runs in its own child `LifecycleRegistry` registered with the controller's parent registry.
+- Snapshot updates trigger `selectActivePlayer` with the previous selected bus name and `playerPriority` from settings; the resulting active snapshot is mapped to a display state and rendered.
+- Disable disposes the parent lifecycle, which cascades to every child registry, the indicator, the settings adapter, and the discovery service in reverse-registration order.
+- Added `tests/display/player-state.test.js` covering null, undefined, full metadata, empty metadata, and non-Latin metadata.
+- Verification: `npm run verify` passed with 12 test files and 97 tests; extension bundle includes the updated controller and all MPRIS modules.
+- Runtime evidence: captured live on GNOME Shell 46.0 / Ubuntu 24.04.4 X11. Six of seven scenarios exercised live (track display, track skip, pause/resume, Spotify quit, multi-player coexistence, disable/re-enable round trip); Scenario 1 (zero MPRIS players) was not exercisable on this host (persistent Chromium MPRIS instance) and is covered by unit tests. Zero JS errors, zero GIO criticals, zero lyricbar exceptions across the entire run. Artifacts at `docs/exec-plans/completed/evidence/2026-05-23_phase-8/`.
+- Sub-plan moved to `docs/exec-plans/completed/2026-05-23_controller-mpris-integration.md`.
+
+### Phase 9: LRCLIB Domain Response Parsing
+
+Commit:
+
+```text
+feat(lyrics): add lrclib response parsing
+```
+
+Goal:
+
+Parse LRCLIB responses into provider-neutral results without network behavior.
+
+Implementation:
+
+- Add `src/domain/lyrics/provider-result.js` or equivalent.
+- Add LRCLIB response parser in pure logic if practical.
+- Validate synced lyrics, plain lyrics, missing lyrics, and malformed responses.
+- Expand LRC parser tests for realistic LRCLIB payloads.
+
+Acceptance:
+
+- Provider response parsing is covered by tests.
+- Malformed provider data cannot crash runtime consumers.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Not required.
+
+Risk:
+
+- Low. Pure logic only.
+
+Status:
+
+- Complete.
+- Static implementation landed in `feat(lyrics): add lrclib response parsing`.
+- Added `src/domain/lyrics/provider-result.js` exporting `parseLrclibResponse(unknown): LyricsProviderResult`. Defensive parser that distinguishes `synced`, `plain`, `instrumental`, `not-found`, and `error` results. Falls back from synced to plain when no timestamped lines are parseable.
+- Extended `src/domain/lyrics/types.js` with `ProviderTrackInfo` and the `LyricsProviderResult` discriminated union; existing typedefs are unchanged.
+- Reuses the existing `parseLrc` parser for synced lyric lines; no duplication of timestamp logic.
+- Added `tests/lyrics/provider-result.test.js` with 13 cases covering combined synced + plain, synced only, plain only, instrumental, 404 not-found, empty body, null and undefined input, non-object input, 500-level provider errors, synced-falls-back-to-plain, synced-with-no-fallback, a realistic LRCLIB-style fixture, and invalid durations.
+- Property access uses the `Reflect.get` helper pattern that satisfies both `noPropertyAccessFromIndexSignature` and the `dot-notation` ESLint rule.
+- Verification: `npm run verify` passed with 13 test files and 110 tests; extension bundle includes `src/domain/lyrics/provider-result.js`.
+- Sub-plan: `docs/exec-plans/active/2026-05-23_lrclib-response-parsing.md`. Will move to `completed/` after the parent plan promotion.
+
+### Phase 10: LRCLIB Runtime Provider
+
+Commit:
+
+```text
+feat(lyrics): add lrclib provider adapter
+```
+
+Goal:
+
+Fetch lyrics from LRCLIB through a small runtime adapter.
+
+Implementation:
+
+- Add `src/runtime/lyrics/lrclib.js`.
+- Build query from normalized track metadata.
+- Apply timeout.
+- Use cancellable/guarded async behavior.
+- Return provider-neutral result objects.
+- Do not update UI directly from provider callbacks.
+- Keep network behavior isolated to provider adapter.
+
+Acceptance:
+
+- Provider handles success, not found, malformed response, timeout, and network failure.
+- No network calls outside provider adapter.
+- Async callbacks are guarded after dispose.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Required once wired into controller in later phase.
+
+Risk:
+
+- High. Network callbacks inside Shell require careful guards.
+
+Status:
+
+- In Progress.
+- Static implementation complete; runtime evidence intentionally deferred to Phase 12 where the controller wires the provider into the lyrics service and end-to-end behavior can be exercised against a real LRCLIB endpoint.
+- Added `src/runtime/lyrics/url.js` pure builder for the LRCLIB `GET /api/get` URL with `URLSearchParams`-based percent encoding; rejects empty artist or title; omits zero / negative durations; converts ms to integer seconds.
+- Added `src/runtime/lyrics/http-result.js` pure mapper from `{ statusCode, body, error, timedOut }` into the Phase 9 `LyricsProviderResult`. Handles 200 + JSON, 404, 4xx / 5xx, transport failures, timeouts, and missing status.
+- Added `src/runtime/lyrics/lrclib.js` `LrclibProvider` class. Owns a libsoup 3 `Soup.Session` (or accepts an injected session for tests), per-call `Gio.Cancellable` registered with `LifecycleRegistry`, and a `GLib.timeout_add` watchdog that cancels the call after the configured timeout. User-Agent identifies LyricBar plus the repo URL. Async callback short-circuits when the provider is disabled or the call was cancelled.
+- Extended `types/gjs.d.ts` with a permissive `gi://Soup` declaration to keep the strict typecheck happy without overcommitting to libsoup's Promise-of-everything API.
+- Added `tests/lyrics/url.test.js` (7 cases) and `tests/lyrics/http-result.test.js` (10 cases) covering URL building edge cases, all status-code branches, body parsing failures, transport errors, and timeouts.
+- Property access uses the `Object.hasOwn` + `Reflect.get` helper pattern. Cleanup tracking goes through `LifecycleRegistry.addCancellable` and `LifecycleRegistry.addSource`.
+- Verification: `npm run verify` passed with 15 test files and 127 tests; extension bundle includes `src/runtime/lyrics/{url,http-result,lrclib}.js`.
+- Sub-plan: `docs/exec-plans/active/2026-05-24_lrclib-runtime-provider.md`. Sub-plan stays active until Phase 12 records the combined runtime evidence.
+
+### Phase 11: Lyrics Cache
+
+Commit:
+
+```text
+feat(lyrics): add local lyrics cache
+```
+
+Goal:
+
+Cache successful and negative lyric lookup results.
+
+Implementation:
+
+- Add `src/runtime/lyrics/cache.js`.
+- Use a cache schema version.
+- Store by normalized artist/title/album/duration key.
+- Cache positive synced/plain results.
+- Cache negative lookup results with TTL.
+- Keep cache writes isolated to the cache module.
+- Respect `cache-enabled`.
+
+Acceptance:
+
+- Cache keys are deterministic.
+- Corrupt cache data is ignored safely.
+- Negative cache prevents repeated failed lookups.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Required when wired into controller:
+  - repeat same track and confirm cache hit in diagnostics/logs
+
+Risk:
+
+- Medium. Filesystem use must stay isolated and recoverable.
+
+Status:
+
+- In Progress.
+- Static implementation complete; runtime evidence intentionally deferred to Phase 12 alongside Phase 10 evidence.
+- Added `src/domain/lyrics/cache-policy.js` exporting `buildCacheFileName`, `buildCacheEntry`, `parseCacheEntry`, plus `CACHE_SCHEMA_VERSION`, `POSITIVE_TTL_MS`, and `NEGATIVE_TTL_MS`. Defensive parser rejects schema mismatch, expired entries, future-dated `savedAt`, and malformed result envelopes.
+- Added `src/runtime/lyrics/cache.js` `LyricsCache` class. Stores one JSON envelope per key under `${user-cache-dir}/lyricbar/cache-v1/`. Reads use `Gio.File.load_contents_async`, writes use a temp + rename pattern via `replace_contents_bytes_async` + `move`. Lazy directory creation; pass-through mode on failure.
+- Honors the `cacheEnabled` setting through a settings-view callback so the cache stays decoupled from the runtime adapter.
+- All cancellables for async file operations registered with `LifecycleRegistry`. Async callbacks short-circuit on disabled state or cancellation.
+- Added `tests/lyrics/cache-policy.test.js` with 17 cases covering filename stability, TTL selection per result kind, live round-trips for synced / plain / instrumental / not-found / error, schema mismatch, missing fields, expired entries, future-clock tampering, and malformed embedded results.
+- Verification: `npm run verify` passed with 16 test files and 144 tests; extension bundle includes `src/domain/lyrics/cache-policy.js` and `src/runtime/lyrics/cache.js`.
+- Sub-plan: `docs/exec-plans/active/2026-05-24_lyrics-cache.md`. Sub-plan stays active until Phase 12 records combined runtime evidence.
+
+### Phase 12: Lyrics Service Orchestration
+
+Commit:
+
+```text
+feat(lyrics): orchestrate lookup and timeline state
+```
+
+Goal:
+
+Create the lyrics service that combines cache, provider, parser, and track identity.
+
+Implementation:
+
+- Add `src/runtime/lyrics/service.js`.
+- Trigger lookup when track identity changes.
+- Avoid duplicate in-flight lookup for same track.
+- Cancel/ignore stale requests on track change or disable.
+- Prefer synced lyrics.
+- Fall back to plain lyrics/track display.
+- Expose timeline state to controller.
+
+Acceptance:
+
+- Track changes cannot apply stale lyrics to a new track.
+- Disable during lookup is safe.
+- Provider failures become fallback state, not Shell errors.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Required:
+  - switch tracks quickly
+  - disable extension during lookup
+  - network disconnected
+
+Risk:
+
+- High. This phase combines async, network, and lifecycle behavior.
+
+### Phase 13: Lyric Synchronization Loop
+
+Commit:
+
+```text
+feat(lyrics): synchronize lyric line with playback
+```
+
+Goal:
+
+Update the visible lyric line according to playback position.
+
+Implementation:
+
+- Poll active player position at a bounded interval, likely 500ms.
+- Start polling only when synced lyrics exist and player is playing.
+- Stop polling when paused/stopped/no lyrics/disabled.
+- Update indicator only when visible line changes.
+- Track timeout cleanup through lifecycle registry.
+
+Acceptance:
+
+- No leaked timeout after disable.
+- Paused playback stops unnecessary updates.
+- Current line selection is covered by pure domain tests.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Required:
+  - lyric line advances while playing
+  - line stops changing while paused
+  - disable removes timeout without Shell errors
+
+Risk:
+
+- High. Timers inside Shell must be bounded and cleaned up.
+
+### Phase 14: Preferences UI
+
+Commit:
+
+```text
+feat(shell): complete preferences ui
+```
+
+Goal:
+
+Expose v1 settings through GNOME preferences.
+
+Implementation:
+
+- Add controls for:
+  - panel position
+  - max width
+  - fallback mode
+  - cache enabled
+  - debug logging
+- Validate values through settings adapter.
+- Keep preferences UI simple and native.
+
+Acceptance:
+
+- Preferences window opens without errors.
+- Changing preferences updates runtime where applicable.
+- Invalid settings remain safely handled.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Required:
+  - open preferences
+  - change max width
+  - change fallback mode
+  - disable/enable extension after preference changes
+
+Risk:
+
+- Medium. Preferences run in a separate GNOME extension preferences process.
+
+### Phase 15: Diagnostics
+
+Commit:
+
+```text
+feat(shell): add diagnostics state
+```
+
+Goal:
+
+Make troubleshooting visible without noisy user-facing errors.
+
+Implementation:
+
+- Add diagnostics store.
+- Track current player, track identity, lyrics provider status, cache status, and last non-fatal error.
+- Show diagnostics in the extension menu or preferences.
+- Honor `debug-logging`.
+- Avoid logging sensitive data beyond track metadata already sent to LRCLIB.
+
+Acceptance:
+
+- Missing player, missing lyrics, network failure, and cache read failure are diagnosable.
+- Debug logging is off by default.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Required:
+  - no player
+  - no lyrics result
+  - network/provider failure
+
+Risk:
+
+- Medium. Diagnostics must help without creating privacy or noise issues.
+
+### Phase 16: Privacy Documentation
+
+Commit:
+
+```text
+docs(product): document privacy behavior
+```
+
+Goal:
+
+Document what data LyricBar reads, stores, and sends.
+
+Implementation:
+
+- Add `docs/privacy.md`.
+- Explain MPRIS metadata.
+- Explain LRCLIB lookup fields.
+- Explain local cache location and contents.
+- Explain telemetry policy.
+- Link privacy doc from README and docs index.
+
+Acceptance:
+
+- Users can understand network and cache behavior before installing.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Not required.
+
+Risk:
+
+- Low. Docs only.
+
+### Phase 17: Troubleshooting Documentation
+
+Commit:
+
+```text
+docs(product): add troubleshooting guide
+```
+
+Goal:
+
+Document common operational failures and debugging commands.
+
+Implementation:
+
+- Add `docs/troubleshooting.md`.
+- Include:
+  - checking GNOME Shell version
+  - checking session type
+  - listing MPRIS players
+  - viewing GNOME Shell logs
+  - missing lyrics behavior
+  - provider/network failures
+  - safe install/uninstall commands
+- Link from README and docs index.
+
+Acceptance:
+
+- A user can diagnose common failures without reading source code.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Not required.
+
+Risk:
+
+- Low. Docs only.
+
+### Phase 18: Manual Runtime Harness
+
+Commit:
+
+```text
+chore(harness): add manual runtime checklist
+```
+
+Goal:
+
+Create a repeatable manual test harness for GNOME runtime behavior.
+
+Implementation:
+
+- Add `docs/harness/runtime-checklist.md`.
+- Add commands for:
+  - build zip
+  - install locally
+  - enable extension
+  - disable extension
+  - uninstall extension
+  - inspect logs
+  - list MPRIS players
+- Include evidence table for releases.
+- Make clear that Shell reload/install requires explicit approval.
+
+Acceptance:
+
+- Runtime evidence expectations are documented.
+- PR template and execution-plan docs link to the checklist.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Not required for the doc itself.
+
+Risk:
+
+- Low. Harness docs only.
+
+### Phase 19: Release Packaging Hardening
+
+Commit:
+
+```text
+chore(release): harden extension bundle validation
+```
+
+Goal:
+
+Make release artifacts harder to break.
+
+Implementation:
+
+- Extend build script to validate bundle contents.
+- Reject accidental inclusion of:
+  - tests
+  - scripts
+  - docs
+  - `node_modules`
+  - `.git`
+- Verify compiled schemas exist in bundle.
+- Verify `metadata.json` UUID matches zip name.
+- Optionally add a `validate:bundle` script.
+
+Acceptance:
+
+- Bundle validation fails on missing required files or forbidden files.
+- CI uploads only validated bundles.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Not required.
+
+Risk:
+
+- Medium. Release path changes can block CI if too strict.
+
+### Phase 20: End-To-End Alpha Runtime Test
+
+Commit:
+
+```text
+test(shell): record alpha runtime evidence
+```
+
+Goal:
+
+Validate the complete v1 path manually on the target desktop.
+
+Implementation:
+
+- Run the manual runtime checklist on GNOME Shell 46.
+- Capture evidence in `docs/exec-plans/completed/` or `docs/release-notes/alpha.md`.
+- Record:
+  - install
+  - enable
+  - no player
+  - Spotify playing
+  - lyrics found
+  - lyrics missing
+  - pause/resume
+  - track skip
+  - network failure
+  - disable
+  - uninstall
+
+Acceptance:
+
+- End-to-end behavior is proven on target environment.
+- Known issues are documented.
+- `npm run verify` passes.
+
+Runtime evidence:
+
+- Required.
+
+Risk:
+
+- High. This is the first full desktop runtime validation.
+
+## Verification
+
+Every phase must run:
+
+```bash
+npm run verify
+```
+
+Where relevant:
+
+```bash
+npm audit
+npm run commitlint -- --from <base> --to <head>
+```
+
+For medium/high-risk runtime phases, also record manual runtime evidence in the phase PR or execution plan.
+
+## Runtime Evidence
+
+Runtime evidence should include:
+
+- GNOME Shell version
+- session type
+- extension install path
+- player used
+- commands run
+- logs checked
+- scenarios executed
+- screenshots or short recordings when UI behavior changed
+
+Do not run install, enable, disable, Shell reload, or uninstall operations without explicit approval from the human owner.
+
+## Risks And Mitigations
+
+- Risk: GNOME Shell extension bugs can destabilize the desktop.
+  - Mitigation: keep runtime phases small, run static guardrails, require runtime evidence, and avoid unsafe Shell reload commands.
+- Risk: D-Bus player lifecycle is race-prone.
+  - Mitigation: exact bus names only, guarded callbacks, cleanup registry, and quit/launch runtime tests.
+- Risk: LRCLIB returns missing, malformed, or mismatched lyrics.
+  - Mitigation: provider-neutral parser, fallback states, conservative normalization, and negative caching.
+- Risk: Async network callbacks apply stale lyrics after track changes.
+  - Mitigation: request tokens/cancellables and track identity checks before applying results.
+- Risk: Preferences/schema drift breaks extension load.
+  - Mitigation: schema validation, settings adapter validation, and preferences runtime evidence.
+- Risk: Agents add behavior outside intended boundaries.
+  - Mitigation: architecture guardrails, typecheck, JSDoc contracts, execution plans, and PR evidence requirements.
+
+## Completion Notes
+
+Pending implementation.
+
+## Follow-Ups
+
+- [ ] Create issue/PR labels for phase scopes.
+- [ ] Decide whether release notes should live under `docs/release-notes/`.
+- [ ] Decide whether to add local git hooks after commitlint has proven useful in CI.

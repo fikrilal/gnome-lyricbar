@@ -1,36 +1,76 @@
+/**
+ * @import { PlayerSnapshot } from './types.js'
+ */
+
+/**
+ * @param {readonly PlayerSnapshot[] | null | undefined} players
+ * @param {string | null} [previousBusName]
+ * @param {readonly string[]} [preferredFragments]
+ * @returns {PlayerSnapshot | null}
+ */
 export function selectActivePlayer(players, previousBusName = null, preferredFragments = []) {
-  const validPlayers = Array.isArray(players)
-    ? players.filter((player) => isValidPlayer(player))
-    : [];
-  if (validPlayers.length === 0) {
+  if (!Array.isArray(players) || players.length === 0) {
     return null;
   }
 
-  const playing = validPlayers.find((player) => player.playbackStatus === 'Playing');
+  const playing = findFirstPlaying(players);
   if (playing) {
     return playing;
   }
 
-  const previous = validPlayers.find((player) => player.busName === previousBusName);
-  if (previous) {
-    return previous;
+  if (typeof previousBusName === 'string' && previousBusName !== '') {
+    const previous = players.find((player) => player.busName === previousBusName);
+    if (previous) {
+      return previous;
+    }
   }
 
   for (const fragment of preferredFragments) {
-    const preferred = validPlayers.find((player) => player.busName.includes(fragment));
+    const preferred = findByFragment(players, fragment);
     if (preferred) {
       return preferred;
     }
   }
 
-  return [...validPlayers].sort((left, right) => left.busName.localeCompare(right.busName))[0];
+  return sortByBusName(players)[0] ?? null;
 }
 
-function isValidPlayer(player) {
-  return (
-    player !== null &&
-    typeof player === 'object' &&
-    typeof player.busName === 'string' &&
-    player.busName.startsWith('org.mpris.MediaPlayer2.')
-  );
+/**
+ * @param {readonly PlayerSnapshot[]} players
+ * @returns {PlayerSnapshot | null}
+ */
+function findFirstPlaying(players) {
+  const playing = players.filter((player) => player.playbackStatus === 'Playing');
+  if (playing.length === 0) {
+    return null;
+  }
+
+  return sortByBusName(playing)[0] ?? null;
+}
+
+/**
+ * @param {readonly PlayerSnapshot[]} players
+ * @param {string} fragment
+ * @returns {PlayerSnapshot | null}
+ */
+function findByFragment(players, fragment) {
+  if (typeof fragment !== 'string' || fragment.trim() === '') {
+    return null;
+  }
+
+  const needle = fragment.trim().toLowerCase();
+  const matches = players.filter((player) => player.busName.toLowerCase().includes(needle));
+  if (matches.length === 0) {
+    return null;
+  }
+
+  return sortByBusName(matches)[0] ?? null;
+}
+
+/**
+ * @param {readonly PlayerSnapshot[]} players
+ * @returns {PlayerSnapshot[]}
+ */
+function sortByBusName(players) {
+  return [...players].sort((left, right) => left.busName.localeCompare(right.busName));
 }

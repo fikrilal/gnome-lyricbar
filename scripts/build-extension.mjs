@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { repoPath } from './lib/repo.mjs';
 
 const metadata = JSON.parse(await readFile(repoPath('metadata.json'), 'utf8'));
-const uuid = metadata.uuid;
+const { uuid } = metadata;
 const distRoot = repoPath('dist');
 const buildRoot = join(distRoot, uuid);
 const bundlePath = join(distRoot, `${uuid}.zip`);
@@ -17,6 +17,7 @@ const runtimeFiles = [
   'stylesheet.css',
   'schemas',
   'src/shell',
+  'src/runtime',
   'src/domain',
 ];
 
@@ -31,7 +32,7 @@ const schemaResult = spawnSync('glib-compile-schemas', [join(buildRoot, 'schemas
   encoding: 'utf8',
 });
 
-if (schemaResult.error?.code === 'ENOENT') {
+if (isNodeError(schemaResult.error) && schemaResult.error.code === 'ENOENT') {
   process.stderr.write('glib-compile-schemas is required to build the extension bundle.\n');
   process.exit(1);
 }
@@ -57,7 +58,7 @@ const zipResult = spawnSync('zip', ['-qr', bundlePath, '.'], {
   encoding: 'utf8',
 });
 
-if (zipResult.error?.code === 'ENOENT') {
+if (isNodeError(zipResult.error) && zipResult.error.code === 'ENOENT') {
   process.stderr.write('zip is required to build the extension bundle.\n');
   process.exit(1);
 }
@@ -69,3 +70,11 @@ if (zipResult.status !== 0) {
 
 await mkdir(dirname(bundlePath), { recursive: true });
 process.stdout.write(`Built ${bundlePath}\n`);
+
+/**
+ * @param {unknown} error
+ * @returns {error is NodeJS.ErrnoException}
+ */
+function isNodeError(error) {
+  return error instanceof Error;
+}
