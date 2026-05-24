@@ -10,20 +10,20 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 
 class LyricBarIndicatorBase extends PanelMenu.Button {
   /** @type {InstanceType<typeof St.Label> | null} */
-  #label = null;
+  _lyricBarLabel = null;
 
   /** @override */
   _init() {
     super._init(0.0, 'LyricBar');
     removeActorChildren(this);
 
-    this.#label = new St.Label({
+    this._lyricBarLabel = new St.Label({
       text: '',
       y_align: Clutter.ActorAlign.CENTER,
       style_class: 'lyricbar-label',
     });
 
-    this.add_child(this.#label);
+    this.add_child(this._lyricBarLabel);
   }
 
   /**
@@ -31,18 +31,18 @@ class LyricBarIndicatorBase extends PanelMenu.Button {
    * @returns {void}
    */
   render(viewModel) {
-    if (!this.#label) {
+    if (!this._lyricBarLabel) {
       return;
     }
 
     setActorVisible(this, viewModel.visible);
-    setLabelText(this.#label, viewModel.text);
-    setActorStyle(this.#label, `max-width: ${viewModel.maxWidth}px;`);
+    setLabelText(this._lyricBarLabel, viewModel.text);
+    setActorStyle(this._lyricBarLabel, `max-width: ${viewModel.maxWidth}px;`);
   }
 
   /** @override */
   destroy() {
-    this.#label = null;
+    this._lyricBarLabel = null;
     super.destroy();
   }
 }
