@@ -1,4 +1,5 @@
-const ENDPOINT = 'https://lrclib.net/api/get';
+const GET_ENDPOINT = 'https://lrclib.net/api/get';
+const SEARCH_ENDPOINT = 'https://lrclib.net/api/search';
 
 /**
  * @import { LyricsQuery } from '../../domain/lyrics/types.js'
@@ -34,7 +35,27 @@ export function buildLrclibUrl(query) {
     params.push(['duration', String(Math.round(query.durationMs / 1000))]);
   }
 
-  return `${ENDPOINT}?${encodeFormQuery(params)}`;
+  return `${GET_ENDPOINT}?${encodeFormQuery(params)}`;
+}
+
+/**
+ * @param {LyricsQuery} query
+ * @returns {string | null}
+ */
+export function buildLrclibSearchUrl(query) {
+  const artist = normalize(query.artist);
+  const title = normalizeSearchTitle(query.title);
+  if (artist === '' || title === '') {
+    return null;
+  }
+
+  /** @type {[string, string][]} */
+  const params = [
+    ['artist_name', artist],
+    ['track_name', title],
+  ];
+
+  return `${SEARCH_ENDPOINT}?${encodeFormQuery(params)}`;
 }
 
 /**
@@ -46,6 +67,19 @@ function normalize(value) {
     return '';
   }
   return value.trim();
+}
+
+/**
+ * Parenthetical suffixes are often release decorations in Spotify titles
+ * while LRCLIB's synced entries may store the base title.
+ *
+ * @param {string | null | undefined} value
+ * @returns {string}
+ */
+function normalizeSearchTitle(value) {
+  return normalize(value)
+    .replace(/(?:^|\s+)\([^)]{1,32}\)\s*$/u, '')
+    .trim();
 }
 
 /**
