@@ -55,10 +55,19 @@ Test the public installer:
 curl -fsSL https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/scripts/install.sh | bash
 ```
 
+Test the optional GitHub updater:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/scripts/install.sh | bash -s -- --install-updater
+~/.local/bin/lyricbar-update
+systemctl --user status lyricbar-update.timer
+curl -fsSL https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/scripts/install.sh | bash -s -- --uninstall-updater
+```
+
 Test a pinned release:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/scripts/install.sh | bash -s -- v0.1.0
+curl -fsSL https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/scripts/install.sh | bash -s -- v0.1.2
 ```
 
 Manual release-asset install:
