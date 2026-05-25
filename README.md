@@ -44,11 +44,24 @@ Open preferences:
 gnome-extensions prefs lyricbar@fikrilal.github.io
 ```
 
+Optional GitHub auto-update:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/scripts/install.sh | bash -s -- --install-updater
+```
+
+This installs a user `systemd` timer that checks GitHub Releases daily. Manual update command:
+
+```bash
+~/.local/bin/lyricbar-update
+```
+
 Uninstall:
 
 ```bash
 gnome-extensions disable lyricbar@fikrilal.github.io
 rm -rf ~/.local/share/gnome-shell/extensions/lyricbar@fikrilal.github.io
+curl -fsSL https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/scripts/install.sh | bash -s -- --uninstall-updater
 ```
 
 ## Development

@@ -8,7 +8,40 @@ readonly DEFAULT_VERSION="latest"
 readonly EXTENSION_DIR="${HOME}/.local/share/gnome-shell/extensions/${EXTENSION_UUID}"
 readonly SUPPORTED_SHELL_MAJOR_VERSIONS="46 47 48 49"
 
-VERSION="${LYRICBAR_VERSION:-${1:-$DEFAULT_VERSION}}"
+VERSION="${LYRICBAR_VERSION:-$DEFAULT_VERSION}"
+INSTALL_UPDATER=false
+UNINSTALL_UPDATER=false
+
+usage() {
+  cat <<'EOF'
+Usage:
+  install.sh [version] [--install-updater]
+  install.sh --uninstall-updater
+
+Examples:
+  install.sh
+  install.sh v0.1.2
+  install.sh --install-updater
+EOF
+}
+
+for arg in "$@"; do
+  case "$arg" in
+    --install-updater)
+      INSTALL_UPDATER=true
+      ;;
+    --uninstall-updater)
+      UNINSTALL_UPDATER=true
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      VERSION="$arg"
+      ;;
+  esac
+done
 
 if [[ "$VERSION" == "latest" ]]; then
   DOWNLOAD_URL="https://github.com/${REPOSITORY}/releases/latest/download/${ASSET_NAME}"
@@ -42,6 +75,173 @@ download_file() {
   exit 1
 }
 
+resolve_latest_version() {
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/${REPOSITORY}/releases/latest" |
+      sed -nE 's#.*/tag/([^/?#]+).*#\1#p'
+    return
+  fi
+
+  if command -v wget >/dev/null 2>&1; then
+    wget -qS --spider "https://github.com/${REPOSITORY}/releases/latest" 2>&1 |
+      sed -nE 's#.*Location: .*/tag/([^/?#[:space:]]+).*#\1#p' |
+      tail -n 1
+    return
+  fi
+}
+
+version_marker_path() {
+  local state_home="${XDG_STATE_HOME:-${HOME}/.local/state}"
+  printf '%s\n' "${state_home}/lyricbar/version"
+}
+
+write_version_marker() {
+  local installed_version="$1"
+  local marker_path
+
+  marker_path="$(version_marker_path)"
+  mkdir -p "$(dirname "$marker_path")"
+  printf '%s\n' "$installed_version" >"$marker_path"
+}
+
+uninstall_updater() {
+  if command -v systemctl >/dev/null 2>&1; then
+    systemctl --user disable --now lyricbar-update.timer >/dev/null 2>&1 || true
+  fi
+
+  rm -f "${HOME}/.config/systemd/user/lyricbar-update.service"
+  rm -f "${HOME}/.config/systemd/user/lyricbar-update.timer"
+  rm -f "${HOME}/.local/bin/lyricbar-update"
+
+  if command -v systemctl >/dev/null 2>&1; then
+    systemctl --user daemon-reload >/dev/null 2>&1 || true
+  fi
+
+  printf 'LyricBar GitHub updater removed.\n'
+}
+
+install_updater() {
+  require_command systemctl
+
+  local bin_dir="${HOME}/.local/bin"
+  local systemd_user_dir="${HOME}/.config/systemd/user"
+  local updater_path="${bin_dir}/lyricbar-update"
+  local service_path="${systemd_user_dir}/lyricbar-update.service"
+  local timer_path="${systemd_user_dir}/lyricbar-update.timer"
+
+  mkdir -p "$bin_dir" "$systemd_user_dir"
+
+  cat >"$updater_path" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly REPOSITORY="fikrilal/gnome-lyricbar"
+readonly INSTALLER_URL="https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/scripts/install.sh"
+readonly STATE_DIR="${XDG_STATE_HOME:-${HOME}/.local/state}/lyricbar"
+readonly VERSION_FILE="${STATE_DIR}/version"
+
+download_file() {
+  local url="$1"
+  local output_path="$2"
+
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL --retry 3 --connect-timeout 20 --output "$output_path" "$url"
+    return
+  fi
+
+  if command -v wget >/dev/null 2>&1; then
+    wget -q -O "$output_path" "$url"
+    return
+  fi
+
+  printf 'LyricBar update failed: curl or wget is required.\n' >&2
+  exit 1
+}
+
+resolve_latest_version() {
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/${REPOSITORY}/releases/latest" |
+      sed -nE 's#.*/tag/([^/?#]+).*#\1#p'
+    return
+  fi
+
+  if command -v wget >/dev/null 2>&1; then
+    wget -qS --spider "https://github.com/${REPOSITORY}/releases/latest" 2>&1 |
+      sed -nE 's#.*Location: .*/tag/([^/?#[:space:]]+).*#\1#p' |
+      tail -n 1
+    return
+  fi
+}
+
+latest_version="$(resolve_latest_version)"
+if [[ -z "$latest_version" ]]; then
+  printf 'LyricBar update skipped: could not resolve latest release.\n' >&2
+  exit 0
+fi
+
+installed_version=""
+if [[ -f "$VERSION_FILE" ]]; then
+  installed_version="$(tr -d '[:space:]' <"$VERSION_FILE")"
+fi
+
+if [[ "$installed_version" == "$latest_version" ]]; then
+  printf 'LyricBar is already up to date (%s).\n' "$latest_version"
+  exit 0
+fi
+
+tmp_dir="$(mktemp -d)"
+trap 'rm -rf "$tmp_dir"' EXIT
+
+installer_path="${tmp_dir}/install.sh"
+download_file "$INSTALLER_URL" "$installer_path"
+chmod +x "$installer_path"
+"$installer_path" "$latest_version"
+
+mkdir -p "$STATE_DIR"
+printf '%s\n' "$latest_version" >"$VERSION_FILE"
+printf 'LyricBar updated to %s.\n' "$latest_version"
+EOF
+  chmod +x "$updater_path"
+
+  cat >"$service_path" <<EOF
+[Unit]
+Description=Update LyricBar from GitHub Releases
+Documentation=https://github.com/${REPOSITORY}
+
+[Service]
+Type=oneshot
+ExecStart=${updater_path}
+EOF
+
+  cat >"$timer_path" <<'EOF'
+[Unit]
+Description=Check for LyricBar GitHub updates
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=1d
+RandomizedDelaySec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
+  systemctl --user daemon-reload
+  systemctl --user enable --now lyricbar-update.timer
+
+  printf 'LyricBar GitHub updater installed.\n'
+  printf 'Manual update command:\n'
+  printf '  %s\n' "$updater_path"
+  printf 'Timer status:\n'
+  printf '  systemctl --user status lyricbar-update.timer\n'
+}
+
+if [[ "$UNINSTALL_UPDATER" == "true" ]]; then
+  uninstall_updater
+  exit 0
+fi
+
 require_command gnome-shell
 require_command gnome-extensions
 require_command gsettings
@@ -65,6 +265,14 @@ zip_path="${tmp_dir}/${ASSET_NAME}"
 printf 'Downloading LyricBar %s...\n' "$VERSION"
 download_file "$DOWNLOAD_URL" "$zip_path"
 
+installed_version="$VERSION"
+if [[ "$installed_version" == "latest" ]]; then
+  installed_version="$(resolve_latest_version)"
+fi
+if [[ -z "$installed_version" ]]; then
+  installed_version="unknown"
+fi
+
 gsettings_has_key() {
   local schema="$1"
   local key="$2"
@@ -81,12 +289,12 @@ add_extension_to_gsettings_array() {
 
   current_value="$(gsettings get "$schema" "$key")"
   next_value="$(
-    CURRENT_VALUE="$current_value" EXTENSION_UUID="$uuid" python3 - <<'PY'
+    CURRENT_VALUE="$current_value" LYRICBAR_TARGET_UUID="$uuid" python3 - <<'PY'
 import ast
 import os
 
 current = os.environ["CURRENT_VALUE"].strip()
-uuid = os.environ["EXTENSION_UUID"]
+uuid = os.environ["LYRICBAR_TARGET_UUID"]
 
 if current in {"", "@as []", "[]"}:
     values = []
@@ -112,12 +320,12 @@ remove_extension_from_gsettings_array() {
 
   current_value="$(gsettings get "$schema" "$key")"
   next_value="$(
-    CURRENT_VALUE="$current_value" EXTENSION_UUID="$uuid" python3 - <<'PY'
+    CURRENT_VALUE="$current_value" LYRICBAR_TARGET_UUID="$uuid" python3 - <<'PY'
 import ast
 import os
 
 current = os.environ["CURRENT_VALUE"].strip()
-uuid = os.environ["EXTENSION_UUID"]
+uuid = os.environ["LYRICBAR_TARGET_UUID"]
 
 if current in {"", "@as []", "[]"}:
     values = []
@@ -199,3 +407,9 @@ fi
 
 printf 'Open preferences with:\n'
 printf '  gnome-extensions prefs %s\n' "$EXTENSION_UUID"
+
+write_version_marker "$installed_version"
+
+if [[ "$INSTALL_UPDATER" == "true" ]]; then
+  install_updater
+fi

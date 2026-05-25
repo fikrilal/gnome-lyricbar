@@ -42,10 +42,24 @@ if (schemaResult.status !== 0) {
   process.exit(schemaResult.status ?? 1);
 }
 
+await rm(join(buildRoot, 'schemas', 'gschemas.compiled'), { force: true });
+
+const typeOnlyFiles = [
+  'src/domain/display/types.js',
+  'src/domain/lyrics/types.js',
+  'src/domain/mpris/types.js',
+  'src/domain/settings/types.js',
+];
+
+for (const path of typeOnlyFiles) {
+  await rm(join(buildRoot, path), { force: true });
+}
+
 const manifest = {
   uuid,
   builtAt: new Date().toISOString(),
   files: runtimeFiles,
+  excludedFiles: ['schemas/gschemas.compiled', ...typeOnlyFiles],
 };
 await writeFile(
   join(buildRoot, 'build-manifest.json'),
