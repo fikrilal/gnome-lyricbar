@@ -311,7 +311,10 @@ export class LyricBarController {
       { logger: logger?.child('cache') },
     );
 
-    this.#lyricsService = new LyricsService(lifecycle, provider, cache, { logger });
+    this.#lyricsService = new LyricsService(lifecycle, provider, cache, {
+      getBrowserPlayerService: () => this.#currentSettings?.browserPlayerService ?? 'spotify',
+      logger,
+    });
     this.#lyricsService.onLookupChanged((player, lookup) => {
       if (!this.#enabled) {
         return;

@@ -1,5 +1,12 @@
+import { detectPlayerProfile } from '../mpris/profile.js';
+
 /**
  * @import { PlayerSnapshot } from '../mpris/types.js'
+ * @import { BrowserPlayerService } from '../settings/types.js'
+ *
+ * @typedef {Readonly<{
+ *   browserPlayerService?: BrowserPlayerService | null | undefined,
+ * }>} TrackIdentityOptions
  */
 
 /**
@@ -8,9 +15,10 @@
  * player, so the lyrics service can suppress duplicate lookups.
  *
  * @param {PlayerSnapshot | null | undefined} player
+ * @param {TrackIdentityOptions} [options]
  * @returns {string | null}
  */
-export function buildTrackIdentityKey(player) {
+export function buildTrackIdentityKey(player, options = {}) {
   if (player === null || player === undefined) {
     return null;
   }
@@ -22,7 +30,11 @@ export function buildTrackIdentityKey(player) {
   }
 
   const album = normalize(player.album);
-  const trackId = typeof player.trackId === 'string' ? player.trackId : '';
+  const trackId = shouldUseTrackId(player, options)
+    ? typeof player.trackId === 'string'
+      ? player.trackId
+      : ''
+    : '';
   const duration =
     typeof player.durationMs === 'number' && Number.isFinite(player.durationMs)
       ? String(Math.round(player.durationMs / 1000))
@@ -42,4 +54,21 @@ function normalize(value) {
     return '';
   }
   return value.trim();
+}
+
+/**
+ * Browser MPRIS track IDs are browser implementation details. Chromium can
+ * reuse generic object paths across different songs, and can also churn them
+ * for the same logical song. Keep real desktop track IDs, but ignore browser
+ * track IDs for lookup suppression.
+ *
+ * @param {PlayerSnapshot} player
+ * @param {TrackIdentityOptions} options
+ * @returns {boolean}
+ */
+function shouldUseTrackId(player, options) {
+  const profile = detectPlayerProfile(player, {
+    browserPlayerService: options.browserPlayerService ?? 'auto',
+  });
+  return profile.sourceKind !== 'browser';
 }

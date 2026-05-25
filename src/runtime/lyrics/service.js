@@ -6,6 +6,7 @@ import { buildTrackIdentityKey } from '../../domain/lyrics/track-identity.js';
  * @import { RuntimeLogger } from '../logger.js'
  * @import { LyricsProviderResult, LyricsQuery } from '../../domain/lyrics/types.js'
  * @import { PlayerSnapshot } from '../../domain/mpris/types.js'
+ * @import { BrowserPlayerService } from '../../domain/settings/types.js'
  *
  * @typedef {Readonly<{
  *   lookup(query: LyricsQuery, callback: (result: LyricsProviderResult) => void): void,
@@ -53,17 +54,24 @@ export class LyricsService {
   /** @type {RuntimeLogger | null} */
   #logger = null;
 
+  /** @type {() => BrowserPlayerService} */
+  #getBrowserPlayerService;
+
   /**
    * @param {LifecycleRegistry} lifecycle
    * @param {ServiceProvider} provider
    * @param {ServiceCache} cache
-   * @param {{ logger?: RuntimeLogger | undefined }} [options]
+   * @param {{
+   *   logger?: RuntimeLogger | undefined,
+   *   getBrowserPlayerService?: () => BrowserPlayerService,
+   * }} [options]
    */
   constructor(lifecycle, provider, cache, options = {}) {
     this.#lifecycle = lifecycle;
     this.#provider = provider;
     this.#cache = cache;
     this.#logger = options.logger ?? null;
+    this.#getBrowserPlayerService = options.getBrowserPlayerService ?? (() => 'auto');
 
     this.#lifecycle.add(() => {
       this.#logger?.debug('service-dispose');
@@ -81,7 +89,9 @@ export class LyricsService {
       return;
     }
 
-    const key = buildTrackIdentityKey(player);
+    const key = buildTrackIdentityKey(player, {
+      browserPlayerService: this.#getBrowserPlayerService(),
+    });
 
     if (key === this.#currentKey) {
       if (this.#sameSnapshot(player)) {
