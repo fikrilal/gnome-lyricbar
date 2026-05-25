@@ -5,6 +5,7 @@ import { PLAYER_PROFILES } from './profile.js';
  *
  * @typedef {Readonly<{
  *   debounceMetadataMs: number,
+ *   advertisementRetentionMs: number,
  *   retainLastValidOnEmpty: boolean,
  *   retainLastValidOnAdvertisement: boolean,
  *   requireArtistForLookup: boolean,
@@ -14,6 +15,7 @@ import { PLAYER_PROFILES } from './profile.js';
 
 const DESKTOP_POLICY = Object.freeze({
   debounceMetadataMs: 0,
+  advertisementRetentionMs: 0,
   retainLastValidOnEmpty: false,
   retainLastValidOnAdvertisement: false,
   requireArtistForLookup: true,
@@ -22,6 +24,7 @@ const DESKTOP_POLICY = Object.freeze({
 
 const BROWSER_POLICY = Object.freeze({
   debounceMetadataMs: 350,
+  advertisementRetentionMs: 2000,
   retainLastValidOnEmpty: true,
   retainLastValidOnAdvertisement: true,
   requireArtistForLookup: true,
@@ -30,6 +33,7 @@ const BROWSER_POLICY = Object.freeze({
 
 const GENERIC_POLICY = Object.freeze({
   debounceMetadataMs: 0,
+  advertisementRetentionMs: 0,
   retainLastValidOnEmpty: false,
   retainLastValidOnAdvertisement: false,
   requireArtistForLookup: true,

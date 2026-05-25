@@ -5,6 +5,7 @@
  * @typedef {Readonly<{
  *   snapshot: PlayerSnapshot,
  *   firstSeenAtMs: number,
+ *   kind: 'metadata' | 'advertisement',
  * }>} PendingStableCandidate
  *
  * @typedef {Readonly<{
@@ -65,6 +66,16 @@ export function reduceStablePlayerSnapshot(input) {
   }
 
   if (isAdvertisementSnapshot(candidate)) {
+    if (input.policy.advertisementRetentionMs > 0) {
+      return reduceAdvertisementSnapshot({
+        previousStable,
+        pendingCandidate,
+        candidate,
+        policy: input.policy,
+        nowMs: input.nowMs,
+      });
+    }
+
     if (previousStable !== null && input.policy.retainLastValidOnAdvertisement) {
       return {
         stableSnapshot: previousStable,
@@ -82,6 +93,7 @@ export function reduceStablePlayerSnapshot(input) {
       pendingCandidate: {
         snapshot: candidate,
         firstSeenAtMs: input.nowMs,
+        kind: 'metadata',
       },
       decision: 'held',
     };
@@ -97,6 +109,7 @@ export function reduceStablePlayerSnapshot(input) {
       pendingCandidate: {
         snapshot: candidate,
         firstSeenAtMs: input.nowMs,
+        kind: 'metadata',
       },
       decision: 'held',
     };
@@ -112,6 +125,51 @@ export function reduceStablePlayerSnapshot(input) {
   }
 
   return accept(candidate);
+}
+
+/**
+ * @param {{
+ *   previousStable: PlayerSnapshot | null,
+ *   pendingCandidate: PendingStableCandidate | null,
+ *   candidate: PlayerSnapshot,
+ *   policy: PlayerProfilePolicy,
+ *   nowMs: number,
+ * }} input
+ * @returns {StableSnapshotResult}
+ */
+function reduceAdvertisementSnapshot(input) {
+  if (!input.policy.retainLastValidOnAdvertisement || input.previousStable === null) {
+    return {
+      stableSnapshot: null,
+      pendingCandidate: null,
+      decision: 'cleared',
+    };
+  }
+
+  const pendingAdvertisement =
+    input.pendingCandidate?.kind === 'advertisement' ? input.pendingCandidate : null;
+  const pendingCandidate =
+    pendingAdvertisement === null
+      ? {
+          snapshot: input.candidate,
+          firstSeenAtMs: input.nowMs,
+          kind: /** @type {'advertisement'} */ ('advertisement'),
+        }
+      : pendingAdvertisement;
+
+  if (input.nowMs - pendingCandidate.firstSeenAtMs < input.policy.advertisementRetentionMs) {
+    return {
+      stableSnapshot: input.previousStable,
+      pendingCandidate,
+      decision: 'retained-previous',
+    };
+  }
+
+  return {
+    stableSnapshot: null,
+    pendingCandidate: null,
+    decision: 'cleared',
+  };
 }
 
 /**

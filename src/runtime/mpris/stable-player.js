@@ -159,26 +159,34 @@ export class StablePlayerProxy {
       title: stableCandidate?.title ?? candidate?.title ?? null,
     });
 
-    this.#updatePendingTimer(policy.debounceMetadataMs);
+    this.#updatePendingTimer({
+      advertisementRetentionMs: policy.advertisementRetentionMs,
+      debounceMetadataMs: policy.debounceMetadataMs,
+    });
     if (!snapshotsEqual(previous, this.#stableSnapshot)) {
       this.#emit();
     }
   }
 
   /**
-   * @param {number} debounceMetadataMs
+   * @param {{ advertisementRetentionMs: number, debounceMetadataMs: number }} policy
    * @returns {void}
    */
-  #updatePendingTimer(debounceMetadataMs) {
+  #updatePendingTimer(policy) {
     this.#cancelTimer();
-    if (this.#pendingCandidate === null || debounceMetadataMs <= 0) {
+    if (this.#pendingCandidate === null) {
       return;
     }
 
-    const remainingMs = Math.max(
-      0,
-      this.#pendingCandidate.firstSeenAtMs + debounceMetadataMs - this.#now(),
-    );
+    const delayMs =
+      this.#pendingCandidate.kind === 'advertisement'
+        ? policy.advertisementRetentionMs
+        : policy.debounceMetadataMs;
+    if (delayMs <= 0) {
+      return;
+    }
+
+    const remainingMs = Math.max(0, this.#pendingCandidate.firstSeenAtMs + delayMs - this.#now());
     this.#cancelPendingTimer = this.#schedule(() => {
       const pending = this.#pendingCandidate;
       this.#cancelPendingTimer = null;

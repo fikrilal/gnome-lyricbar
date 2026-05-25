@@ -64,21 +64,83 @@ describe('reduceStablePlayerSnapshot', () => {
     });
   });
 
-  it('retains the previous browser track when Chromium emits advertisement metadata', () => {
+  it('retains the previous browser track during a short advertisement burst', () => {
     const previousStable = snapshot({});
+    const candidate = snapshot({ title: ' Advertisement ', artist: '', album: '' });
 
     expect(
       reduceStablePlayerSnapshot({
         previousStable,
         pendingCandidate: null,
-        candidate: snapshot({ title: ' Advertisement ', artist: '', album: '' }),
+        candidate,
         policy: browserPolicy,
         nowMs: 1000,
       }),
     ).toEqual({
       stableSnapshot: previousStable,
-      pendingCandidate: null,
+      pendingCandidate: {
+        snapshot: candidate,
+        firstSeenAtMs: 1000,
+        kind: 'advertisement',
+      },
       decision: 'retained-previous',
+    });
+  });
+
+  it('clears the previous browser track when advertisement metadata persists', () => {
+    const previousStable = snapshot({});
+    const candidate = snapshot({ title: 'Advertisement', artist: '', album: '' });
+
+    expect(
+      reduceStablePlayerSnapshot({
+        previousStable,
+        pendingCandidate: {
+          snapshot: candidate,
+          firstSeenAtMs: 1000,
+          kind: 'advertisement',
+        },
+        candidate,
+        policy: browserPolicy,
+        nowMs: 3000,
+      }),
+    ).toEqual({
+      stableSnapshot: null,
+      pendingCandidate: null,
+      decision: 'cleared',
+    });
+  });
+
+  it('clears browser advertisement metadata when no previous stable track exists', () => {
+    expect(
+      reduceStablePlayerSnapshot({
+        previousStable: null,
+        pendingCandidate: null,
+        candidate: snapshot({ title: 'Advertisement', artist: '', album: '' }),
+        policy: browserPolicy,
+        nowMs: 1000,
+      }),
+    ).toEqual({
+      stableSnapshot: null,
+      pendingCandidate: null,
+      decision: 'cleared',
+    });
+  });
+
+  it('keeps desktop advertisement behavior unchanged', () => {
+    const candidate = snapshot({ title: 'Advertisement', artist: '', album: '' });
+
+    expect(
+      reduceStablePlayerSnapshot({
+        previousStable: snapshot({}),
+        pendingCandidate: null,
+        candidate,
+        policy: desktopPolicy,
+        nowMs: 1000,
+      }),
+    ).toEqual({
+      stableSnapshot: candidate,
+      pendingCandidate: null,
+      decision: 'accepted',
     });
   });
 
@@ -99,6 +161,7 @@ describe('reduceStablePlayerSnapshot', () => {
       pendingCandidate: {
         snapshot: candidate,
         firstSeenAtMs: 1000,
+        kind: 'metadata',
       },
       decision: 'held',
     });
@@ -121,6 +184,7 @@ describe('reduceStablePlayerSnapshot', () => {
       pendingCandidate: {
         snapshot: candidate,
         firstSeenAtMs: 1000,
+        kind: 'metadata',
       },
       decision: 'held',
     });
@@ -146,6 +210,7 @@ describe('reduceStablePlayerSnapshot', () => {
     const pendingCandidate = {
       snapshot: candidate,
       firstSeenAtMs: 1000,
+      kind: /** @type {'metadata'} */ ('metadata'),
     };
 
     expect(
@@ -174,6 +239,7 @@ describe('reduceStablePlayerSnapshot', () => {
         pendingCandidate: {
           snapshot: firstCandidate,
           firstSeenAtMs: 1000,
+          kind: 'metadata',
         },
         candidate: secondCandidate,
         policy: browserPolicy,
@@ -184,6 +250,7 @@ describe('reduceStablePlayerSnapshot', () => {
       pendingCandidate: {
         snapshot: secondCandidate,
         firstSeenAtMs: 1200,
+        kind: 'metadata',
       },
       decision: 'held',
     });

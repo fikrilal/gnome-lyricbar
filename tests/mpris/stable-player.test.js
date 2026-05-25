@@ -39,6 +39,28 @@ describe('StablePlayerProxy', () => {
     expect(harness.listener).toHaveBeenCalledTimes(2);
   });
 
+  it('clears the previous browser snapshot when advertisement metadata persists', () => {
+    const harness = createHarness({
+      busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
+      nowMs: 1000,
+    });
+    const stableSnapshot = snapshot({});
+
+    harness.stable.start();
+    harness.raw.emit(stableSnapshot);
+    harness.scheduler.advance(350);
+    harness.raw.emit(snapshot({ title: 'Advertisement', artist: '', album: '' }));
+
+    expect(harness.listener).toHaveBeenLastCalledWith(stableSnapshot);
+
+    harness.scheduler.advance(1999);
+    expect(harness.listener).toHaveBeenLastCalledWith(stableSnapshot);
+
+    harness.scheduler.advance(1);
+    expect(harness.listener).toHaveBeenLastCalledWith(null);
+    expect(harness.stable.snapshot()).toBeNull();
+  });
+
   it('holds full browser metadata until the debounce timer fires', () => {
     const harness = createHarness({
       busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
