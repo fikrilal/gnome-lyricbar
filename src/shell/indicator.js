@@ -83,8 +83,6 @@ class LyricBarSettingsIndicatorBase extends PanelMenu.Button {
 
     this._settings = settings;
     this._extension = extension;
-    /** @type {any[]} */
-    this._connections = [];
 
     this._icon = new St.Icon({
       gicon: Gio.Icon.new_for_string('audio-x-generic-symbolic'),
@@ -122,7 +120,6 @@ class LyricBarSettingsIndicatorBase extends PanelMenu.Button {
       const state = settings.get_string('panel-position');
       this._updatePositionOrnaments(state);
     });
-    this._connections.push([settings, this._posChangedId]);
 
     // Text Alignment Submenu
     this._alignSubMenu = new PopupMenu.PopupSubMenuMenuItem('Text Alignment', false);
@@ -154,7 +151,6 @@ class LyricBarSettingsIndicatorBase extends PanelMenu.Button {
       const state = settings.get_string('text-align');
       this._updateAlignmentOrnaments(state);
     });
-    this._connections.push([settings, this._alignChangedId]);
 
     // Separator
     this._separator = new PopupMenu.PopupSeparatorMenuItem();
@@ -192,16 +188,14 @@ class LyricBarSettingsIndicatorBase extends PanelMenu.Button {
 
   /** @override */
   destroy() {
-    if (this._connections) {
-      for (const [obj, id] of this._connections) {
-        try {
-          obj.disconnect(id);
-        } catch {
-          // ignore already finalized/destroyed objects
-        }
-      }
+    if (this._settings && this._posChangedId) {
+      this._settings.disconnect(this._posChangedId);
+      this._posChangedId = null;
     }
-    this._connections = [];
+    if (this._settings && this._alignChangedId) {
+      this._settings.disconnect(this._alignChangedId);
+      this._alignChangedId = null;
+    }
 
     if (this._leftItem && this._leftActivatedId) {
       this._leftItem.disconnect(this._leftActivatedId);
