@@ -24,6 +24,7 @@ import { LyricsService } from './lyrics/service.js';
 import { RuntimeLogger } from './logger.js';
 import { MprisService } from './mpris/service.js';
 import { PlayerProxy } from './mpris/player.js';
+import { StablePlayerProxy } from './mpris/stable-player.js';
 import { SettingsAdapter } from './settings.js';
 
 /**
@@ -46,7 +47,7 @@ import { SettingsAdapter } from './settings.js';
  * }>} IndicatorHandle
  *
  * @typedef {{
- *   proxy: PlayerProxy,
+ *   proxy: StablePlayerProxy,
  *   lifecycle: LifecycleRegistry,
  * }} TrackedProxy
  */
@@ -381,8 +382,12 @@ export class LyricBarController {
     const child = new LifecycleRegistry();
     parent.add(child);
 
-    const proxy = new PlayerProxy(this.#connection, busName, child, {
+    const rawProxy = new PlayerProxy(this.#connection, busName, child, {
       logger: this.#logger?.child('player'),
+    });
+    const proxy = new StablePlayerProxy(rawProxy, child, {
+      logger: this.#logger?.child('player') ?? null,
+      schedule: scheduleTimeout,
     });
     proxy.onSnapshot(() => {
       this.#refreshSelection();
@@ -565,4 +570,25 @@ export class LyricBarController {
     });
     this.#indicator.render(viewModel);
   }
+}
+
+/**
+ * @param {() => void} callback
+ * @param {number} delayMs
+ * @returns {() => void}
+ */
+function scheduleTimeout(callback, delayMs) {
+  let sourceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, delayMs, () => {
+    sourceId = 0;
+    callback();
+    return GLib.SOURCE_REMOVE;
+  });
+
+  return () => {
+    if (sourceId === 0) {
+      return;
+    }
+    GLib.source_remove(sourceId);
+    sourceId = 0;
+  };
 }
