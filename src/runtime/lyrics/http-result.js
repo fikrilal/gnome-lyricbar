@@ -1,7 +1,10 @@
-import { parseLrclibResponse } from '../../domain/lyrics/provider-result.js';
+import {
+  parseBestSyncedLrclibSearchResponse,
+  parseLrclibResponse,
+} from '../../domain/lyrics/provider-result.js';
 
 /**
- * @import { LyricsProviderResult } from '../../domain/lyrics/types.js'
+ * @import { LyricsProviderResult, LyricsQuery } from '../../domain/lyrics/types.js'
  *
  * @typedef {Readonly<{
  *   statusCode?: number | null,
@@ -55,6 +58,41 @@ export function mapHttpResultToProviderResult(result) {
   }
 
   return parseLrclibResponse(parsed);
+}
+
+/**
+ * @param {HttpResult} result
+ * @param {LyricsQuery} query
+ * @returns {LyricsProviderResult | null}
+ */
+export function mapHttpResultToSyncedSearchResult(result, query) {
+  const parsed = parseSearchJson(result);
+  return parsed === null ? null : parseBestSyncedLrclibSearchResponse(parsed, query);
+}
+
+/**
+ * @param {HttpResult} result
+ * @returns {unknown | null}
+ */
+function parseSearchJson(result) {
+  const status = readStatus(result);
+  const body = readBody(result);
+  if (
+    result.timedOut === true ||
+    readError(result) !== null ||
+    status === null ||
+    status < 200 ||
+    status >= 300 ||
+    body === null
+  ) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(body);
+  } catch {
+    return null;
+  }
 }
 
 /**

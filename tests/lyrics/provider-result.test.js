@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseLrclibResponse } from '../../src/domain/lyrics/provider-result.js';
+import {
+  parseBestSyncedLrclibSearchResponse,
+  parseLrclibResponse,
+} from '../../src/domain/lyrics/provider-result.js';
 
 describe('parseLrclibResponse', () => {
   it('returns synced lyrics with plain fallback when both are present', () => {
@@ -209,5 +212,90 @@ describe('parseLrclibResponse', () => {
     if (result.kind === 'plain') {
       expect(result.track.durationMs).toBeNull();
     }
+  });
+});
+
+describe('parseBestSyncedLrclibSearchResponse', () => {
+  it('selects a safe synced search fallback when exact LRCLIB lookup only has plain lyrics', () => {
+    const result = parseBestSyncedLrclibSearchResponse(
+      [
+        {
+          id: 24305660,
+          trackName: 'Tewas Tertimbun Masa Lalu ( TTM )',
+          artistName: 'NDX A.K.A.',
+          albumName: '',
+          duration: 244,
+          plainLyrics: 'Kowe tau neng uripku',
+        },
+        {
+          id: 32784779,
+          trackName: 'Tewas Tertimbun Masa Lalu',
+          artistName: 'NDX A.K.A.',
+          albumName: 'NDX A.K.A. Familia',
+          duration: 244,
+          syncedLyrics: '[00:07.56] Kowe tau ning uripku\n[00:11.18] Tansah ana ning atiku',
+          plainLyrics: 'Kowe tau ning uripku\nTansah ana ning atiku',
+        },
+      ],
+      {
+        artist: 'NDX A.K.A.',
+        title: 'Tewas Tertimbun Masa Lalu (TTM)',
+        album: 'NDX A.K.A. Familia',
+        durationMs: 244297,
+      },
+    );
+
+    expect(result?.kind).toBe('synced');
+    if (result?.kind === 'synced') {
+      expect(result.track.trackName).toBe('Tewas Tertimbun Masa Lalu');
+      expect(result.lines).toEqual([
+        { timeMs: 7560, text: 'Kowe tau ning uripku' },
+        { timeMs: 11180, text: 'Tansah ana ning atiku' },
+      ]);
+    }
+  });
+
+  it('rejects synced search candidates with a duration that is too far from the active track', () => {
+    const result = parseBestSyncedLrclibSearchResponse(
+      [
+        {
+          trackName: 'Tewas Tertimbun Masa Lalu',
+          artistName: 'NDX A.K.A.',
+          albumName: 'NDX A.K.A. Familia',
+          duration: 262,
+          syncedLyrics: '[00:09.48] Kowe tau neng uripku',
+        },
+      ],
+      {
+        artist: 'NDX A.K.A.',
+        title: 'Tewas Tertimbun Masa Lalu (TTM)',
+        album: 'NDX A.K.A. Familia',
+        durationMs: 244297,
+      },
+    );
+
+    expect(result).toBeNull();
+  });
+
+  it('rejects search candidates from a different artist', () => {
+    const result = parseBestSyncedLrclibSearchResponse(
+      [
+        {
+          trackName: 'Tewas Tertimbun Masa Lalu',
+          artistName: 'Nella Kharisma',
+          albumName: 'Nella Kharisma Special NDX',
+          duration: 244,
+          syncedLyrics: '[00:09.48] Kowe tau neng uripku',
+        },
+      ],
+      {
+        artist: 'NDX A.K.A.',
+        title: 'Tewas Tertimbun Masa Lalu (TTM)',
+        album: 'NDX A.K.A. Familia',
+        durationMs: 244297,
+      },
+    );
+
+    expect(result).toBeNull();
   });
 });

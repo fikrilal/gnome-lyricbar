@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildLrclibUrl } from '../../src/runtime/lyrics/url.js';
+import { buildLrclibSearchUrl, buildLrclibUrl } from '../../src/runtime/lyrics/url.js';
 
 describe('buildLrclibUrl', () => {
   it('builds a basic URL with artist and title', () => {
@@ -91,5 +91,31 @@ describe('buildLrclibUrl', () => {
         durationMs: -1,
       }),
     ).toBe('https://lrclib.net/api/get?artist_name=Coldplay&track_name=Yellow');
+  });
+});
+
+describe('buildLrclibSearchUrl', () => {
+  it('builds a structured search URL with a parenthetical suffix removed from the title', () => {
+    expect(
+      buildLrclibSearchUrl({
+        artist: 'NDX A.K.A.',
+        title: 'Tewas Tertimbun Masa Lalu (TTM)',
+        album: 'NDX A.K.A. Familia',
+        durationMs: 244297,
+      }),
+    ).toBe(
+      'https://lrclib.net/api/search?artist_name=NDX+A.K.A.&track_name=Tewas+Tertimbun+Masa+Lalu',
+    );
+  });
+
+  it('returns null when the stripped search title is empty', () => {
+    expect(
+      buildLrclibSearchUrl({
+        artist: 'Artist',
+        title: ' (Live)',
+        album: '',
+        durationMs: null,
+      }),
+    ).toBeNull();
   });
 });

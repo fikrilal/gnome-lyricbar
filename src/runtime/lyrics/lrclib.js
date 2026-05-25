@@ -2,8 +2,8 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Soup from 'gi://Soup';
 
-import { mapHttpResultToProviderResult } from './http-result.js';
-import { buildLrclibUrl } from './url.js';
+import { mapHttpResultToProviderResult, mapHttpResultToSyncedSearchResult } from './http-result.js';
+import { buildLrclibSearchUrl, buildLrclibUrl } from './url.js';
 
 /**
  * @import { LifecycleRegistry } from '../lifecycle.js'
@@ -82,17 +82,75 @@ export class LrclibProvider {
       return;
     }
 
-    const message = Soup.Message.new('GET', url);
-    if (message === null) {
-      this.#logger?.debug('lookup-skipped', { reason: 'invalid-url' });
-      callback(Object.freeze({ kind: 'error', reason: 'invalid lookup url' }));
+    this.#send(url, (httpResult) => {
+      const providerResult = mapHttpResultToProviderResult(httpResult);
+      this.#logger?.debug('request-result', {
+        kind: providerResult.kind,
+        statusCode: httpResult.statusCode ?? null,
+      });
+
+      if (providerResult.kind === 'synced' || providerResult.kind === 'instrumental') {
+        callback(providerResult);
+        return;
+      }
+
+      if (providerResult.kind !== 'plain' && providerResult.kind !== 'not-found') {
+        callback(providerResult);
+        return;
+      }
+
+      this.#lookupSyncedSearchFallback(query, providerResult, callback);
+    });
+  }
+
+  /**
+   * @param {LyricsQuery} query
+   * @param {LyricsProviderResult} fallback
+   * @param {LyricsLookupCallback} callback
+   * @returns {void}
+   */
+  #lookupSyncedSearchFallback(query, fallback, callback) {
+    const searchUrl = buildLrclibSearchUrl(query);
+    if (searchUrl === null) {
+      callback(fallback);
       return;
     }
 
-    this.#logger?.debug('request-start', {
+    this.#logger?.debug('search-fallback-start', {
       artist: query.artist,
       title: query.title,
     });
+
+    this.#send(searchUrl, (httpResult) => {
+      const searchResult = mapHttpResultToSyncedSearchResult(httpResult, query);
+      if (searchResult === null) {
+        this.#logger?.debug('search-fallback-result', { kind: 'none' });
+        callback(fallback);
+        return;
+      }
+
+      this.#logger?.debug('search-fallback-result', {
+        kind: searchResult.kind,
+        title: searchResult.track.trackName,
+      });
+      callback(searchResult);
+    });
+  }
+
+  /**
+   * @param {string} url
+   * @param {(result: import('./http-result.js').HttpResult) => void} callback
+   * @returns {void}
+   */
+  #send(url, callback) {
+    const message = Soup.Message.new('GET', url);
+    if (message === null) {
+      this.#logger?.debug('lookup-skipped', { reason: 'invalid-url' });
+      callback(Object.freeze({ statusCode: null, body: null, error: 'invalid lookup url' }));
+      return;
+    }
+
+    this.#logger?.debug('request-send');
 
     const cancellable = new Gio.Cancellable();
     this.#lifecycle.addCancellable(() => cancellable);
@@ -151,18 +209,19 @@ export class LrclibProvider {
             body: null,
             error: describeError(error),
           });
-          this.#logger?.debug('request-result', { kind: providerResult.kind, statusCode: null });
-          callback(providerResult);
+          callback({
+            statusCode: null,
+            body: null,
+            error: providerResult.kind === 'error' ? providerResult.reason : describeError(error),
+          });
           return;
         }
 
         const statusCode = readStatusCode(message);
-        const providerResult = mapHttpResultToProviderResult({
+        callback({
           statusCode,
           body,
         });
-        this.#logger?.debug('request-result', { kind: providerResult.kind, statusCode });
-        callback(providerResult);
       },
     );
   }

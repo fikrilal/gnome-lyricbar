@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { mapHttpResultToProviderResult } from '../../src/runtime/lyrics/http-result.js';
+import {
+  mapHttpResultToProviderResult,
+  mapHttpResultToSyncedSearchResult,
+} from '../../src/runtime/lyrics/http-result.js';
 
 describe('mapHttpResultToProviderResult', () => {
   it('routes a 200 response with synced lyrics through the LRCLIB parser', () => {
@@ -120,5 +123,45 @@ describe('mapHttpResultToProviderResult', () => {
       kind: 'error',
       reason: 'empty response body',
     });
+  });
+});
+
+describe('mapHttpResultToSyncedSearchResult', () => {
+  it('maps a search response to the best safe synced result', () => {
+    const body = JSON.stringify([
+      {
+        trackName: 'Tewas Tertimbun Masa Lalu',
+        artistName: 'NDX A.K.A.',
+        albumName: 'NDX A.K.A. Familia',
+        duration: 244,
+        syncedLyrics: '[00:07.56] Kowe tau ning uripku',
+      },
+    ]);
+
+    const result = mapHttpResultToSyncedSearchResult(
+      { statusCode: 200, body },
+      {
+        artist: 'NDX A.K.A.',
+        title: 'Tewas Tertimbun Masa Lalu (TTM)',
+        album: 'NDX A.K.A. Familia',
+        durationMs: 244297,
+      },
+    );
+
+    expect(result?.kind).toBe('synced');
+  });
+
+  it('returns null for failed search responses', () => {
+    expect(
+      mapHttpResultToSyncedSearchResult(
+        { statusCode: 503, body: 'oops' },
+        {
+          artist: 'NDX A.K.A.',
+          title: 'Tewas Tertimbun Masa Lalu (TTM)',
+          album: 'NDX A.K.A. Familia',
+          durationMs: 244297,
+        },
+      ),
+    ).toBeNull();
   });
 });
