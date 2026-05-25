@@ -10,6 +10,7 @@ describe('policyForPlayerProfile', () => {
   it('uses immediate metadata policy for Spotify Desktop', () => {
     expect(policyForPlayerProfile(PLAYER_PROFILES.spotifyDesktop)).toEqual({
       debounceMetadataMs: 0,
+      advertisementRetentionMs: 0,
       retainLastValidOnEmpty: false,
       retainLastValidOnAdvertisement: false,
       requireArtistForLookup: true,
@@ -20,6 +21,7 @@ describe('policyForPlayerProfile', () => {
   it('uses stabilizing metadata policy for Chromium browser players', () => {
     expect(policyForPlayerProfile(PLAYER_PROFILES.chromiumBrowser)).toEqual({
       debounceMetadataMs: 350,
+      advertisementRetentionMs: 2000,
       retainLastValidOnEmpty: true,
       retainLastValidOnAdvertisement: true,
       requireArtistForLookup: true,
@@ -42,6 +44,7 @@ describe('policyForPlayerProfile', () => {
   it('uses conservative generic policy for unknown or missing profiles', () => {
     expect(policyForPlayerProfile(PLAYER_PROFILES.genericMpris)).toEqual({
       debounceMetadataMs: 0,
+      advertisementRetentionMs: 0,
       retainLastValidOnEmpty: false,
       retainLastValidOnAdvertisement: false,
       requireArtistForLookup: true,

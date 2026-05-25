@@ -23,6 +23,22 @@ function snapshot(overrides) {
   };
 }
 
+/**
+ * @param {Partial<PlayerSnapshot>} overrides
+ * @returns {PlayerSnapshot}
+ */
+function browserSnapshot(overrides) {
+  return snapshot({
+    busName: 'org.mpris.MediaPlayer2.chromium.instance105121',
+    title: 'Mangu',
+    artist: 'Fourtwnty, Charita Utami',
+    album: 'Nalar',
+    durationMs: 261094,
+    trackId: '/org/chromium/MediaPlayer2/TrackList/Track6E48368',
+    ...overrides,
+  });
+}
+
 describe('buildTrackIdentityKey', () => {
   it('returns null for null player', () => {
     expect(buildTrackIdentityKey(null)).toBeNull();
@@ -47,6 +63,53 @@ describe('buildTrackIdentityKey', () => {
   it('changes when the bus name differs', () => {
     expect(buildTrackIdentityKey(snapshot({ busName: 'org.mpris.MediaPlayer2.spotify' }))).not.toBe(
       buildTrackIdentityKey(snapshot({ busName: 'org.mpris.MediaPlayer2.vlc' })),
+    );
+  });
+
+  it('keeps desktop Spotify track ids as part of identity', () => {
+    expect(buildTrackIdentityKey(snapshot({ trackId: '/com/spotify/track/a' }))).not.toBe(
+      buildTrackIdentityKey(snapshot({ trackId: '/com/spotify/track/b' })),
+    );
+  });
+
+  it('ignores browser track id churn for the same song', () => {
+    const first = browserSnapshot({
+      trackId: '/org/chromium/MediaPlayer2/TrackList/TrackA',
+    });
+    const second = browserSnapshot({
+      trackId: '/org/chromium/MediaPlayer2/TrackList/TrackB',
+    });
+
+    expect(buildTrackIdentityKey(first, { browserPlayerService: 'spotify' })).toBe(
+      buildTrackIdentityKey(second, { browserPlayerService: 'spotify' }),
+    );
+  });
+
+  it('changes browser identity when song metadata changes even if track id is reused', () => {
+    const reusedTrackId = '/org/chromium/MediaPlayer2/TrackList/Track6E48368';
+
+    expect(
+      buildTrackIdentityKey(
+        browserSnapshot({
+          title: 'Ramai Sepi Bersama',
+          artist: 'Hindia',
+          album: 'Ramai Sepi Bersama',
+          durationMs: 188046,
+          trackId: reusedTrackId,
+        }),
+        { browserPlayerService: 'spotify' },
+      ),
+    ).not.toBe(
+      buildTrackIdentityKey(
+        browserSnapshot({
+          title: 'Mangu',
+          artist: 'Fourtwnty, Charita Utami',
+          album: 'Nalar',
+          durationMs: 261094,
+          trackId: reusedTrackId,
+        }),
+        { browserPlayerService: 'spotify' },
+      ),
     );
   });
 

@@ -9,6 +9,7 @@ import { snapshotsEqual } from './player-mapping.js';
  * @import { RuntimeLogger } from '../logger.js'
  * @import { PlayerSnapshot } from '../../domain/mpris/types.js'
  * @import { PendingStableCandidate } from '../../domain/mpris/stability.js'
+ * @import { BrowserPlayerService } from '../../domain/settings/types.js'
  *
  * @typedef {(snapshot: PlayerSnapshot | null) => void} PlayerSnapshotCallback
  * @typedef {(positionMs: number | null) => void} PlayerPositionCallback
@@ -40,6 +41,9 @@ export class StablePlayerProxy {
   /** @type {Scheduler} */
   #schedule;
 
+  /** @type {() => BrowserPlayerService} */
+  #getBrowserPlayerService;
+
   /** @type {PlayerSnapshot | null} */
   #stableSnapshot = null;
 
@@ -55,7 +59,12 @@ export class StablePlayerProxy {
   /**
    * @param {RawPlayerProxy} rawProxy
    * @param {LifecycleRegistry} lifecycle
-   * @param {{ logger?: RuntimeLogger | null, now?: () => number, schedule: Scheduler }} options
+   * @param {{
+   *   logger?: RuntimeLogger | null,
+   *   now?: () => number,
+   *   schedule: Scheduler,
+   *   getBrowserPlayerService?: () => BrowserPlayerService,
+   * }} options
    */
   constructor(rawProxy, lifecycle, options) {
     this.#rawProxy = rawProxy;
@@ -63,6 +72,7 @@ export class StablePlayerProxy {
     this.#logger = options.logger ?? null;
     this.#now = options.now ?? (() => Date.now());
     this.#schedule = options.schedule;
+    this.#getBrowserPlayerService = options.getBrowserPlayerService ?? (() => 'auto');
 
     this.#lifecycle.add(() => {
       this.#cancelTimer();
@@ -121,10 +131,14 @@ export class StablePlayerProxy {
    * @returns {void}
    */
   #applySnapshot(candidate) {
-    const baseProfile = detectPlayerProfile(candidate ?? { busName: this.busName });
+    const profileOptions = { browserPlayerService: this.#getBrowserPlayerService() };
+    const baseProfile = detectPlayerProfile(candidate ?? { busName: this.busName }, profileOptions);
     const adapted = adaptPlayerSnapshot(candidate, baseProfile);
     const stableCandidate = adapted?.snapshot ?? null;
-    const profile = detectPlayerProfile(stableCandidate ?? candidate ?? { busName: this.busName });
+    const profile = detectPlayerProfile(
+      stableCandidate ?? candidate ?? { busName: this.busName },
+      profileOptions,
+    );
     const policy = policyForPlayerProfile(profile);
     const previous = this.#stableSnapshot;
     const result = reduceStablePlayerSnapshot({
@@ -145,26 +159,34 @@ export class StablePlayerProxy {
       title: stableCandidate?.title ?? candidate?.title ?? null,
     });
 
-    this.#updatePendingTimer(policy.debounceMetadataMs);
+    this.#updatePendingTimer({
+      advertisementRetentionMs: policy.advertisementRetentionMs,
+      debounceMetadataMs: policy.debounceMetadataMs,
+    });
     if (!snapshotsEqual(previous, this.#stableSnapshot)) {
       this.#emit();
     }
   }
 
   /**
-   * @param {number} debounceMetadataMs
+   * @param {{ advertisementRetentionMs: number, debounceMetadataMs: number }} policy
    * @returns {void}
    */
-  #updatePendingTimer(debounceMetadataMs) {
+  #updatePendingTimer(policy) {
     this.#cancelTimer();
-    if (this.#pendingCandidate === null || debounceMetadataMs <= 0) {
+    if (this.#pendingCandidate === null) {
       return;
     }
 
-    const remainingMs = Math.max(
-      0,
-      this.#pendingCandidate.firstSeenAtMs + debounceMetadataMs - this.#now(),
-    );
+    const delayMs =
+      this.#pendingCandidate.kind === 'advertisement'
+        ? policy.advertisementRetentionMs
+        : policy.debounceMetadataMs;
+    if (delayMs <= 0) {
+      return;
+    }
+
+    const remainingMs = Math.max(0, this.#pendingCandidate.firstSeenAtMs + delayMs - this.#now());
     this.#cancelPendingTimer = this.#schedule(() => {
       const pending = this.#pendingCandidate;
       this.#cancelPendingTimer = null;

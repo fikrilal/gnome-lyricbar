@@ -4,14 +4,17 @@ const MIN_MAX_WIDTH = 120;
 const MAX_MAX_WIDTH = 720;
 const DEFAULT_FALLBACK_MODE = 'track';
 const DEFAULT_PLAYER_PRIORITY = ['spotify'];
+const DEFAULT_BROWSER_PLAYER_SERVICE = 'spotify';
 const DEFAULT_TEXT_ALIGN = 'left';
 
 const PANEL_POSITIONS = new Set(['left', 'center', 'right']);
 const FALLBACK_MODES = new Set(['track', 'idle', 'hidden']);
+const BROWSER_PLAYER_SERVICES = new Set(['auto', 'spotify', 'generic']);
 const TEXT_ALIGNS = new Set(['left', 'center', 'right']);
 
 /**
  * @import {
+ *   BrowserPlayerService,
  *   FallbackMode,
  *   LyricBarSettings,
  *   PanelPosition,
@@ -31,6 +34,7 @@ export function normalizeSettings(raw) {
     textAlign: normalizeTextAlign(raw.textAlign),
     fallbackMode: normalizeFallbackMode(raw.fallbackMode),
     playerPriority: normalizePlayerPriority(raw.playerPriority),
+    browserPlayerService: normalizeBrowserPlayerService(raw.browserPlayerService),
     cacheEnabled: normalizeBoolean(raw.cacheEnabled, true),
     debugLogging: normalizeBoolean(raw.debugLogging, false),
   };
@@ -84,6 +88,16 @@ export function normalizePlayerPriority(value) {
     .filter((item) => item !== '');
 
   return [...new Set(normalized)];
+}
+
+/**
+ * @param {unknown} value
+ * @returns {BrowserPlayerService}
+ */
+export function normalizeBrowserPlayerService(value) {
+  return typeof value === 'string' && BROWSER_PLAYER_SERVICES.has(value)
+    ? /** @type {BrowserPlayerService} */ (value)
+    : DEFAULT_BROWSER_PLAYER_SERVICE;
 }
 
 /**

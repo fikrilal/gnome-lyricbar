@@ -128,6 +128,55 @@ describe('LyricsService', () => {
     expect(harness.provider.lookup).not.toHaveBeenCalled();
     expect(harness.listener).toHaveBeenLastCalledWith(playing, syncedResult);
   });
+
+  it('does not retrigger browser lookup when only generic browser track id changes', () => {
+    const harness = createHarness({
+      browserPlayerService: 'spotify',
+      cachedResult: syncedResult,
+    });
+    const first = browserSnapshot({
+      trackId: '/org/chromium/MediaPlayer2/TrackList/TrackA',
+    });
+    const second = browserSnapshot({
+      trackId: '/org/chromium/MediaPlayer2/TrackList/TrackB',
+    });
+
+    harness.service.setActivePlayer(first);
+    harness.service.setActivePlayer(second);
+
+    expect(harness.cache.get).toHaveBeenCalledTimes(1);
+    expect(harness.provider.lookup).not.toHaveBeenCalled();
+    expect(harness.listener).toHaveBeenLastCalledWith(second, syncedResult);
+  });
+
+  it('does retrigger browser lookup when song metadata changes with reused browser track id', () => {
+    const harness = createHarness({
+      browserPlayerService: 'spotify',
+      cachedResult: syncedResult,
+    });
+    const reusedTrackId = '/org/chromium/MediaPlayer2/TrackList/Track6E48368';
+    const first = browserSnapshot({
+      title: 'Ramai Sepi Bersama',
+      artist: 'Hindia',
+      album: 'Ramai Sepi Bersama',
+      durationMs: 188046,
+      trackId: reusedTrackId,
+    });
+    const second = browserSnapshot({
+      title: 'Mangu',
+      artist: 'Fourtwnty, Charita Utami',
+      album: 'Nalar',
+      durationMs: 261094,
+      trackId: reusedTrackId,
+    });
+
+    harness.service.setActivePlayer(first);
+    harness.service.setActivePlayer(second);
+
+    expect(harness.cache.get).toHaveBeenCalledTimes(2);
+    expect(harness.provider.lookup).not.toHaveBeenCalled();
+    expect(harness.listener).toHaveBeenLastCalledWith(second, syncedResult);
+  });
 });
 
 /**
@@ -148,9 +197,26 @@ function snapshot(overrides) {
 }
 
 /**
+ * @param {Partial<PlayerSnapshot>} overrides
+ * @returns {PlayerSnapshot}
+ */
+function browserSnapshot(overrides) {
+  return snapshot({
+    busName: 'org.mpris.MediaPlayer2.chromium.instance105121',
+    title: 'Mangu',
+    artist: 'Fourtwnty, Charita Utami',
+    album: 'Nalar',
+    durationMs: 261094,
+    trackId: '/org/chromium/MediaPlayer2/TrackList/Track6E48368',
+    ...overrides,
+  });
+}
+
+/**
  * @typedef {Readonly<{
  *   cachedResult?: LyricsProviderResult | null,
  *   deferCache?: boolean,
+ *   browserPlayerService?: import('../../src/domain/settings/types.js').BrowserPlayerService,
  * }>} HarnessOptions
  *
  * @param {HarnessOptions} options
@@ -188,7 +254,9 @@ function createHarness(options) {
     put: vi.fn(),
   };
 
-  const service = new LyricsService(lifecycle, provider, cache);
+  const service = new LyricsService(lifecycle, provider, cache, {
+    getBrowserPlayerService: () => options.browserPlayerService ?? 'auto',
+  });
   const listener = vi.fn();
   service.onLookupChanged(listener);
 
