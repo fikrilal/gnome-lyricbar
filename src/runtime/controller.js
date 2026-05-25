@@ -8,6 +8,7 @@ import {
   displayStateFromSyncedPosition,
 } from '../domain/display/lyrics-state.js';
 import { displayStateFromPlayer } from '../domain/display/player-state.js';
+import { shouldPollSyncedLyrics } from '../domain/display/sync-polling.js';
 import { buildIndicatorViewModel } from '../domain/display/view-model.js';
 import { selectActivePlayer } from '../domain/mpris/selection.js';
 import {
@@ -485,11 +486,11 @@ export class LyricBarController {
    * @returns {boolean}
    */
   #shouldPollSyncedLyrics() {
-    return (
-      this.#enabled &&
-      this.#activePlayer?.playbackStatus === 'Playing' &&
-      this.#currentLookup?.kind === 'synced'
-    );
+    return shouldPollSyncedLyrics({
+      enabled: this.#enabled,
+      player: this.#activePlayer,
+      lookup: this.#currentLookup,
+    });
   }
 
   /**

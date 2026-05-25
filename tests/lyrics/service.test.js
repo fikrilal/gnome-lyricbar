@@ -115,6 +115,19 @@ describe('LyricsService', () => {
     expect(harness.cache.get).toHaveBeenCalledTimes(1);
     expect(harness.provider.lookup).toHaveBeenCalledTimes(1);
   });
+
+  it('emits same-track playback status changes without retriggering lyrics lookup', () => {
+    const harness = createHarness({ cachedResult: syncedResult });
+    const stopped = snapshot({ playbackStatus: 'Stopped' });
+    const playing = snapshot({ playbackStatus: 'Playing' });
+
+    harness.service.setActivePlayer(stopped);
+    harness.service.setActivePlayer(playing);
+
+    expect(harness.cache.get).toHaveBeenCalledTimes(1);
+    expect(harness.provider.lookup).not.toHaveBeenCalled();
+    expect(harness.listener).toHaveBeenLastCalledWith(playing, syncedResult);
+  });
 });
 
 /**

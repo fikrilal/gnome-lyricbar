@@ -83,7 +83,17 @@ export class LyricsService {
 
     const key = buildTrackIdentityKey(player);
 
-    if (key === this.#currentKey && this.#sameSnapshot(player)) {
+    if (key === this.#currentKey) {
+      if (this.#sameSnapshot(player)) {
+        return;
+      }
+      this.#currentPlayer = player;
+      this.#logger?.debug('active-player-refresh', {
+        busName: player?.busName ?? null,
+        title: player?.title ?? null,
+        playbackStatus: player?.playbackStatus ?? null,
+      });
+      this.#emit();
       return;
     }
 
@@ -207,7 +217,8 @@ export class LyricsService {
       current.artist === player.artist &&
       current.album === player.album &&
       current.durationMs === player.durationMs &&
-      current.trackId === player.trackId
+      current.trackId === player.trackId &&
+      current.playbackStatus === player.playbackStatus
     );
   }
 
