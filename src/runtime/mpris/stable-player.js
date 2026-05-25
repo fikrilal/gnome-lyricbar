@@ -1,3 +1,4 @@
+import { adaptPlayerSnapshot } from '../../domain/mpris/player-adapter.js';
 import { detectPlayerProfile } from '../../domain/mpris/profile.js';
 import { policyForPlayerProfile } from '../../domain/mpris/profile-policy.js';
 import { reduceStablePlayerSnapshot } from '../../domain/mpris/stability.js';
@@ -120,13 +121,16 @@ export class StablePlayerProxy {
    * @returns {void}
    */
   #applySnapshot(candidate) {
-    const profile = detectPlayerProfile(candidate ?? { busName: this.busName });
+    const baseProfile = detectPlayerProfile(candidate ?? { busName: this.busName });
+    const adapted = adaptPlayerSnapshot(candidate, baseProfile);
+    const stableCandidate = adapted?.snapshot ?? null;
+    const profile = detectPlayerProfile(stableCandidate ?? candidate ?? { busName: this.busName });
     const policy = policyForPlayerProfile(profile);
     const previous = this.#stableSnapshot;
     const result = reduceStablePlayerSnapshot({
       previousStable: this.#stableSnapshot,
       pendingCandidate: this.#pendingCandidate,
-      candidate,
+      candidate: stableCandidate,
       policy,
       nowMs: this.#now(),
     });
@@ -135,9 +139,10 @@ export class StablePlayerProxy {
     this.#pendingCandidate = result.pendingCandidate;
     this.#logger?.debug('stable-snapshot-decision', {
       busName: this.busName,
+      adapter: adapted?.adapterId ?? null,
       decision: result.decision,
       profile: profile.id,
-      title: candidate?.title ?? null,
+      title: stableCandidate?.title ?? candidate?.title ?? null,
     });
 
     this.#updatePendingTimer(policy.debounceMetadataMs);

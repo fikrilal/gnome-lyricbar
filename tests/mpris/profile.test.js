@@ -24,6 +24,17 @@ describe('detectPlayerProfile', () => {
     ).toBe(PLAYER_PROFILES.chromiumBrowser);
   });
 
+  it('detects Spotify Web when browser metadata includes a Spotify track identifier', () => {
+    expect(
+      detectPlayerProfile({
+        busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
+        title: 'Nina',
+        artist: '.Feast',
+        trackId: '/com/spotify/track/1',
+      }),
+    ).toBe(PLAYER_PROFILES.spotifyWeb);
+  });
+
   it('detects Firefox browser MPRIS players', () => {
     expect(
       detectPlayerProfile({

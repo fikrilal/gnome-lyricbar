@@ -1,6 +1,7 @@
 /**
  * @typedef {
  *   | 'spotify-desktop'
+ *   | 'spotify-web'
  *   | 'chromium-browser'
  *   | 'firefox-browser'
  *   | 'generic-mpris'
@@ -16,6 +17,7 @@
  *   title?: unknown,
  *   artist?: unknown,
  *   album?: unknown,
+ *   trackId?: unknown,
  * }>} PlayerProfileInput
  */
 
@@ -25,6 +27,10 @@ export const PLAYER_PROFILES = Object.freeze({
   spotifyDesktop: Object.freeze({
     id: 'spotify-desktop',
     sourceKind: 'desktop',
+  }),
+  spotifyWeb: Object.freeze({
+    id: 'spotify-web',
+    sourceKind: 'browser',
   }),
   chromiumBrowser: Object.freeze({
     id: 'chromium-browser',
@@ -61,10 +67,16 @@ export function detectPlayerProfile(input) {
   }
 
   if (applicationName === 'chromium' || applicationName.startsWith('chromium.')) {
+    if (hasSpotifyWebEvidence(input)) {
+      return PLAYER_PROFILES.spotifyWeb;
+    }
     return PLAYER_PROFILES.chromiumBrowser;
   }
 
   if (applicationName === 'firefox' || applicationName.startsWith('firefox.')) {
+    if (hasSpotifyWebEvidence(input)) {
+      return PLAYER_PROFILES.spotifyWeb;
+    }
     return PLAYER_PROFILES.firefoxBrowser;
   }
 
@@ -86,4 +98,29 @@ function normalizeBusName(value) {
   }
 
   return trimmed;
+}
+
+/**
+ * Browser MPRIS bus names identify the browser, not the web app. Only classify
+ * Spotify Web when metadata carries a strong Spotify-shaped identifier.
+ *
+ * @param {PlayerProfileInput | null | undefined} input
+ * @returns {boolean}
+ */
+function hasSpotifyWebEvidence(input) {
+  const trackId = normalizeMaybeText(input?.trackId);
+  return trackId !== null && trackId.toLowerCase().includes('spotify');
+}
+
+/**
+ * @param {unknown} value
+ * @returns {string | null}
+ */
+function normalizeMaybeText(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed === '' ? null : trimmed;
 }

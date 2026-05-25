@@ -27,6 +27,12 @@ describe('policyForPlayerProfile', () => {
     });
   });
 
+  it('uses stabilizing metadata policy for Spotify Web players', () => {
+    expect(policyForPlayerProfile(PLAYER_PROFILES.spotifyWeb)).toEqual(
+      policyForPlayerProfile(PLAYER_PROFILES.chromiumBrowser),
+    );
+  });
+
   it('uses stabilizing metadata policy for Firefox browser players', () => {
     expect(policyForPlayerProfile(PLAYER_PROFILES.firefoxBrowser)).toEqual(
       policyForPlayerProfile(PLAYER_PROFILES.chromiumBrowser),

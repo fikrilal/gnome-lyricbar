@@ -61,6 +61,32 @@ describe('StablePlayerProxy', () => {
     expect(harness.stable.snapshot()).toEqual(candidate);
   });
 
+  it('emits adapted Spotify Web metadata after the debounce timer fires', () => {
+    const harness = createHarness({
+      busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
+      nowMs: 1000,
+    });
+    const candidate = snapshot({
+      title: 'Tewas Tertimbun Masa Lalu (TTM) - NDX A.K.A | Spotify',
+      artist: '',
+      album: '',
+      trackId: '/com/spotify/track/browser',
+    });
+
+    harness.stable.start();
+    harness.raw.emit(candidate);
+    harness.scheduler.advance(350);
+
+    expect(harness.listener).toHaveBeenLastCalledWith(
+      snapshot({
+        title: 'Tewas Tertimbun Masa Lalu (TTM)',
+        artist: 'NDX A.K.A',
+        album: '',
+        trackId: '/com/spotify/track/browser',
+      }),
+    );
+  });
+
   it('restarts debounce when browser candidate changes before acceptance', () => {
     const harness = createHarness({
       busName: 'org.mpris.MediaPlayer2.chromium.instance58782',

@@ -39,6 +39,7 @@ const GENERIC_POLICY = Object.freeze({
 /** @type {Readonly<Record<PlayerProfileId, PlayerProfilePolicy>>} */
 export const PLAYER_PROFILE_POLICIES = Object.freeze({
   [PLAYER_PROFILES.spotifyDesktop.id]: DESKTOP_POLICY,
+  [PLAYER_PROFILES.spotifyWeb.id]: BROWSER_POLICY,
   [PLAYER_PROFILES.chromiumBrowser.id]: BROWSER_POLICY,
   [PLAYER_PROFILES.firefoxBrowser.id]: BROWSER_POLICY,
   [PLAYER_PROFILES.genericMpris.id]: GENERIC_POLICY,
