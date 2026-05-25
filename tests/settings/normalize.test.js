@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   normalizeFallbackMode,
+  normalizeBrowserPlayerService,
   normalizeMaxWidth,
   normalizePanelPosition,
   normalizePlayerPriority,
@@ -18,6 +19,7 @@ describe('normalizeSettings', () => {
         textAlign: 'center',
         fallbackMode: 'hidden',
         playerPriority: ['spotify', 'firefox'],
+        browserPlayerService: 'generic',
         cacheEnabled: false,
         debugLogging: true,
       }),
@@ -27,6 +29,7 @@ describe('normalizeSettings', () => {
       textAlign: 'center',
       fallbackMode: 'hidden',
       playerPriority: ['spotify', 'firefox'],
+      browserPlayerService: 'generic',
       cacheEnabled: false,
       debugLogging: true,
     });
@@ -40,6 +43,7 @@ describe('normalizeSettings', () => {
         textAlign: 'bad',
         fallbackMode: 'loud',
         playerPriority: 'spotify',
+        browserPlayerService: 'bad',
         cacheEnabled: 'yes',
         debugLogging: 'no',
       }),
@@ -49,6 +53,7 @@ describe('normalizeSettings', () => {
       textAlign: 'left',
       fallbackMode: 'track',
       playerPriority: ['spotify'],
+      browserPlayerService: 'spotify',
       cacheEnabled: true,
       debugLogging: false,
     });
@@ -95,6 +100,18 @@ describe('normalizePlayerPriority', () => {
       'spotify',
       'firefox',
     ]);
+  });
+});
+
+describe('normalizeBrowserPlayerService', () => {
+  it('accepts known browser player services', () => {
+    expect(normalizeBrowserPlayerService('auto')).toBe('auto');
+    expect(normalizeBrowserPlayerService('spotify')).toBe('spotify');
+    expect(normalizeBrowserPlayerService('generic')).toBe('generic');
+  });
+
+  it('rejects unknown browser player services', () => {
+    expect(normalizeBrowserPlayerService('youtube')).toBe('spotify');
   });
 });
 

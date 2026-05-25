@@ -8,7 +8,10 @@
  * @returns {boolean}
  */
 export function shouldRefreshPlayerSelection(previous, next) {
-  return !sameStringList(previous.playerPriority, next.playerPriority);
+  return (
+    !sameStringList(previous.playerPriority, next.playerPriority) ||
+    previous.browserPlayerService !== next.browserPlayerService
+  );
 }
 
 /**

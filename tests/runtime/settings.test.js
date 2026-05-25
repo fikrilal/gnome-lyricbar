@@ -18,6 +18,7 @@ describe('SettingsAdapter', () => {
       textAlign: 'right',
       fallbackMode: 'track',
       playerPriority: ['spotify'],
+      browserPlayerService: 'spotify',
       cacheEnabled: true,
       debugLogging: false,
     });
@@ -31,16 +32,16 @@ describe('SettingsAdapter', () => {
 
     adapter.subscribe(callback);
 
-    expect(backend.connect).toHaveBeenCalledTimes(7);
+    expect(backend.connect).toHaveBeenCalledTimes(8);
     backend.emit('changed::max-width');
 
     expect(callback).toHaveBeenCalledWith(adapter.read());
 
     lifecycle.dispose();
 
-    expect(backend.disconnect).toHaveBeenCalledTimes(7);
-    expect(backend.disconnect).toHaveBeenNthCalledWith(1, 7);
-    expect(backend.disconnect).toHaveBeenNthCalledWith(7, 1);
+    expect(backend.disconnect).toHaveBeenCalledTimes(8);
+    expect(backend.disconnect).toHaveBeenNthCalledWith(1, 8);
+    expect(backend.disconnect).toHaveBeenNthCalledWith(8, 1);
   });
 });
 
@@ -63,6 +64,9 @@ function createSettingsBackend(overrides = {}) {
       }
       if (key === 'fallback-mode') {
         return 'track';
+      }
+      if (key === 'browser-player-service') {
+        return 'spotify';
       }
       return '';
     }),

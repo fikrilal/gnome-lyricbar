@@ -20,6 +20,15 @@ describe('shouldRefreshPlayerSelection', () => {
     expect(shouldRefreshPlayerSelection(settings(['spotify']), settings(['vlc']))).toBe(true);
   });
 
+  it('returns true when browser player service changes', () => {
+    expect(
+      shouldRefreshPlayerSelection(
+        settings(['spotify'], { browserPlayerService: 'spotify' }),
+        settings(['spotify'], { browserPlayerService: 'generic' }),
+      ),
+    ).toBe(true);
+  });
+
   it('ignores unrelated display settings', () => {
     expect(
       shouldRefreshPlayerSelection(
@@ -49,14 +58,16 @@ describe('shouldRepositionPanelIndicator', () => {
  * @param {readonly string[]} playerPriority
  * @returns {import('../../src/domain/settings/types.js').LyricBarSettings}
  */
-function settings(playerPriority) {
+function settings(playerPriority, overrides = {}) {
   return {
     panelPosition: 'center',
     maxWidth: 360,
     textAlign: 'left',
     fallbackMode: 'track',
     playerPriority,
+    browserPlayerService: 'spotify',
     cacheEnabled: true,
     debugLogging: false,
+    ...overrides,
   };
 }

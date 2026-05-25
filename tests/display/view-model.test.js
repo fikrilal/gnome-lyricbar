@@ -13,6 +13,7 @@ const baseSettings = {
   textAlign: 'left',
   fallbackMode: 'track',
   playerPriority: ['spotify'],
+  browserPlayerService: 'spotify',
   cacheEnabled: true,
   debugLogging: false,
 };

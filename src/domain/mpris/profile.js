@@ -18,7 +18,15 @@
  *   artist?: unknown,
  *   album?: unknown,
  *   trackId?: unknown,
+ *   durationMs?: unknown,
+ *   playbackStatus?: unknown,
  * }>} PlayerProfileInput
+ *
+ * @typedef {'auto' | 'spotify' | 'generic'} BrowserPlayerService
+ *
+ * @typedef {Readonly<{
+ *   browserPlayerService?: BrowserPlayerService | null | undefined,
+ * }>} PlayerProfileOptions
  */
 
 const MPRIS_BUS_PREFIX = 'org.mpris.MediaPlayer2.';
@@ -52,9 +60,10 @@ export const PLAYER_PROFILES = Object.freeze({
  * players intentionally start as browser-family profiles.
  *
  * @param {PlayerProfileInput | null | undefined} input
+ * @param {PlayerProfileOptions} [options]
  * @returns {PlayerProfile}
  */
-export function detectPlayerProfile(input) {
+export function detectPlayerProfile(input, options = {}) {
   const busName = normalizeBusName(input?.busName);
   if (busName === null) {
     return PLAYER_PROFILES.genericMpris;
@@ -67,14 +76,14 @@ export function detectPlayerProfile(input) {
   }
 
   if (applicationName === 'chromium' || applicationName.startsWith('chromium.')) {
-    if (hasSpotifyWebEvidence(input)) {
+    if (shouldUseSpotifyWebProfile(input, options)) {
       return PLAYER_PROFILES.spotifyWeb;
     }
     return PLAYER_PROFILES.chromiumBrowser;
   }
 
   if (applicationName === 'firefox' || applicationName.startsWith('firefox.')) {
-    if (hasSpotifyWebEvidence(input)) {
+    if (shouldUseSpotifyWebProfile(input, options)) {
       return PLAYER_PROFILES.spotifyWeb;
     }
     return PLAYER_PROFILES.firefoxBrowser;
@@ -110,6 +119,55 @@ function normalizeBusName(value) {
 function hasSpotifyWebEvidence(input) {
   const trackId = normalizeMaybeText(input?.trackId);
   return trackId !== null && trackId.toLowerCase().includes('spotify');
+}
+
+/**
+ * Browser MPRIS players identify the browser, not the media service. LyricBar
+ * is Spotify-first, so users can explicitly bias music-like browser metadata
+ * toward Spotify Web while keeping auto/generic behavior available.
+ *
+ * @param {PlayerProfileInput | null | undefined} input
+ * @param {PlayerProfileOptions} options
+ * @returns {boolean}
+ */
+function shouldUseSpotifyWebProfile(input, options) {
+  const browserPlayerService = options.browserPlayerService ?? 'auto';
+
+  if (browserPlayerService === 'generic') {
+    return false;
+  }
+
+  if (browserPlayerService === 'spotify') {
+    return isMusicLikeBrowserMetadata(input);
+  }
+
+  return hasSpotifyWebEvidence(input);
+}
+
+/**
+ * @param {PlayerProfileInput | null | undefined} input
+ * @returns {boolean}
+ */
+function isMusicLikeBrowserMetadata(input) {
+  const title = normalizeMaybeText(input?.title);
+  const artist = normalizeMaybeText(input?.artist);
+  if (title === null || artist === null) {
+    return false;
+  }
+
+  if (title.toLowerCase() === 'advertisement') {
+    return false;
+  }
+
+  if (input?.playbackStatus === 'Stopped') {
+    return false;
+  }
+
+  if (typeof input?.durationMs !== 'number' || !Number.isFinite(input.durationMs)) {
+    return true;
+  }
+
+  return input.durationMs >= 30_000;
 }
 
 /**

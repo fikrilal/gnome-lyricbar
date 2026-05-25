@@ -154,6 +154,7 @@ export class LyricBarController {
       const previousSettings = this.#currentSettings;
       this.#currentSettings = settings;
       this.#logger?.debug('settings-changed', {
+        browserPlayerService: settings.browserPlayerService,
         debugLogging: settings.debugLogging,
         maxWidth: settings.maxWidth,
         panelPosition: settings.panelPosition,
@@ -386,6 +387,7 @@ export class LyricBarController {
       logger: this.#logger?.child('player'),
     });
     const proxy = new StablePlayerProxy(rawProxy, child, {
+      getBrowserPlayerService: () => this.#currentSettings?.browserPlayerService ?? 'spotify',
       logger: this.#logger?.child('player') ?? null,
       schedule: scheduleTimeout,
     });

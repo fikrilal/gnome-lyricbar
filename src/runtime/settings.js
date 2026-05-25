@@ -20,6 +20,7 @@ const SETTING_KEYS = [
   'text-align',
   'fallback-mode',
   'player-priority',
+  'browser-player-service',
   'cache-enabled',
   'debug-logging',
 ];
@@ -47,6 +48,7 @@ export class SettingsAdapter {
       textAlign: this.#settings.get_string('text-align'),
       fallbackMode: this.#settings.get_string('fallback-mode'),
       playerPriority: this.#settings.get_strv('player-priority'),
+      browserPlayerService: this.#settings.get_string('browser-player-service'),
       cacheEnabled: this.#settings.get_boolean('cache-enabled'),
       debugLogging: this.#settings.get_boolean('debug-logging'),
     });

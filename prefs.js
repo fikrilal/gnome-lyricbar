@@ -171,6 +171,45 @@ export default class LyricBarPreferences extends ExtensionPreferences {
     settings.bind('cache-enabled', cacheEnabledRow, 'active', Gio.SettingsBindFlags.DEFAULT);
 
     behaviorGroup.add(playerPriorityRow);
+
+    // browser-player-service: ComboRow
+    const browserPlayerServices = ['auto', 'spotify', 'generic'];
+    const browserPlayerServiceRow = new Adw.ComboRow({
+      title: 'Browser player service',
+      subtitle: 'How browser media players should be interpreted.',
+      model: new Gtk.StringList({ strings: ['Auto detect', 'Spotify Web', 'Generic browser'] }),
+    });
+    const currentBrowserPlayerService = settings.get_string('browser-player-service');
+    const browserPlayerServiceIndex = browserPlayerServices.indexOf(currentBrowserPlayerService);
+    if (browserPlayerServiceIndex !== -1) {
+      browserPlayerServiceRow.selected = browserPlayerServiceIndex;
+    }
+    const browserPlayerServiceNotifyId = browserPlayerServiceRow.connect('notify::selected', () => {
+      const { selected } = browserPlayerServiceRow;
+      if (selected >= 0 && selected < browserPlayerServices.length) {
+        settings.set_string('browser-player-service', browserPlayerServices[selected]);
+      }
+    });
+    connections.push([browserPlayerServiceRow, browserPlayerServiceNotifyId]);
+
+    const browserPlayerServiceChangedId = settings.connect(
+      'changed::browser-player-service',
+      () => {
+        const currentBrowserPlayerService = settings.get_string('browser-player-service');
+        const browserPlayerServiceIndex = browserPlayerServices.indexOf(
+          currentBrowserPlayerService,
+        );
+        if (
+          browserPlayerServiceIndex !== -1 &&
+          browserPlayerServiceRow.selected !== browserPlayerServiceIndex
+        ) {
+          browserPlayerServiceRow.selected = browserPlayerServiceIndex;
+        }
+      },
+    );
+    connections.push([settings, browserPlayerServiceChangedId]);
+
+    behaviorGroup.add(browserPlayerServiceRow);
     behaviorGroup.add(cacheEnabledRow);
 
     // 3. Debugging Group

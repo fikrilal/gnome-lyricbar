@@ -24,7 +24,7 @@ describe('detectPlayerProfile', () => {
     ).toBe(PLAYER_PROFILES.chromiumBrowser);
   });
 
-  it('detects Spotify Web when browser metadata includes a Spotify track identifier', () => {
+  it('detects Spotify Web in auto mode when browser metadata includes a Spotify track identifier', () => {
     expect(
       detectPlayerProfile({
         busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
@@ -33,6 +33,52 @@ describe('detectPlayerProfile', () => {
         trackId: '/com/spotify/track/1',
       }),
     ).toBe(PLAYER_PROFILES.spotifyWeb);
+  });
+
+  it('detects Spotify Web when Spotify browser service is configured and metadata looks like music', () => {
+    expect(
+      detectPlayerProfile(
+        {
+          busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
+          title: 'Mangu',
+          artist: 'Fourtwnty, Charita Utami',
+          album: 'Nalar',
+          durationMs: 261094,
+          trackId: '/org/chromium/MediaPlayer2/TrackList/Track6E48368',
+          playbackStatus: 'Playing',
+        },
+        { browserPlayerService: 'spotify' },
+      ),
+    ).toBe(PLAYER_PROFILES.spotifyWeb);
+  });
+
+  it('keeps browser players generic when generic browser service is configured', () => {
+    expect(
+      detectPlayerProfile(
+        {
+          busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
+          title: 'Mangu',
+          artist: 'Fourtwnty, Charita Utami',
+          trackId: '/com/spotify/track/1',
+        },
+        { browserPlayerService: 'generic' },
+      ),
+    ).toBe(PLAYER_PROFILES.chromiumBrowser);
+  });
+
+  it('does not infer Spotify Web from advertisements', () => {
+    expect(
+      detectPlayerProfile(
+        {
+          busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
+          title: 'Advertisement',
+          artist: 'Spotify',
+          durationMs: 30_000,
+          playbackStatus: 'Playing',
+        },
+        { browserPlayerService: 'spotify' },
+      ),
+    ).toBe(PLAYER_PROFILES.chromiumBrowser);
   });
 
   it('detects Firefox browser MPRIS players', () => {
