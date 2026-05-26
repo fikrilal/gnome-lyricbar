@@ -395,10 +395,23 @@ export class LyricBarController {
       schedule: scheduleTimeout,
     });
     proxy.onSnapshot(() => {
+      this.#refreshPeerPlayerProperties(proxy.busName);
       this.#refreshSelection();
     });
     this.#proxies.set(busName, { proxy, lifecycle: child });
     proxy.start();
+  }
+
+  /**
+   * @param {string} sourceBusName
+   * @returns {void}
+   */
+  #refreshPeerPlayerProperties(sourceBusName) {
+    for (const [busName, tracked] of this.#proxies) {
+      if (busName !== sourceBusName) {
+        tracked.proxy.refreshProperties();
+      }
+    }
   }
 
   /**
@@ -430,6 +443,7 @@ export class LyricBarController {
 
     this.#logger?.debug('active-player-selected', {
       busName: active?.busName ?? null,
+      playbackStatus: active?.playbackStatus ?? null,
       title: active?.title ?? null,
     });
 

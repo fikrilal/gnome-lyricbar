@@ -191,6 +191,13 @@ export class PlayerProxy {
   }
 
   /**
+   * @returns {void}
+   */
+  refreshProperties() {
+    this.#refreshAllProperties();
+  }
+
+  /**
    * @param {any} proxy
    * @returns {void}
    */
@@ -292,6 +299,7 @@ export class PlayerProxy {
     this.#snapshot = next;
     this.#logger?.debug('snapshot-changed', {
       busName: this.#busName,
+      playbackStatus: next?.playbackStatus ?? null,
       title: next?.title ?? null,
     });
     for (const listener of this.#listeners) {

@@ -143,6 +143,17 @@ describe('StablePlayerProxy', () => {
     expect(harness.raw.readPosition).toHaveBeenCalledWith(callback);
   });
 
+  it('delegates property refreshes to the raw player', () => {
+    const harness = createHarness({
+      busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
+      nowMs: 1000,
+    });
+
+    harness.stable.refreshProperties();
+
+    expect(harness.raw.refreshProperties).toHaveBeenCalledTimes(1);
+  });
+
   it('cancels pending timers on lifecycle disposal', () => {
     const harness = createHarness({
       busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
@@ -192,6 +203,7 @@ function createHarness(options) {
  *   snapshot: ReturnType<typeof vi.fn>,
  *   onSnapshot: ReturnType<typeof vi.fn>,
  *   readPosition: ReturnType<typeof vi.fn>,
+ *   refreshProperties: ReturnType<typeof vi.fn>,
  *   start: ReturnType<typeof vi.fn>,
  *   emit(snapshot: PlayerSnapshot | null): void,
  * }}
@@ -210,6 +222,7 @@ function createRawPlayer(busName) {
       callback(currentSnapshot);
     }),
     readPosition: vi.fn(),
+    refreshProperties: vi.fn(),
     start: vi.fn(),
     emit(snapshotValue) {
       currentSnapshot = snapshotValue;
