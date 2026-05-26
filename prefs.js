@@ -11,6 +11,9 @@ export default class LyricBarPreferences extends ExtensionPreferences {
    */
   fillPreferencesWindow(window) {
     const settings = this.getSettings();
+    const metadata = /** @type {Record<string, unknown>} */ (
+      /** @type {{ metadata?: unknown }} */ (this).metadata ?? {}
+    );
     /** @type {any[]} */
     const connections = [];
 
@@ -227,9 +230,39 @@ export default class LyricBarPreferences extends ExtensionPreferences {
 
     debuggingGroup.add(debugLoggingRow);
 
+    // 4. About Group
+    const aboutGroup = new Adw.PreferencesGroup({
+      title: 'About',
+    });
+
+    const versionRow = new Adw.ActionRow({
+      title: 'Version',
+      subtitle: readMetadataText(metadata, 'version-name', 'Unknown'),
+    });
+
+    const uuidRow = new Adw.ActionRow({
+      title: 'Extension UUID',
+      subtitle: readMetadataText(metadata, 'uuid', 'lyricbar@fikrilal.github.io'),
+    });
+
+    const websiteRow = new Adw.ActionRow({
+      title: 'Website',
+      subtitle: readMetadataText(metadata, 'url', 'https://github.com/fikrilal/gnome-lyricbar'),
+    });
+    websiteRow.activatable = true;
+    const websiteActivateId = websiteRow.connect('activated', () => {
+      Gtk.show_uri(window, websiteRow.subtitle, 0);
+    });
+    connections.push([websiteRow, websiteActivateId]);
+
+    aboutGroup.add(versionRow);
+    aboutGroup.add(uuidRow);
+    aboutGroup.add(websiteRow);
+
     page.add(displayGroup);
     page.add(behaviorGroup);
     page.add(debuggingGroup);
+    page.add(aboutGroup);
 
     window.add(page);
 
@@ -245,4 +278,15 @@ export default class LyricBarPreferences extends ExtensionPreferences {
       window.disconnect(windowDestroyId);
     });
   }
+}
+
+/**
+ * @param {Record<string, unknown>} metadata
+ * @param {string} key
+ * @param {string} fallback
+ * @returns {string}
+ */
+function readMetadataText(metadata, key, fallback) {
+  const value = metadata[key];
+  return typeof value === 'string' && value.trim() !== '' ? value : fallback;
 }
