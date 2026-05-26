@@ -1,0 +1,33 @@
+{
+  "name": "youtube-music-web-normal",
+  "description": "Chrome MPRIS metadata captured from normal YouTube Music playback.",
+  "busName": "org.mpris.MediaPlayer2.chromium.instance6544",
+  "rootProperties": {
+    "Identity": "Chrome",
+    "CanQuit": false,
+    "CanRaise": false,
+    "HasTrackList": false
+  },
+  "playerProperties": {
+    "PlaybackStatus": "Playing",
+    "Position": 151467846,
+    "Metadata": {
+      "mpris:artUrl": "file:///tmp/.com.google.Chrome.mmRFBN",
+      "mpris:length": 205341000,
+      "mpris:trackid": "/org/chromium/MediaPlayer2/TrackList/Track22C9441C7D270DC57830A101D2310234",
+      "xesam:album": "",
+      "xesam:artist": ["DJ Snake"],
+      "xesam:title": "Let Me Love You"
+    }
+  },
+  "positionSamplesMs": [151468, 151971, 152474, 152977, 153479],
+  "expectedSnapshot": {
+    "busName": "org.mpris.MediaPlayer2.chromium.instance6544",
+    "title": "Let Me Love You",
+    "artist": "DJ Snake",
+    "album": "",
+    "durationMs": 205341,
+    "trackId": "/org/chromium/MediaPlayer2/TrackList/Track22C9441C7D270DC57830A101D2310234",
+    "playbackStatus": "Playing"
+  }
+}
