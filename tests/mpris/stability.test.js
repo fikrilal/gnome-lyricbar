@@ -204,6 +204,35 @@ describe('reduceStablePlayerSnapshot', () => {
     });
   });
 
+  it('keeps the debounce window but refreshes same-track playback status', () => {
+    const previousStable = snapshot({ title: 'Older Song', artist: 'Older Artist' });
+    const stoppedCandidate = snapshot({ playbackStatus: 'Stopped' });
+    const playingCandidate = snapshot({ playbackStatus: 'Playing' });
+    const pendingCandidate = {
+      snapshot: stoppedCandidate,
+      firstSeenAtMs: 1000,
+      kind: /** @type {'metadata'} */ ('metadata'),
+    };
+
+    expect(
+      reduceStablePlayerSnapshot({
+        previousStable,
+        pendingCandidate,
+        candidate: playingCandidate,
+        policy: browserPolicy,
+        nowMs: 1200,
+      }),
+    ).toEqual({
+      stableSnapshot: previousStable,
+      pendingCandidate: {
+        snapshot: playingCandidate,
+        firstSeenAtMs: 1000,
+        kind: 'metadata',
+      },
+      decision: 'held',
+    });
+  });
+
   it('accepts full browser metadata after the debounce window has elapsed', () => {
     const previousStable = snapshot({ title: 'Older Song', artist: 'Older Artist' });
     const candidate = snapshot({ title: 'Nina', artist: '.Feast' });

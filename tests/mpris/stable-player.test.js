@@ -131,6 +131,27 @@ describe('StablePlayerProxy', () => {
     expect(harness.stable.snapshot()).toEqual(second);
   });
 
+  it('accepts the latest browser playback status for the same pending track', () => {
+    const harness = createHarness({
+      busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
+      nowMs: 1000,
+    });
+    const stopped = snapshot({ playbackStatus: 'Stopped' });
+    const playing = snapshot({ playbackStatus: 'Playing' });
+
+    harness.stable.start();
+    harness.raw.emit(stopped);
+    harness.scheduler.advance(100);
+    harness.raw.emit(playing);
+    harness.scheduler.advance(249);
+
+    expect(harness.stable.snapshot()).toBeNull();
+
+    harness.scheduler.advance(1);
+    expect(harness.listener).toHaveBeenLastCalledWith(playing);
+    expect(harness.stable.snapshot()).toEqual(playing);
+  });
+
   it('delegates position reads to the raw player', () => {
     const harness = createHarness({
       busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
