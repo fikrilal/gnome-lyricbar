@@ -247,6 +247,26 @@ export default class LyricBarPreferences extends ExtensionPreferences {
     copyDiagnosticsRow.add_suffix(copyDiagnosticsButton);
     debuggingGroup.add(copyDiagnosticsRow);
 
+    const openIssueRow = new Adw.ActionRow({
+      title: 'Open issue',
+      subtitle: 'Open GitHub issue tracker in your browser.',
+    });
+    const openIssueButton = new Gtk.Button({
+      icon_name: 'dialog-question-symbolic',
+      valign: Gtk.Align.CENTER,
+      tooltip_text: 'Open issue',
+    });
+    const openIssueId = openIssueButton.connect('clicked', () => {
+      Gtk.show_uri(
+        window,
+        `${readMetadataText(metadata, 'url', 'https://github.com/fikrilal/gnome-lyricbar')}/issues/new`,
+        0,
+      );
+    });
+    connections.push([openIssueButton, openIssueId]);
+    openIssueRow.add_suffix(openIssueButton);
+    debuggingGroup.add(openIssueRow);
+
     // 4. About Group
     const aboutGroup = new Adw.PreferencesGroup({
       title: 'About',
