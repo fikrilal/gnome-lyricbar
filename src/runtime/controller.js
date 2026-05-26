@@ -312,7 +312,7 @@ export class LyricBarController {
     );
 
     this.#lyricsService = new LyricsService(lifecycle, provider, cache, {
-      getBrowserPlayerService: () => this.#currentSettings?.browserPlayerService ?? 'spotify',
+      getBrowserPlayerService: () => this.#currentSettings?.browserPlayerService ?? 'auto',
       logger,
     });
     this.#lyricsService.onLookupChanged((player, lookup) => {
@@ -390,7 +390,7 @@ export class LyricBarController {
       logger: this.#logger?.child('player'),
     });
     const proxy = new StablePlayerProxy(rawProxy, child, {
-      getBrowserPlayerService: () => this.#currentSettings?.browserPlayerService ?? 'spotify',
+      getBrowserPlayerService: () => this.#currentSettings?.browserPlayerService ?? 'auto',
       logger: this.#logger?.child('player') ?? null,
       schedule: scheduleTimeout,
     });

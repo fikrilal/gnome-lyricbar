@@ -53,7 +53,7 @@ describe('normalizeSettings', () => {
       textAlign: 'left',
       fallbackMode: 'track',
       playerPriority: ['spotify'],
-      browserPlayerService: 'spotify',
+      browserPlayerService: 'auto',
       cacheEnabled: true,
       debugLogging: false,
     });
@@ -112,7 +112,7 @@ describe('normalizeBrowserPlayerService', () => {
   });
 
   it('rejects unknown browser player services', () => {
-    expect(normalizeBrowserPlayerService('youtube')).toBe('spotify');
+    expect(normalizeBrowserPlayerService('youtube')).toBe('auto');
   });
 });
 

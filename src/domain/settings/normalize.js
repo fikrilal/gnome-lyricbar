@@ -4,7 +4,7 @@ const MIN_MAX_WIDTH = 120;
 const MAX_MAX_WIDTH = 720;
 const DEFAULT_FALLBACK_MODE = 'track';
 const DEFAULT_PLAYER_PRIORITY = ['spotify'];
-const DEFAULT_BROWSER_PLAYER_SERVICE = 'spotify';
+const DEFAULT_BROWSER_PLAYER_SERVICE = 'auto';
 const DEFAULT_TEXT_ALIGN = 'left';
 
 const PANEL_POSITIONS = new Set(['left', 'center', 'right']);

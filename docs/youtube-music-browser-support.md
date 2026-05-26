@@ -115,7 +115,7 @@ YouTube Music
 Generic browser
 ```
 
-Default can remain `spotify` for the current product promise. YouTube Music users can explicitly switch the browser profile until we have stronger auto-detection evidence.
+Default should be `auto`. In auto mode LyricBar should only use service-specific behavior when MPRIS carries strong evidence. Otherwise, browser music should stay on the generic browser profile, which avoids misclassifying YouTube Music as Spotify Web while still supporting synced lyric lookup and position polling.
 
 ### YouTube Music Profile
 

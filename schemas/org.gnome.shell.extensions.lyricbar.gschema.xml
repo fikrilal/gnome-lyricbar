@@ -28,7 +28,7 @@
       <description>Preferred MPRIS player bus-name fragments, in priority order.</description>
     </key>
     <key name="browser-player-service" type="s">
-      <default>'spotify'</default>
+      <default>'auto'</default>
       <summary>Browser player service</summary>
       <description>How browser MPRIS players should be interpreted ('auto', 'spotify', 'youtube-music', or 'generic').</description>
     </key>
