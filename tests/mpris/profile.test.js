@@ -52,6 +52,38 @@ describe('detectPlayerProfile', () => {
     ).toBe(PLAYER_PROFILES.spotifyWeb);
   });
 
+  it('detects YouTube Music Web when YouTube Music browser service is configured and metadata looks like music', () => {
+    expect(
+      detectPlayerProfile(
+        {
+          busName: 'org.mpris.MediaPlayer2.chromium.instance6544',
+          title: 'Let Me Love You',
+          artist: 'DJ Snake',
+          album: '',
+          durationMs: 205341,
+          trackId: '/org/chromium/MediaPlayer2/TrackList/Track22C9441C7D270DC57830A101D2310234',
+          playbackStatus: 'Playing',
+        },
+        { browserPlayerService: 'youtube-music' },
+      ),
+    ).toBe(PLAYER_PROFILES.youtubeMusicWeb);
+  });
+
+  it('detects YouTube Music Web for Firefox when YouTube Music browser service is configured', () => {
+    expect(
+      detectPlayerProfile(
+        {
+          busName: 'org.mpris.MediaPlayer2.firefox.instance1',
+          title: 'Heathens',
+          artist: 'twenty one pilots',
+          durationMs: 217921,
+          playbackStatus: 'Playing',
+        },
+        { browserPlayerService: 'youtube-music' },
+      ),
+    ).toBe(PLAYER_PROFILES.youtubeMusicWeb);
+  });
+
   it('keeps browser players generic when generic browser service is configured', () => {
     expect(
       detectPlayerProfile(
@@ -62,6 +94,21 @@ describe('detectPlayerProfile', () => {
           trackId: '/com/spotify/track/1',
         },
         { browserPlayerService: 'generic' },
+      ),
+    ).toBe(PLAYER_PROFILES.chromiumBrowser);
+  });
+
+  it('does not infer YouTube Music Web from advertisements', () => {
+    expect(
+      detectPlayerProfile(
+        {
+          busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
+          title: 'Advertisement',
+          artist: 'YouTube Music',
+          durationMs: 30_000,
+          playbackStatus: 'Playing',
+        },
+        { browserPlayerService: 'youtube-music' },
       ),
     ).toBe(PLAYER_PROFILES.chromiumBrowser);
   });

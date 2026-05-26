@@ -8,6 +8,7 @@ This directory is the source of truth for LyricBar product direction, engineerin
 - [Engineering proposal](engineering-proposal.md): architecture, stack, module boundaries, testing, CI, release, and risks.
 - [Player profile architecture](player-profile-architecture.md): MPRIS profile and metadata stability design for Spotify Desktop, browser players, YouTube Music, and Apple Music.
 - [Spotify Web support improvements](spotify-web-support-improvements.md): live MPRIS findings and phased improvements for better Spotify browser support.
+- [YouTube Music browser support](youtube-music-browser-support.md): live MPRIS findings and phased work for explicit YouTube Music browser compatibility.
 - [Privacy](privacy.md): network requests, local cache, logs, and data handling.
 - [Troubleshooting](troubleshooting.md): install, runtime, player selection, lyric sync, and preference issues.
 - [Release checklist](release-checklist.md): public release gates and runtime scenarios.
@@ -27,6 +28,7 @@ docs/
   engineering-proposal.md
   player-profile-architecture.md
   spotify-web-support-improvements.md
+  youtube-music-browser-support.md
   privacy.md
   troubleshooting.md
   release-checklist.md

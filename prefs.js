@@ -176,11 +176,13 @@ export default class LyricBarPreferences extends ExtensionPreferences {
     behaviorGroup.add(playerPriorityRow);
 
     // browser-player-service: ComboRow
-    const browserPlayerServices = ['auto', 'spotify', 'generic'];
+    const browserPlayerServices = ['auto', 'spotify', 'youtube-music', 'generic'];
     const browserPlayerServiceRow = new Adw.ComboRow({
       title: 'Browser player service',
       subtitle: 'How browser media players should be interpreted.',
-      model: new Gtk.StringList({ strings: ['Auto detect', 'Spotify Web', 'Generic browser'] }),
+      model: new Gtk.StringList({
+        strings: ['Auto detect', 'Spotify Web', 'YouTube Music', 'Generic browser'],
+      }),
     });
     const currentBrowserPlayerService = settings.get_string('browser-player-service');
     const browserPlayerServiceIndex = browserPlayerServices.indexOf(currentBrowserPlayerService);

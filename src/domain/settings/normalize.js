@@ -9,7 +9,7 @@ const DEFAULT_TEXT_ALIGN = 'left';
 
 const PANEL_POSITIONS = new Set(['left', 'center', 'right']);
 const FALLBACK_MODES = new Set(['track', 'idle', 'hidden']);
-const BROWSER_PLAYER_SERVICES = new Set(['auto', 'spotify', 'generic']);
+const BROWSER_PLAYER_SERVICES = new Set(['auto', 'spotify', 'youtube-music', 'generic']);
 const TEXT_ALIGNS = new Set(['left', 'center', 'right']);
 
 /**

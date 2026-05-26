@@ -2,6 +2,7 @@
  * @typedef {
  *   | 'spotify-desktop'
  *   | 'spotify-web'
+ *   | 'youtube-music-web'
  *   | 'chromium-browser'
  *   | 'firefox-browser'
  *   | 'generic-mpris'
@@ -22,7 +23,7 @@
  *   playbackStatus?: unknown,
  * }>} PlayerProfileInput
  *
- * @typedef {'auto' | 'spotify' | 'generic'} BrowserPlayerService
+ * @typedef {'auto' | 'spotify' | 'youtube-music' | 'generic'} BrowserPlayerService
  *
  * @typedef {Readonly<{
  *   browserPlayerService?: BrowserPlayerService | null | undefined,
@@ -38,6 +39,10 @@ export const PLAYER_PROFILES = Object.freeze({
   }),
   spotifyWeb: Object.freeze({
     id: 'spotify-web',
+    sourceKind: 'browser',
+  }),
+  youtubeMusicWeb: Object.freeze({
+    id: 'youtube-music-web',
     sourceKind: 'browser',
   }),
   chromiumBrowser: Object.freeze({
@@ -76,6 +81,9 @@ export function detectPlayerProfile(input, options = {}) {
   }
 
   if (applicationName === 'chromium' || applicationName.startsWith('chromium.')) {
+    if (shouldUseYoutubeMusicWebProfile(input, options)) {
+      return PLAYER_PROFILES.youtubeMusicWeb;
+    }
     if (shouldUseSpotifyWebProfile(input, options)) {
       return PLAYER_PROFILES.spotifyWeb;
     }
@@ -83,6 +91,9 @@ export function detectPlayerProfile(input, options = {}) {
   }
 
   if (applicationName === 'firefox' || applicationName.startsWith('firefox.')) {
+    if (shouldUseYoutubeMusicWebProfile(input, options)) {
+      return PLAYER_PROFILES.youtubeMusicWeb;
+    }
     if (shouldUseSpotifyWebProfile(input, options)) {
       return PLAYER_PROFILES.spotifyWeb;
     }
@@ -141,7 +152,24 @@ function shouldUseSpotifyWebProfile(input, options) {
     return isMusicLikeBrowserMetadata(input);
   }
 
+  if (browserPlayerService === 'youtube-music') {
+    return false;
+  }
+
   return hasSpotifyWebEvidence(input);
+}
+
+/**
+ * Browser MPRIS players identify the browser, not the web app. Users can
+ * explicitly bias music-like browser metadata toward YouTube Music until MPRIS
+ * provides strong service evidence.
+ *
+ * @param {PlayerProfileInput | null | undefined} input
+ * @param {PlayerProfileOptions} options
+ * @returns {boolean}
+ */
+function shouldUseYoutubeMusicWebProfile(input, options) {
+  return options.browserPlayerService === 'youtube-music' && isMusicLikeBrowserMetadata(input);
 }
 
 /**
