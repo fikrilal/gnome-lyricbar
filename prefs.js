@@ -230,6 +230,23 @@ export default class LyricBarPreferences extends ExtensionPreferences {
 
     debuggingGroup.add(debugLoggingRow);
 
+    const copyDiagnosticsRow = new Adw.ActionRow({
+      title: 'Copy diagnostics',
+      subtitle: 'Copy safe extension settings for bug reports.',
+    });
+    const copyDiagnosticsButton = new Gtk.Button({
+      icon_name: 'edit-copy-symbolic',
+      valign: Gtk.Align.CENTER,
+      tooltip_text: 'Copy diagnostics',
+    });
+    const copyDiagnosticsId = copyDiagnosticsButton.connect('clicked', () => {
+      window.get_clipboard().set(buildDiagnosticsMarkdown(metadata, settings));
+      copyDiagnosticsButton.tooltip_text = 'Copied diagnostics';
+    });
+    connections.push([copyDiagnosticsButton, copyDiagnosticsId]);
+    copyDiagnosticsRow.add_suffix(copyDiagnosticsButton);
+    debuggingGroup.add(copyDiagnosticsRow);
+
     // 4. About Group
     const aboutGroup = new Adw.PreferencesGroup({
       title: 'About',
@@ -289,4 +306,67 @@ export default class LyricBarPreferences extends ExtensionPreferences {
 function readMetadataText(metadata, key, fallback) {
   const value = metadata[key];
   return typeof value === 'string' && value.trim() !== '' ? value : fallback;
+}
+
+/**
+ * @param {Record<string, unknown>} metadata
+ * @param {{
+ *   get_string(key: string): string,
+ *   get_int(key: string): number,
+ *   get_strv(key: string): string[],
+ *   get_boolean(key: string): boolean,
+ * }} settings
+ * @returns {string}
+ */
+function buildDiagnosticsMarkdown(metadata, settings) {
+  return [
+    '## LyricBar diagnostics',
+    '',
+    '| Field | Value |',
+    '| --- | --- |',
+    `| Version | ${escapeMarkdownTable(readMetadataText(metadata, 'version-name', 'Unknown'))} |`,
+    `| UUID | ${escapeMarkdownTable(readMetadataText(metadata, 'uuid', 'lyricbar@fikrilal.github.io'))} |`,
+    `| URL | ${escapeMarkdownTable(readMetadataText(metadata, 'url', 'https://github.com/fikrilal/gnome-lyricbar'))} |`,
+    `| Shell compatibility | ${escapeMarkdownTable(readShellVersions(metadata))} |`,
+    `| Panel position | ${escapeMarkdownTable(settings.get_string('panel-position'))} |`,
+    `| Text alignment | ${escapeMarkdownTable(settings.get_string('text-align'))} |`,
+    `| Maximum width | ${settings.get_int('max-width')} |`,
+    `| Fallback mode | ${escapeMarkdownTable(settings.get_string('fallback-mode'))} |`,
+    `| Player priority | ${escapeMarkdownTable(settings.get_strv('player-priority').join(', '))} |`,
+    `| Browser player service | ${escapeMarkdownTable(settings.get_string('browser-player-service'))} |`,
+    `| Cache enabled | ${formatBoolean(settings.get_boolean('cache-enabled'))} |`,
+    `| Debug logging | ${formatBoolean(settings.get_boolean('debug-logging'))} |`,
+    '',
+    'This diagnostic block intentionally excludes lyrics, listening history, logs, local file paths, and MPRIS metadata.',
+  ].join('\n');
+}
+
+/**
+ * @param {Record<string, unknown>} metadata
+ * @returns {string}
+ */
+function readShellVersions(metadata) {
+  const value = metadata['shell-version'];
+  if (!Array.isArray(value)) {
+    return 'Unknown';
+  }
+
+  const versions = value.filter((entry) => typeof entry === 'string' && entry.trim() !== '');
+  return versions.length === 0 ? 'Unknown' : versions.join(', ');
+}
+
+/**
+ * @param {boolean} value
+ * @returns {string}
+ */
+function formatBoolean(value) {
+  return value ? 'yes' : 'no';
+}
+
+/**
+ * @param {string} value
+ * @returns {string}
+ */
+function escapeMarkdownTable(value) {
+  return value.replaceAll('|', '\\|').replaceAll('\n', ' ');
 }
