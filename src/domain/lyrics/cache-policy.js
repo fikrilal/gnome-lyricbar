@@ -1,7 +1,10 @@
 import { buildLyricsCacheKey } from './cache-key.js';
+import { detectPlayerProfile } from '../mpris/profile.js';
 
 /**
  * @import { LyricsProviderResult, TrackMetadataInput } from './types.js'
+ * @import { PlayerSnapshot } from '../mpris/types.js'
+ * @import { BrowserPlayerService } from '../settings/types.js'
  *
  * @typedef {Readonly<{
  *   schema: number,
@@ -9,6 +12,10 @@ import { buildLyricsCacheKey } from './cache-key.js';
  *   expiresAt: number,
  *   result: LyricsProviderResult,
  * }>} CacheEntry
+ *
+ * @typedef {Readonly<{
+ *   browserPlayerService?: BrowserPlayerService | null | undefined,
+ * }>} CacheDecisionOptions
  */
 
 export const CACHE_SCHEMA_VERSION = 2;
@@ -42,6 +49,33 @@ export function buildCacheEntry(result, now) {
     expiresAt: now + ttl,
     result,
   });
+}
+
+/**
+ * Decides whether a provider result should be persisted. Browser MPRIS can emit
+ * short-lived non-track metadata, so low-confidence browser misses must not
+ * poison the negative cache. Positive results remain cacheable because the
+ * provider already found a usable lyric payload.
+ *
+ * @param {PlayerSnapshot | null | undefined} player
+ * @param {LyricsProviderResult} result
+ * @param {CacheDecisionOptions} [options]
+ * @returns {boolean}
+ */
+export function shouldWriteLyricsCache(player, result, options = {}) {
+  if (result.kind !== 'not-found') {
+    return true;
+  }
+
+  if (player === null || player === undefined) {
+    return true;
+  }
+
+  if (!isBrowserSnapshot(player, options)) {
+    return true;
+  }
+
+  return isHighConfidenceBrowserSnapshot(player);
 }
 
 /**
@@ -117,6 +151,61 @@ function isValidResult(value) {
     default:
       return false;
   }
+}
+
+/**
+ * @param {PlayerSnapshot | null | undefined} player
+ * @param {CacheDecisionOptions} options
+ * @returns {boolean}
+ */
+function isBrowserSnapshot(player, options) {
+  if (player === null || player === undefined) {
+    return false;
+  }
+
+  const profile = detectPlayerProfile(player, {
+    browserPlayerService: options.browserPlayerService ?? 'auto',
+  });
+  return profile.sourceKind === 'browser';
+}
+
+/**
+ * @param {PlayerSnapshot} player
+ * @returns {boolean}
+ */
+function isHighConfidenceBrowserSnapshot(player) {
+  const title = normalizeMaybeText(player.title);
+  const artist = normalizeMaybeText(player.artist);
+  if (title === null || artist === null) {
+    return false;
+  }
+
+  if (title.toLowerCase() === 'advertisement') {
+    return false;
+  }
+
+  if (player.playbackStatus === 'Stopped') {
+    return false;
+  }
+
+  if (typeof player.durationMs !== 'number' || !Number.isFinite(player.durationMs)) {
+    return true;
+  }
+
+  return player.durationMs >= 30_000;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {string | null}
+ */
+function normalizeMaybeText(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed === '' ? null : trimmed;
 }
 
 /**
