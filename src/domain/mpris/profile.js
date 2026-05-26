@@ -80,27 +80,46 @@ export function detectPlayerProfile(input, options = {}) {
     return PLAYER_PROFILES.spotifyDesktop;
   }
 
-  if (applicationName === 'chromium' || applicationName.startsWith('chromium.')) {
-    if (shouldUseYoutubeMusicWebProfile(input, options)) {
-      return PLAYER_PROFILES.youtubeMusicWeb;
-    }
-    if (shouldUseSpotifyWebProfile(input, options)) {
-      return PLAYER_PROFILES.spotifyWeb;
-    }
-    return PLAYER_PROFILES.chromiumBrowser;
-  }
-
-  if (applicationName === 'firefox' || applicationName.startsWith('firefox.')) {
-    if (shouldUseYoutubeMusicWebProfile(input, options)) {
-      return PLAYER_PROFILES.youtubeMusicWeb;
-    }
-    if (shouldUseSpotifyWebProfile(input, options)) {
-      return PLAYER_PROFILES.spotifyWeb;
-    }
-    return PLAYER_PROFILES.firefoxBrowser;
+  const browserProfile = detectBrowserFamilyProfile(applicationName);
+  if (browserProfile !== null) {
+    return selectBrowserServiceProfile(input, browserProfile, options);
   }
 
   return PLAYER_PROFILES.genericMpris;
+}
+
+/**
+ * Maps a browser-family profile and browser-service preference to the concrete
+ * profile LyricBar should use for runtime behavior. Browser MPRIS identities
+ * expose the browser, not the web app, so service-specific profiles are only
+ * selected when the user explicitly asks for one or auto mode has strong
+ * metadata evidence.
+ *
+ * @param {PlayerProfileInput | null | undefined} input
+ * @param {PlayerProfile} browserProfile
+ * @param {PlayerProfileOptions} [options]
+ * @returns {PlayerProfile}
+ */
+export function selectBrowserServiceProfile(input, browserProfile, options = {}) {
+  if (browserProfile.sourceKind !== 'browser') {
+    return browserProfile;
+  }
+
+  const browserPlayerService = options.browserPlayerService ?? 'auto';
+
+  if (browserPlayerService === 'generic') {
+    return browserProfile;
+  }
+
+  if (browserPlayerService === 'spotify') {
+    return isMusicLikeBrowserMetadata(input) ? PLAYER_PROFILES.spotifyWeb : browserProfile;
+  }
+
+  if (browserPlayerService === 'youtube-music') {
+    return isMusicLikeBrowserMetadata(input) ? PLAYER_PROFILES.youtubeMusicWeb : browserProfile;
+  }
+
+  return hasSpotifyWebEvidence(input) ? PLAYER_PROFILES.spotifyWeb : browserProfile;
 }
 
 /**
@@ -121,6 +140,22 @@ function normalizeBusName(value) {
 }
 
 /**
+ * @param {string} applicationName
+ * @returns {PlayerProfile | null}
+ */
+function detectBrowserFamilyProfile(applicationName) {
+  if (applicationName === 'chromium' || applicationName.startsWith('chromium.')) {
+    return PLAYER_PROFILES.chromiumBrowser;
+  }
+
+  if (applicationName === 'firefox' || applicationName.startsWith('firefox.')) {
+    return PLAYER_PROFILES.firefoxBrowser;
+  }
+
+  return null;
+}
+
+/**
  * Browser MPRIS bus names identify the browser, not the web app. Only classify
  * Spotify Web when metadata carries a strong Spotify-shaped identifier.
  *
@@ -130,46 +165,6 @@ function normalizeBusName(value) {
 function hasSpotifyWebEvidence(input) {
   const trackId = normalizeMaybeText(input?.trackId);
   return trackId !== null && trackId.toLowerCase().includes('spotify');
-}
-
-/**
- * Browser MPRIS players identify the browser, not the media service. LyricBar
- * is Spotify-first, so users can explicitly bias music-like browser metadata
- * toward Spotify Web while keeping auto/generic behavior available.
- *
- * @param {PlayerProfileInput | null | undefined} input
- * @param {PlayerProfileOptions} options
- * @returns {boolean}
- */
-function shouldUseSpotifyWebProfile(input, options) {
-  const browserPlayerService = options.browserPlayerService ?? 'auto';
-
-  if (browserPlayerService === 'generic') {
-    return false;
-  }
-
-  if (browserPlayerService === 'spotify') {
-    return isMusicLikeBrowserMetadata(input);
-  }
-
-  if (browserPlayerService === 'youtube-music') {
-    return false;
-  }
-
-  return hasSpotifyWebEvidence(input);
-}
-
-/**
- * Browser MPRIS players identify the browser, not the web app. Users can
- * explicitly bias music-like browser metadata toward YouTube Music until MPRIS
- * provides strong service evidence.
- *
- * @param {PlayerProfileInput | null | undefined} input
- * @param {PlayerProfileOptions} options
- * @returns {boolean}
- */
-function shouldUseYoutubeMusicWebProfile(input, options) {
-  return options.browserPlayerService === 'youtube-music' && isMusicLikeBrowserMetadata(input);
 }
 
 /**
