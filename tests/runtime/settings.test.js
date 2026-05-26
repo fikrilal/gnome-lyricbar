@@ -18,7 +18,7 @@ describe('SettingsAdapter', () => {
       textAlign: 'right',
       fallbackMode: 'track',
       playerPriority: ['spotify'],
-      browserPlayerService: 'spotify',
+      browserPlayerService: 'auto',
       cacheEnabled: true,
       debugLogging: false,
     });
@@ -66,7 +66,7 @@ function createSettingsBackend(overrides = {}) {
         return 'track';
       }
       if (key === 'browser-player-service') {
-        return 'spotify';
+        return 'auto';
       }
       return '';
     }),

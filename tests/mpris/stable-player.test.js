@@ -131,6 +131,27 @@ describe('StablePlayerProxy', () => {
     expect(harness.stable.snapshot()).toEqual(second);
   });
 
+  it('accepts the latest browser playback status for the same pending track', () => {
+    const harness = createHarness({
+      busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
+      nowMs: 1000,
+    });
+    const stopped = snapshot({ playbackStatus: 'Stopped' });
+    const playing = snapshot({ playbackStatus: 'Playing' });
+
+    harness.stable.start();
+    harness.raw.emit(stopped);
+    harness.scheduler.advance(100);
+    harness.raw.emit(playing);
+    harness.scheduler.advance(249);
+
+    expect(harness.stable.snapshot()).toBeNull();
+
+    harness.scheduler.advance(1);
+    expect(harness.listener).toHaveBeenLastCalledWith(playing);
+    expect(harness.stable.snapshot()).toEqual(playing);
+  });
+
   it('delegates position reads to the raw player', () => {
     const harness = createHarness({
       busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
@@ -141,6 +162,17 @@ describe('StablePlayerProxy', () => {
     harness.stable.readPosition(callback);
 
     expect(harness.raw.readPosition).toHaveBeenCalledWith(callback);
+  });
+
+  it('delegates property refreshes to the raw player', () => {
+    const harness = createHarness({
+      busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
+      nowMs: 1000,
+    });
+
+    harness.stable.refreshProperties();
+
+    expect(harness.raw.refreshProperties).toHaveBeenCalledTimes(1);
   });
 
   it('cancels pending timers on lifecycle disposal', () => {
@@ -192,6 +224,7 @@ function createHarness(options) {
  *   snapshot: ReturnType<typeof vi.fn>,
  *   onSnapshot: ReturnType<typeof vi.fn>,
  *   readPosition: ReturnType<typeof vi.fn>,
+ *   refreshProperties: ReturnType<typeof vi.fn>,
  *   start: ReturnType<typeof vi.fn>,
  *   emit(snapshot: PlayerSnapshot | null): void,
  * }}
@@ -210,6 +243,7 @@ function createRawPlayer(busName) {
       callback(currentSnapshot);
     }),
     readPosition: vi.fn(),
+    refreshProperties: vi.fn(),
     start: vi.fn(),
     emit(snapshotValue) {
       currentSnapshot = snapshotValue;

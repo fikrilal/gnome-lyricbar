@@ -19,6 +19,7 @@ import { snapshotsEqual } from './player-mapping.js';
  *   snapshot(): PlayerSnapshot | null,
  *   onSnapshot(callback: PlayerSnapshotCallback): void,
  *   readPosition(callback: PlayerPositionCallback): void,
+ *   refreshProperties(): void,
  *   start(): void,
  * }>} RawPlayerProxy
  *
@@ -127,6 +128,13 @@ export class StablePlayerProxy {
   }
 
   /**
+   * @returns {void}
+   */
+  refreshProperties() {
+    this.#rawProxy.refreshProperties();
+  }
+
+  /**
    * @param {PlayerSnapshot | null} candidate
    * @returns {void}
    */
@@ -155,6 +163,7 @@ export class StablePlayerProxy {
       busName: this.busName,
       adapter: adapted?.adapterId ?? null,
       decision: result.decision,
+      playbackStatus: stableCandidate?.playbackStatus ?? candidate?.playbackStatus ?? null,
       profile: profile.id,
       title: stableCandidate?.title ?? candidate?.title ?? null,
     });

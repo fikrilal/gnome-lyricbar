@@ -1,0 +1,33 @@
+{
+  "name": "youtube-music-web-transient-non-track",
+  "description": "Short-lived browser metadata observed during YouTube Music playback that should not poison the negative lyrics cache.",
+  "busName": "org.mpris.MediaPlayer2.chromium.instance6544",
+  "rootProperties": {
+    "Identity": "Chrome",
+    "CanQuit": false,
+    "CanRaise": false,
+    "HasTrackList": false
+  },
+  "playerProperties": {
+    "PlaybackStatus": "Playing",
+    "Position": 5400,
+    "Metadata": {
+      "mpris:artUrl": "file:///tmp/.com.google.Chrome.transient",
+      "mpris:length": 12000000,
+      "mpris:trackid": "/org/chromium/MediaPlayer2/TrackList/TrackTransient",
+      "xesam:album": "",
+      "xesam:artist": ["Di Tekno In"],
+      "xesam:title": "Kerja tapi nggak kerja"
+    }
+  },
+  "positionSamplesMs": [5400, 5900, 6400],
+  "expectedSnapshot": {
+    "busName": "org.mpris.MediaPlayer2.chromium.instance6544",
+    "title": "Kerja tapi nggak kerja",
+    "artist": "Di Tekno In",
+    "album": "",
+    "durationMs": 12000,
+    "trackId": "/org/chromium/MediaPlayer2/TrackList/TrackTransient",
+    "playbackStatus": "Playing"
+  }
+}

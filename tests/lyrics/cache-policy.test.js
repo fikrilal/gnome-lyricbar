@@ -7,6 +7,7 @@ import {
   NEGATIVE_TTL_MS,
   parseCacheEntry,
   POSITIVE_TTL_MS,
+  shouldWriteLyricsCache,
 } from '../../src/domain/lyrics/cache-policy.js';
 
 const NOW = 1700000000000;
@@ -178,3 +179,88 @@ describe('parseCacheEntry', () => {
     expect(parseCacheEntry(entry, NOW + 1000)).toEqual(instrumental);
   });
 });
+
+describe('shouldWriteLyricsCache', () => {
+  it('allows desktop not-found results to be cached', () => {
+    expect(shouldWriteLyricsCache(playerSnapshot({}), notFoundResult)).toBe(true);
+  });
+
+  it('allows high-confidence browser not-found results to be cached', () => {
+    expect(
+      shouldWriteLyricsCache(browserSnapshot({}), notFoundResult, {
+        browserPlayerService: 'youtube-music',
+      }),
+    ).toBe(true);
+  });
+
+  it('blocks low-confidence browser not-found results from being cached', () => {
+    expect(
+      shouldWriteLyricsCache(
+        browserSnapshot({
+          title: 'Advertisement',
+          artist: 'YouTube Music',
+        }),
+        notFoundResult,
+        { browserPlayerService: 'youtube-music' },
+      ),
+    ).toBe(false);
+  });
+
+  it('blocks short browser not-found results from being cached', () => {
+    expect(
+      shouldWriteLyricsCache(
+        browserSnapshot({
+          durationMs: 10_000,
+        }),
+        notFoundResult,
+        { browserPlayerService: 'spotify' },
+      ),
+    ).toBe(false);
+  });
+
+  it('allows positive browser results to be cached even when metadata confidence is low', () => {
+    expect(
+      shouldWriteLyricsCache(
+        browserSnapshot({
+          title: 'Advertisement',
+          artist: 'YouTube Music',
+        }),
+        syncedResult,
+        { browserPlayerService: 'youtube-music' },
+      ),
+    ).toBe(true);
+  });
+});
+
+/**
+ * @param {Partial<import('../../src/domain/mpris/types.js').PlayerSnapshot>} overrides
+ * @returns {import('../../src/domain/mpris/types.js').PlayerSnapshot}
+ */
+function playerSnapshot(overrides) {
+  return {
+    busName: 'org.mpris.MediaPlayer2.spotify',
+    title: 'Yellow',
+    artist: 'Coldplay',
+    album: 'Parachutes',
+    durationMs: 266773,
+    trackId: '/com/spotify/track/yellow',
+    playbackStatus: 'Playing',
+    ...overrides,
+  };
+}
+
+/**
+ * @param {Partial<import('../../src/domain/mpris/types.js').PlayerSnapshot>} overrides
+ * @returns {import('../../src/domain/mpris/types.js').PlayerSnapshot}
+ */
+function browserSnapshot(overrides) {
+  return playerSnapshot({
+    busName: 'org.mpris.MediaPlayer2.chromium.instance6544',
+    title: 'Let Me Love You',
+    artist: 'DJ Snake',
+    album: '',
+    durationMs: 205341,
+    trackId: '/org/chromium/MediaPlayer2/TrackList/Track22C9441C7D270DC57830A101D2310234',
+    ...overrides,
+  });
+}

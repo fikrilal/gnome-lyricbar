@@ -53,7 +53,7 @@ describe('normalizeSettings', () => {
       textAlign: 'left',
       fallbackMode: 'track',
       playerPriority: ['spotify'],
-      browserPlayerService: 'spotify',
+      browserPlayerService: 'auto',
       cacheEnabled: true,
       debugLogging: false,
     });
@@ -107,11 +107,12 @@ describe('normalizeBrowserPlayerService', () => {
   it('accepts known browser player services', () => {
     expect(normalizeBrowserPlayerService('auto')).toBe('auto');
     expect(normalizeBrowserPlayerService('spotify')).toBe('spotify');
+    expect(normalizeBrowserPlayerService('youtube-music')).toBe('youtube-music');
     expect(normalizeBrowserPlayerService('generic')).toBe('generic');
   });
 
   it('rejects unknown browser player services', () => {
-    expect(normalizeBrowserPlayerService('youtube')).toBe('spotify');
+    expect(normalizeBrowserPlayerService('youtube')).toBe('auto');
   });
 });
 

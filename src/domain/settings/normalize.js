@@ -4,12 +4,12 @@ const MIN_MAX_WIDTH = 120;
 const MAX_MAX_WIDTH = 720;
 const DEFAULT_FALLBACK_MODE = 'track';
 const DEFAULT_PLAYER_PRIORITY = ['spotify'];
-const DEFAULT_BROWSER_PLAYER_SERVICE = 'spotify';
+const DEFAULT_BROWSER_PLAYER_SERVICE = 'auto';
 const DEFAULT_TEXT_ALIGN = 'left';
 
 const PANEL_POSITIONS = new Set(['left', 'center', 'right']);
 const FALLBACK_MODES = new Set(['track', 'idle', 'hidden']);
-const BROWSER_PLAYER_SERVICES = new Set(['auto', 'spotify', 'generic']);
+const BROWSER_PLAYER_SERVICES = new Set(['auto', 'spotify', 'youtube-music', 'generic']);
 const TEXT_ALIGNS = new Set(['left', 'center', 'right']);
 
 /**

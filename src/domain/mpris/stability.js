@@ -119,7 +119,7 @@ export function reduceStablePlayerSnapshot(input) {
   if (elapsedMs < input.policy.debounceMetadataMs) {
     return {
       stableSnapshot: previousStable,
-      pendingCandidate,
+      pendingCandidate: refreshPendingCandidateSnapshot(pendingCandidate, candidate),
       decision: 'held',
     };
   }
@@ -181,6 +181,22 @@ function accept(snapshot) {
     stableSnapshot: snapshot,
     pendingCandidate: null,
     decision: 'accepted',
+  };
+}
+
+/**
+ * The debounce window belongs to the track identity, not to every transient
+ * property update. Keep the original first-seen timestamp while replacing the
+ * snapshot so playback status and other same-track fields do not go stale.
+ *
+ * @param {PendingStableCandidate} pendingCandidate
+ * @param {PlayerSnapshot} candidate
+ * @returns {PendingStableCandidate}
+ */
+function refreshPendingCandidateSnapshot(pendingCandidate, candidate) {
+  return {
+    ...pendingCandidate,
+    snapshot: candidate,
   };
 }
 

@@ -1,5 +1,6 @@
 import { buildLyricsQuery } from '../../domain/lyrics/normalize.js';
 import { buildTrackIdentityKey } from '../../domain/lyrics/track-identity.js';
+import { shouldWriteLyricsCache } from '../../domain/lyrics/cache-policy.js';
 
 /**
  * @import { LifecycleRegistry } from '../lifecycle.js'
@@ -152,10 +153,18 @@ export class LyricsService {
           this.#logger?.debug('lookup-stale', { stage: 'provider' });
           return;
         }
-        try {
-          this.#cache.put(query, result);
-        } catch {
-          // best-effort; cache failure must not break the live emission
+        if (
+          shouldWriteLyricsCache(player, result, {
+            browserPlayerService: this.#getBrowserPlayerService(),
+          })
+        ) {
+          try {
+            this.#cache.put(query, result);
+          } catch {
+            // best-effort; cache failure must not break the live emission
+          }
+        } else {
+          this.#logger?.debug('cache-put-skipped', { reason: 'low-confidence-browser-miss' });
         }
         this.#logger?.debug('provider-result', { kind: result.kind });
         this.#applyResult(generation, key, result);

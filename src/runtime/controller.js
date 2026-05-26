@@ -312,7 +312,7 @@ export class LyricBarController {
     );
 
     this.#lyricsService = new LyricsService(lifecycle, provider, cache, {
-      getBrowserPlayerService: () => this.#currentSettings?.browserPlayerService ?? 'spotify',
+      getBrowserPlayerService: () => this.#currentSettings?.browserPlayerService ?? 'auto',
       logger,
     });
     this.#lyricsService.onLookupChanged((player, lookup) => {
@@ -390,15 +390,28 @@ export class LyricBarController {
       logger: this.#logger?.child('player'),
     });
     const proxy = new StablePlayerProxy(rawProxy, child, {
-      getBrowserPlayerService: () => this.#currentSettings?.browserPlayerService ?? 'spotify',
+      getBrowserPlayerService: () => this.#currentSettings?.browserPlayerService ?? 'auto',
       logger: this.#logger?.child('player') ?? null,
       schedule: scheduleTimeout,
     });
     proxy.onSnapshot(() => {
+      this.#refreshPeerPlayerProperties(proxy.busName);
       this.#refreshSelection();
     });
     this.#proxies.set(busName, { proxy, lifecycle: child });
     proxy.start();
+  }
+
+  /**
+   * @param {string} sourceBusName
+   * @returns {void}
+   */
+  #refreshPeerPlayerProperties(sourceBusName) {
+    for (const [busName, tracked] of this.#proxies) {
+      if (busName !== sourceBusName) {
+        tracked.proxy.refreshProperties();
+      }
+    }
   }
 
   /**
@@ -430,6 +443,7 @@ export class LyricBarController {
 
     this.#logger?.debug('active-player-selected', {
       busName: active?.busName ?? null,
+      playbackStatus: active?.playbackStatus ?? null,
       title: active?.title ?? null,
     });
 

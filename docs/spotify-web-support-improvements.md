@@ -88,13 +88,15 @@ Recommended design:
 browser-player-service = auto | spotify | generic
 ```
 
-- Default:
+- Original Spotify-first default:
 
 ```text
 spotify
 ```
 
 Rationale: LyricBar is currently Spotify-first, and this matches the primary product promise.
+
+After YouTube Music support, the safer product default is `auto`: use Spotify-specific behavior only when MPRIS carries strong Spotify evidence, otherwise keep browser playback on the generic browser policy.
 
 Classification behavior:
 

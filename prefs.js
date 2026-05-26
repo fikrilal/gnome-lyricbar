@@ -11,6 +11,9 @@ export default class LyricBarPreferences extends ExtensionPreferences {
    */
   fillPreferencesWindow(window) {
     const settings = this.getSettings();
+    const metadata = /** @type {Record<string, unknown>} */ (
+      /** @type {{ metadata?: unknown }} */ (this).metadata ?? {}
+    );
     /** @type {any[]} */
     const connections = [];
 
@@ -173,11 +176,13 @@ export default class LyricBarPreferences extends ExtensionPreferences {
     behaviorGroup.add(playerPriorityRow);
 
     // browser-player-service: ComboRow
-    const browserPlayerServices = ['auto', 'spotify', 'generic'];
+    const browserPlayerServices = ['auto', 'spotify', 'youtube-music', 'generic'];
     const browserPlayerServiceRow = new Adw.ComboRow({
       title: 'Browser player service',
       subtitle: 'How browser media players should be interpreted.',
-      model: new Gtk.StringList({ strings: ['Auto detect', 'Spotify Web', 'Generic browser'] }),
+      model: new Gtk.StringList({
+        strings: ['Auto detect', 'Spotify Web', 'YouTube Music', 'Generic browser'],
+      }),
     });
     const currentBrowserPlayerService = settings.get_string('browser-player-service');
     const browserPlayerServiceIndex = browserPlayerServices.indexOf(currentBrowserPlayerService);
@@ -227,9 +232,76 @@ export default class LyricBarPreferences extends ExtensionPreferences {
 
     debuggingGroup.add(debugLoggingRow);
 
+    const copyDiagnosticsRow = new Adw.ActionRow({
+      title: 'Copy diagnostics',
+      subtitle: 'Copy safe extension settings for bug reports.',
+    });
+    const copyDiagnosticsButton = new Gtk.Button({
+      icon_name: 'edit-copy-symbolic',
+      valign: Gtk.Align.CENTER,
+      tooltip_text: 'Copy diagnostics',
+    });
+    const copyDiagnosticsId = copyDiagnosticsButton.connect('clicked', () => {
+      window.get_clipboard().set(buildDiagnosticsMarkdown(metadata, settings));
+      copyDiagnosticsButton.tooltip_text = 'Copied diagnostics';
+    });
+    connections.push([copyDiagnosticsButton, copyDiagnosticsId]);
+    copyDiagnosticsRow.add_suffix(copyDiagnosticsButton);
+    debuggingGroup.add(copyDiagnosticsRow);
+
+    const openIssueRow = new Adw.ActionRow({
+      title: 'Open issue',
+      subtitle: 'Open GitHub issue tracker in your browser.',
+    });
+    const openIssueButton = new Gtk.Button({
+      icon_name: 'dialog-question-symbolic',
+      valign: Gtk.Align.CENTER,
+      tooltip_text: 'Open issue',
+    });
+    const openIssueId = openIssueButton.connect('clicked', () => {
+      Gtk.show_uri(
+        window,
+        `${readMetadataText(metadata, 'url', 'https://github.com/fikrilal/gnome-lyricbar')}/issues/new`,
+        0,
+      );
+    });
+    connections.push([openIssueButton, openIssueId]);
+    openIssueRow.add_suffix(openIssueButton);
+    debuggingGroup.add(openIssueRow);
+
+    // 4. About Group
+    const aboutGroup = new Adw.PreferencesGroup({
+      title: 'About',
+    });
+
+    const versionRow = new Adw.ActionRow({
+      title: 'Version',
+      subtitle: readMetadataText(metadata, 'version-name', 'Unknown'),
+    });
+
+    const uuidRow = new Adw.ActionRow({
+      title: 'Extension UUID',
+      subtitle: readMetadataText(metadata, 'uuid', 'lyricbar@fikrilal.github.io'),
+    });
+
+    const websiteRow = new Adw.ActionRow({
+      title: 'Website',
+      subtitle: readMetadataText(metadata, 'url', 'https://github.com/fikrilal/gnome-lyricbar'),
+    });
+    websiteRow.activatable = true;
+    const websiteActivateId = websiteRow.connect('activated', () => {
+      Gtk.show_uri(window, websiteRow.subtitle, 0);
+    });
+    connections.push([websiteRow, websiteActivateId]);
+
+    aboutGroup.add(versionRow);
+    aboutGroup.add(uuidRow);
+    aboutGroup.add(websiteRow);
+
     page.add(displayGroup);
     page.add(behaviorGroup);
     page.add(debuggingGroup);
+    page.add(aboutGroup);
 
     window.add(page);
 
@@ -245,4 +317,78 @@ export default class LyricBarPreferences extends ExtensionPreferences {
       window.disconnect(windowDestroyId);
     });
   }
+}
+
+/**
+ * @param {Record<string, unknown>} metadata
+ * @param {string} key
+ * @param {string} fallback
+ * @returns {string}
+ */
+function readMetadataText(metadata, key, fallback) {
+  const value = metadata[key];
+  return typeof value === 'string' && value.trim() !== '' ? value : fallback;
+}
+
+/**
+ * @param {Record<string, unknown>} metadata
+ * @param {{
+ *   get_string(key: string): string,
+ *   get_int(key: string): number,
+ *   get_strv(key: string): string[],
+ *   get_boolean(key: string): boolean,
+ * }} settings
+ * @returns {string}
+ */
+function buildDiagnosticsMarkdown(metadata, settings) {
+  return [
+    '## LyricBar diagnostics',
+    '',
+    '| Field | Value |',
+    '| --- | --- |',
+    `| Version | ${escapeMarkdownTable(readMetadataText(metadata, 'version-name', 'Unknown'))} |`,
+    `| UUID | ${escapeMarkdownTable(readMetadataText(metadata, 'uuid', 'lyricbar@fikrilal.github.io'))} |`,
+    `| URL | ${escapeMarkdownTable(readMetadataText(metadata, 'url', 'https://github.com/fikrilal/gnome-lyricbar'))} |`,
+    `| Shell compatibility | ${escapeMarkdownTable(readShellVersions(metadata))} |`,
+    `| Panel position | ${escapeMarkdownTable(settings.get_string('panel-position'))} |`,
+    `| Text alignment | ${escapeMarkdownTable(settings.get_string('text-align'))} |`,
+    `| Maximum width | ${settings.get_int('max-width')} |`,
+    `| Fallback mode | ${escapeMarkdownTable(settings.get_string('fallback-mode'))} |`,
+    `| Player priority | ${escapeMarkdownTable(settings.get_strv('player-priority').join(', '))} |`,
+    `| Browser player service | ${escapeMarkdownTable(settings.get_string('browser-player-service'))} |`,
+    `| Cache enabled | ${formatBoolean(settings.get_boolean('cache-enabled'))} |`,
+    `| Debug logging | ${formatBoolean(settings.get_boolean('debug-logging'))} |`,
+    '',
+    'This diagnostic block intentionally excludes lyrics, listening history, logs, local file paths, and MPRIS metadata.',
+  ].join('\n');
+}
+
+/**
+ * @param {Record<string, unknown>} metadata
+ * @returns {string}
+ */
+function readShellVersions(metadata) {
+  const value = metadata['shell-version'];
+  if (!Array.isArray(value)) {
+    return 'Unknown';
+  }
+
+  const versions = value.filter((entry) => typeof entry === 'string' && entry.trim() !== '');
+  return versions.length === 0 ? 'Unknown' : versions.join(', ');
+}
+
+/**
+ * @param {boolean} value
+ * @returns {string}
+ */
+function formatBoolean(value) {
+  return value ? 'yes' : 'no';
+}
+
+/**
+ * @param {string} value
+ * @returns {string}
+ */
+function escapeMarkdownTable(value) {
+  return value.replaceAll('|', '\\|').replaceAll('\n', ' ');
 }

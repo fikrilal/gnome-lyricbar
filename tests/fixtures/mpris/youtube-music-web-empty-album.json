@@ -1,0 +1,33 @@
+{
+  "name": "youtube-music-web-empty-album",
+  "description": "YouTube Music browser metadata commonly has an empty album while title, artist, duration, and position are valid.",
+  "busName": "org.mpris.MediaPlayer2.chromium.instance6544",
+  "rootProperties": {
+    "Identity": "Chrome",
+    "CanQuit": false,
+    "CanRaise": false,
+    "HasTrackList": false
+  },
+  "playerProperties": {
+    "PlaybackStatus": "Playing",
+    "Position": 169054013,
+    "Metadata": {
+      "mpris:artUrl": "file:///tmp/.com.google.Chrome.NWpVXl",
+      "mpris:length": 202021000,
+      "mpris:trackid": "/org/chromium/MediaPlayer2/TrackList/Track22C9441C7D270DC57830A101D2310234",
+      "xesam:album": "",
+      "xesam:artist": ["Bebe Rexha"],
+      "xesam:title": "I'm a Mess"
+    }
+  },
+  "positionSamplesMs": [169054, 169558, 170061, 170564, 171067],
+  "expectedSnapshot": {
+    "busName": "org.mpris.MediaPlayer2.chromium.instance6544",
+    "title": "I'm a Mess",
+    "artist": "Bebe Rexha",
+    "album": "",
+    "durationMs": 202021,
+    "trackId": "/org/chromium/MediaPlayer2/TrackList/Track22C9441C7D270DC57830A101D2310234",
+    "playbackStatus": "Playing"
+  }
+}

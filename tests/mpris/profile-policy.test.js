@@ -35,6 +35,12 @@ describe('policyForPlayerProfile', () => {
     );
   });
 
+  it('uses stabilizing metadata policy for YouTube Music Web players', () => {
+    expect(policyForPlayerProfile(PLAYER_PROFILES.youtubeMusicWeb)).toEqual(
+      policyForPlayerProfile(PLAYER_PROFILES.chromiumBrowser),
+    );
+  });
+
   it('uses stabilizing metadata policy for Firefox browser players', () => {
     expect(policyForPlayerProfile(PLAYER_PROFILES.firefoxBrowser)).toEqual(
       policyForPlayerProfile(PLAYER_PROFILES.chromiumBrowser),

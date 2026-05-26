@@ -177,6 +177,72 @@ describe('LyricsService', () => {
     expect(harness.provider.lookup).not.toHaveBeenCalled();
     expect(harness.listener).toHaveBeenLastCalledWith(second, syncedResult);
   });
+
+  it('does not cache provider not-found results for low-confidence browser metadata', () => {
+    const harness = createHarness({
+      browserPlayerService: 'youtube-music',
+      cachedResult: null,
+    });
+    const noisyMetadata = browserSnapshot({
+      title: 'Advertisement',
+      artist: 'YouTube Music',
+    });
+
+    harness.service.setActivePlayer(noisyMetadata);
+    harness.resolveProvider(Object.freeze({ kind: 'not-found' }));
+
+    expect(harness.provider.lookup).toHaveBeenCalledTimes(1);
+    expect(harness.cache.put).not.toHaveBeenCalled();
+    expect(harness.listener).toHaveBeenLastCalledWith(noisyMetadata, { kind: 'not-found' });
+  });
+
+  it('still caches provider not-found results for high-confidence browser metadata', () => {
+    const harness = createHarness({
+      browserPlayerService: 'youtube-music',
+      cachedResult: null,
+    });
+    const player = browserSnapshot({});
+    const notFound = Object.freeze({ kind: 'not-found' });
+
+    harness.service.setActivePlayer(player);
+    harness.resolveProvider(notFound);
+
+    expect(harness.cache.put).toHaveBeenCalledWith(
+      {
+        title: 'Mangu',
+        artist: 'Fourtwnty, Charita Utami',
+        album: 'Nalar',
+        durationMs: 261094,
+      },
+      notFound,
+    );
+    expect(harness.listener).toHaveBeenLastCalledWith(player, notFound);
+  });
+
+  it('still caches positive provider results for low-confidence browser metadata', () => {
+    const harness = createHarness({
+      browserPlayerService: 'youtube-music',
+      cachedResult: null,
+    });
+    const noisyMetadata = browserSnapshot({
+      title: 'Advertisement',
+      artist: 'YouTube Music',
+    });
+
+    harness.service.setActivePlayer(noisyMetadata);
+    harness.resolveProvider(syncedResult);
+
+    expect(harness.cache.put).toHaveBeenCalledWith(
+      {
+        title: 'Advertisement',
+        artist: 'YouTube Music',
+        album: 'Nalar',
+        durationMs: 261094,
+      },
+      syncedResult,
+    );
+    expect(harness.listener).toHaveBeenLastCalledWith(noisyMetadata, syncedResult);
+  });
 });
 
 /**
