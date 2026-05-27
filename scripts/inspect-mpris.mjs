@@ -2,6 +2,8 @@
 
 import { spawnSync } from 'node:child_process';
 
+import { readStringProperty } from './lib/gdbus-output.mjs';
+
 const MPRIS_PREFIX = 'org.mpris.MediaPlayer2.';
 const PLAYER_OBJECT_PATH = '/org/mpris/MediaPlayer2';
 const PLAYER_INTERFACE = 'org.mpris.MediaPlayer2.Player';
@@ -235,17 +237,6 @@ function inferProfile(snapshot) {
   return hasMusicMetadata
     ? 'browser music metadata (spotify-web when browser-player-service=spotify)'
     : 'browser';
-}
-
-/**
- * @param {string} raw
- * @param {string} key
- * @returns {string | null}
- */
-function readStringProperty(raw, key) {
-  const escapedKey = escapeRegExp(key);
-  const match = new RegExp(`'${escapedKey}': <'([^']*)'>`, 'u').exec(raw);
-  return match?.[1] ?? null;
 }
 
 /**
