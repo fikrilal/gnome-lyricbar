@@ -30,7 +30,7 @@
     <key name="browser-player-service" type="s">
       <default>'auto'</default>
       <summary>Browser player service</summary>
-      <description>How browser MPRIS players should be interpreted ('auto', 'spotify', 'youtube-music', or 'generic').</description>
+      <description>How browser MPRIS players should be interpreted ('auto', 'spotify', 'youtube-music', 'apple-music', or 'generic').</description>
     </key>
     <key name="cache-enabled" type="b">
       <default>true</default>

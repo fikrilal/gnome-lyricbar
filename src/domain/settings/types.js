@@ -2,7 +2,7 @@
  * @typedef {'left' | 'center' | 'right'} PanelPosition
  * @typedef {'left' | 'center' | 'right'} TextAlign
  * @typedef {'track' | 'idle' | 'hidden'} FallbackMode
- * @typedef {'auto' | 'spotify' | 'youtube-music' | 'generic'} BrowserPlayerService
+ * @typedef {'auto' | 'spotify' | 'youtube-music' | 'apple-music' | 'generic'} BrowserPlayerService
  *
  * @typedef {Readonly<{
  *   panelPosition?: unknown,

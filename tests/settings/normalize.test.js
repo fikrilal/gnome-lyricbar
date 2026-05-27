@@ -108,6 +108,7 @@ describe('normalizeBrowserPlayerService', () => {
     expect(normalizeBrowserPlayerService('auto')).toBe('auto');
     expect(normalizeBrowserPlayerService('spotify')).toBe('spotify');
     expect(normalizeBrowserPlayerService('youtube-music')).toBe('youtube-music');
+    expect(normalizeBrowserPlayerService('apple-music')).toBe('apple-music');
     expect(normalizeBrowserPlayerService('generic')).toBe('generic');
   });
 

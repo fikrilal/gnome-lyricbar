@@ -24,7 +24,7 @@
  *   playbackStatus?: unknown,
  * }>} PlayerProfileInput
  *
- * @typedef {'auto' | 'spotify' | 'youtube-music' | 'generic'} BrowserPlayerService
+ * @typedef {'auto' | 'spotify' | 'youtube-music' | 'apple-music' | 'generic'} BrowserPlayerService
  *
  * @typedef {Readonly<{
  *   browserPlayerService?: BrowserPlayerService | null | undefined,
@@ -122,6 +122,10 @@ export function selectBrowserServiceProfile(input, browserProfile, options = {})
 
   if (browserPlayerService === 'youtube-music') {
     return isMusicLikeBrowserMetadata(input) ? PLAYER_PROFILES.youtubeMusicWeb : browserProfile;
+  }
+
+  if (browserPlayerService === 'apple-music') {
+    return browserProfile;
   }
 
   return hasSpotifyWebEvidence(input) ? PLAYER_PROFILES.spotifyWeb : browserProfile;

@@ -207,6 +207,29 @@ describe('selectBrowserServiceProfile', () => {
     ).toBe(PLAYER_PROFILES.youtubeMusicWeb);
   });
 
+  it('keeps explicit Apple Music service on the browser-family profile until mapping is implemented', () => {
+    expect(
+      selectBrowserServiceProfile(browserInput, PLAYER_PROFILES.chromiumBrowser, {
+        browserPlayerService: 'apple-music',
+      }),
+    ).toBe(PLAYER_PROFILES.chromiumBrowser);
+  });
+
+  it('does not treat explicit Apple Music service like auto Spotify Web detection', () => {
+    expect(
+      selectBrowserServiceProfile(
+        {
+          ...browserInput,
+          trackId: '/com/spotify/track/1',
+        },
+        PLAYER_PROFILES.chromiumBrowser,
+        {
+          browserPlayerService: 'apple-music',
+        },
+      ),
+    ).toBe(PLAYER_PROFILES.chromiumBrowser);
+  });
+
   it('keeps auto mode on the browser-family profile without strong service evidence', () => {
     expect(selectBrowserServiceProfile(browserInput, PLAYER_PROFILES.chromiumBrowser)).toBe(
       PLAYER_PROFILES.chromiumBrowser,
