@@ -207,15 +207,23 @@ describe('selectBrowserServiceProfile', () => {
     ).toBe(PLAYER_PROFILES.youtubeMusicWeb);
   });
 
-  it('keeps explicit Apple Music service on the browser-family profile until mapping is implemented', () => {
+  it('maps explicit Apple Music service to Apple Music Web for music-like metadata', () => {
     expect(
       selectBrowserServiceProfile(browserInput, PLAYER_PROFILES.chromiumBrowser, {
         browserPlayerService: 'apple-music',
       }),
-    ).toBe(PLAYER_PROFILES.chromiumBrowser);
+    ).toBe(PLAYER_PROFILES.appleMusicWeb);
   });
 
-  it('does not treat explicit Apple Music service like auto Spotify Web detection', () => {
+  it('maps explicit Apple Music service for Firefox browser metadata', () => {
+    expect(
+      selectBrowserServiceProfile(browserInput, PLAYER_PROFILES.firefoxBrowser, {
+        browserPlayerService: 'apple-music',
+      }),
+    ).toBe(PLAYER_PROFILES.appleMusicWeb);
+  });
+
+  it('does not let Spotify track evidence override explicit Apple Music service', () => {
     expect(
       selectBrowserServiceProfile(
         {
@@ -227,7 +235,7 @@ describe('selectBrowserServiceProfile', () => {
           browserPlayerService: 'apple-music',
         },
       ),
-    ).toBe(PLAYER_PROFILES.chromiumBrowser);
+    ).toBe(PLAYER_PROFILES.appleMusicWeb);
   });
 
   it('keeps auto mode on the browser-family profile without strong service evidence', () => {
@@ -258,6 +266,12 @@ describe('selectBrowserServiceProfile', () => {
     expect(
       selectBrowserServiceProfile(advertisementInput, PLAYER_PROFILES.chromiumBrowser, {
         browserPlayerService: 'youtube-music',
+      }),
+    ).toBe(PLAYER_PROFILES.chromiumBrowser);
+
+    expect(
+      selectBrowserServiceProfile(advertisementInput, PLAYER_PROFILES.chromiumBrowser, {
+        browserPlayerService: 'apple-music',
       }),
     ).toBe(PLAYER_PROFILES.chromiumBrowser);
   });

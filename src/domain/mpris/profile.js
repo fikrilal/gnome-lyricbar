@@ -125,7 +125,7 @@ export function selectBrowserServiceProfile(input, browserProfile, options = {})
   }
 
   if (browserPlayerService === 'apple-music') {
-    return browserProfile;
+    return isMusicLikeBrowserMetadata(input) ? PLAYER_PROFILES.appleMusicWeb : browserProfile;
   }
 
   return hasSpotifyWebEvidence(input) ? PLAYER_PROFILES.spotifyWeb : browserProfile;

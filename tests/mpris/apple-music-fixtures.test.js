@@ -61,13 +61,26 @@ describe('Apple Music browser MPRIS fixtures', () => {
     expect(snapshot.playbackStatus).toBe('Stopped');
   });
 
-  it('keeps Apple Music browser fixtures on Chromium profile before Apple-specific profile support', () => {
+  it('keeps Apple Music browser fixtures on Chromium profile in auto mode', () => {
     expect(detectPlayerProfile(requireSnapshot(mapFixture(normal)))).toBe(
       PLAYER_PROFILES.chromiumBrowser,
     );
     expect(detectPlayerProfile(requireSnapshot(mapFixture(bogusDuration)))).toBe(
       PLAYER_PROFILES.chromiumBrowser,
     );
+  });
+
+  it('classifies explicit Apple Music browser service as apple-music-web', () => {
+    expect(
+      detectPlayerProfile(requireSnapshot(mapFixture(normal)), {
+        browserPlayerService: 'apple-music',
+      }),
+    ).toBe(PLAYER_PROFILES.appleMusicWeb);
+    expect(
+      detectPlayerProfile(requireSnapshot(mapFixture(bogusDuration)), {
+        browserPlayerService: 'apple-music',
+      }),
+    ).toBe(PLAYER_PROFILES.appleMusicWeb);
   });
 
   it('does not infer Apple Music Web from current Apple Music Chromium fixture evidence', () => {
@@ -80,13 +93,15 @@ describe('Apple Music browser MPRIS fixtures', () => {
   });
 
   it('keeps low-confidence Apple Music browser fixtures on Chromium profile', () => {
-    expect(detectPlayerProfile(requireSnapshot(mapFixture(emptyMetadata)))).toBe(
+    const options = { browserPlayerService: /** @type {const} */ ('apple-music') };
+
+    expect(detectPlayerProfile(requireSnapshot(mapFixture(emptyMetadata)), options)).toBe(
       PLAYER_PROFILES.chromiumBrowser,
     );
-    expect(detectPlayerProfile(requireSnapshot(mapFixture(titleOnly)))).toBe(
+    expect(detectPlayerProfile(requireSnapshot(mapFixture(titleOnly)), options)).toBe(
       PLAYER_PROFILES.chromiumBrowser,
     );
-    expect(detectPlayerProfile(requireSnapshot(mapFixture(stopped)))).toBe(
+    expect(detectPlayerProfile(requireSnapshot(mapFixture(stopped)), options)).toBe(
       PLAYER_PROFILES.chromiumBrowser,
     );
   });
