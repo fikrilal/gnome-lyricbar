@@ -1,4 +1,5 @@
 import { buildLyricsQuery } from '../../domain/lyrics/normalize.js';
+import { applyLyricsQueryPolicy } from '../../domain/lyrics/query-policy.js';
 import { buildTrackIdentityKey } from '../../domain/lyrics/track-identity.js';
 import { shouldWriteLyricsCache } from '../../domain/lyrics/cache-policy.js';
 
@@ -124,12 +125,16 @@ export class LyricsService {
       return;
     }
 
-    const query = buildLyricsQuery({
-      title: player.title,
-      artist: player.artist,
-      album: player.album,
-      durationMs: player.durationMs,
-    });
+    const query = applyLyricsQueryPolicy(
+      player,
+      buildLyricsQuery({
+        title: player.title,
+        artist: player.artist,
+        album: player.album,
+        durationMs: player.durationMs,
+      }),
+      { browserPlayerService: this.#getBrowserPlayerService() },
+    );
 
     if (query.title === '' || query.artist === '') {
       this.#logger?.debug('lookup-skipped', { reason: 'incomplete-metadata' });

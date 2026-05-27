@@ -219,6 +219,82 @@ describe('LyricsService', () => {
     expect(harness.listener).toHaveBeenLastCalledWith(player, notFound);
   });
 
+  it('removes implausible Apple Music browser duration before cache and provider lookup', () => {
+    const harness = createHarness({
+      browserPlayerService: 'apple-music',
+      cachedResult: null,
+    });
+    const player = browserSnapshot({
+      title: 'Radioactive',
+      artist: 'Imagine Dragons',
+      album: 'Night Visions (Deluxe)',
+      durationMs: 1172197,
+    });
+
+    harness.service.setActivePlayer(player);
+
+    expect(harness.cache.get).toHaveBeenCalledWith(
+      {
+        title: 'Radioactive',
+        artist: 'Imagine Dragons',
+        album: 'Night Visions (Deluxe)',
+        durationMs: null,
+      },
+      expect.any(Function),
+    );
+    expect(harness.provider.lookup).toHaveBeenCalledWith(
+      {
+        title: 'Radioactive',
+        artist: 'Imagine Dragons',
+        album: 'Night Visions (Deluxe)',
+        durationMs: null,
+      },
+      expect.any(Function),
+    );
+  });
+
+  it('preserves plausible Apple Music browser duration for lookup', () => {
+    const harness = createHarness({
+      browserPlayerService: 'apple-music',
+      cachedResult: null,
+    });
+    const player = browserSnapshot({
+      title: 'Natural',
+      artist: 'Imagine Dragons',
+      album: 'Origins (Deluxe Edition)',
+      durationMs: 189515,
+    });
+
+    harness.service.setActivePlayer(player);
+
+    expect(harness.provider.lookup).toHaveBeenCalledWith(
+      {
+        title: 'Natural',
+        artist: 'Imagine Dragons',
+        album: 'Origins (Deluxe Edition)',
+        durationMs: 189515,
+      },
+      expect.any(Function),
+    );
+  });
+
+  it('preserves long Spotify Desktop duration for lookup', () => {
+    const harness = createHarness({ cachedResult: null });
+    const player = snapshot({ durationMs: 1172197 });
+
+    harness.service.setActivePlayer(player);
+
+    expect(harness.provider.lookup).toHaveBeenCalledWith(
+      {
+        title: 'Yellow',
+        artist: 'Coldplay',
+        album: 'Parachutes',
+        durationMs: 1172197,
+      },
+      expect.any(Function),
+    );
+  });
+
   it('still caches positive provider results for low-confidence browser metadata', () => {
     const harness = createHarness({
       browserPlayerService: 'youtube-music',
