@@ -32,7 +32,15 @@ Broader GNOME Shell versions should be added only after runtime testing. GNOME S
 
 ## Install
 
-Run:
+Recommended install (includes automatic daily updates):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/scripts/install.sh | bash -s -- --install-updater
+```
+
+LyricBar is in active development with frequent bug fixes and new features. Auto-update ensures you always have the latest version.
+
+Install without auto-update:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/scripts/install.sh | bash
@@ -44,13 +52,7 @@ Open preferences:
 gnome-extensions prefs lyricbar@fikrilal.github.io
 ```
 
-Optional GitHub auto-update:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/scripts/install.sh | bash -s -- --install-updater
-```
-
-This installs a user `systemd` timer that checks GitHub Releases daily. Manual update command:
+Manual update command:
 
 ```bash
 ~/.local/bin/lyricbar-update

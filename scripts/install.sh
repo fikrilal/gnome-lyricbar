@@ -410,6 +410,21 @@ printf '  gnome-extensions prefs %s\n' "$EXTENSION_UUID"
 
 write_version_marker "$installed_version"
 
+if [[ "$INSTALL_UPDATER" != "true" ]] && [[ -t 0 ]]; then
+  printf '\nLyricBar is in active development with frequent bug fixes and new features.\n'
+  printf 'Enable automatic daily updates from GitHub? [Y/n] '
+  read -r updater_answer
+  case "$updater_answer" in
+    n|N|no|No|NO)
+      printf 'Auto-update skipped. You can enable it later with:\n'
+      printf '  %s --install-updater\n' "$0"
+      ;;
+    *)
+      INSTALL_UPDATER=true
+      ;;
+  esac
+fi
+
 if [[ "$INSTALL_UPDATER" == "true" ]]; then
   install_updater
 fi

@@ -1,6 +1,8 @@
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
+import Soup from 'gi://Soup';
 
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
@@ -274,9 +276,43 @@ export default class LyricBarPreferences extends ExtensionPreferences {
       title: 'About',
     });
 
+    const currentVersion = readMetadataText(metadata, 'version-name', 'Unknown');
+
     const versionRow = new Adw.ActionRow({
       title: 'Version',
-      subtitle: readMetadataText(metadata, 'version-name', 'Unknown'),
+      subtitle: currentVersion,
+    });
+
+    const updateRow = new Adw.ActionRow({
+      title: 'Update available',
+      subtitle: 'Checking for updates...',
+    });
+    updateRow.visible = true;
+
+    const releasesUrl = `${readMetadataText(metadata, 'url', 'https://github.com/fikrilal/gnome-lyricbar')}/releases`;
+    updateRow.activatable = true;
+    const updateActivateId = updateRow.connect('activated', () => {
+      Gtk.show_uri(window, releasesUrl, 0);
+    });
+    connections.push([updateRow, updateActivateId]);
+
+    const openButton = new Gtk.Button({
+      icon_name: 'external-link-symbolic',
+      valign: Gtk.Align.CENTER,
+      tooltip_text: 'View releases',
+    });
+    const openButtonId = openButton.connect('clicked', () => {
+      Gtk.show_uri(window, releasesUrl, 0);
+    });
+    connections.push([openButton, openButtonId]);
+    updateRow.add_suffix(openButton);
+
+    checkForUpdate(currentVersion, (latestVersion) => {
+      if (latestVersion) {
+        updateRow.subtitle = `${latestVersion} is available on GitHub`;
+      } else {
+        updateRow.visible = false;
+      }
     });
 
     const uuidRow = new Adw.ActionRow({
@@ -295,6 +331,7 @@ export default class LyricBarPreferences extends ExtensionPreferences {
     connections.push([websiteRow, websiteActivateId]);
 
     aboutGroup.add(versionRow);
+    aboutGroup.add(updateRow);
     aboutGroup.add(uuidRow);
     aboutGroup.add(websiteRow);
 
@@ -328,6 +365,117 @@ export default class LyricBarPreferences extends ExtensionPreferences {
 function readMetadataText(metadata, key, fallback) {
   const value = metadata[key];
   return typeof value === 'string' && value.trim() !== '' ? value : fallback;
+}
+
+const UPDATE_CHECK_INTERVAL_S = 86400;
+const GITHUB_RELEASES_URL = 'https://github.com/fikrilal/gnome-lyricbar/releases/latest';
+const STATE_DIR = GLib.build_filenamev([GLib.get_user_state_dir(), 'lyricbar']);
+const UPDATE_STATE_FILE = GLib.build_filenamev([STATE_DIR, 'update-check.json']);
+
+/**
+ * @returns {{ lastCheck: number, latestVersion: string } | null}
+ */
+function readUpdateState() {
+  try {
+    const [ok, contents] = GLib.file_get_contents(UPDATE_STATE_FILE);
+    if (!ok || !contents) {
+      return null;
+    }
+    const decoder = new TextDecoder('utf-8');
+    return JSON.parse(decoder.decode(contents));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * @param {{ lastCheck: number, latestVersion: string }} state
+ * @returns {void}
+ */
+function writeUpdateState(state) {
+  try {
+    GLib.mkdir_with_parents(STATE_DIR, 0o755);
+    const payload = JSON.stringify(state, null, 2);
+    const encoder = new TextEncoder();
+    const bytes = encoder.encode(payload);
+    GLib.file_set_contents(UPDATE_STATE_FILE, bytes);
+  } catch {
+    // Silently ignore write failures
+  }
+}
+
+/**
+ * @param {string} current
+ * @param {string} latest
+ * @returns {boolean}
+ */
+function isNewerVersion(current, latest) {
+  const normalize = (/** @type {string} */ v) => v.replace(/^v/, '').trim();
+  const currentParts = normalize(current).split('.').map(Number);
+  const latestParts = normalize(latest).split('.').map(Number);
+  const maxLen = Math.max(currentParts.length, latestParts.length);
+  for (let i = 0; i < maxLen; i++) {
+    const c = currentParts[i] || 0;
+    const l = latestParts[i] || 0;
+    if (l > c) {
+      return true;
+    }
+    if (l < c) {
+      return false;
+    }
+  }
+  return false;
+}
+
+/**
+ * @param {string} currentVersion
+ * @param {(latestVersion: string | null) => void} callback
+ * @returns {void}
+ */
+function checkForUpdate(currentVersion, callback) {
+  const state = readUpdateState();
+  const now = Math.floor(Date.now() / 1000);
+
+  if (state && now - state.lastCheck < UPDATE_CHECK_INTERVAL_S) {
+    callback(isNewerVersion(currentVersion, state.latestVersion) ? state.latestVersion : null);
+    return;
+  }
+
+  const session = new Soup.Session({ user_agent: 'lyricbar-prefs/1.0' });
+  const message = Soup.Message.new('HEAD', GITHUB_RELEASES_URL);
+  if (!message) {
+    callback(null);
+    return;
+  }
+
+  session.send_and_read_async(
+    message,
+    GLib.PRIORITY_DEFAULT,
+    null,
+    /**
+     * @param {unknown} _source
+     * @param {unknown} result
+     * @returns {void}
+     */
+    (_source, result) => {
+      try {
+        session.send_and_read_finish(result);
+        const uri = message.get_uri()?.to_string?.() ?? '';
+        const match = uri.match(/\/tag\/([^/?#]+)/);
+        const latestVersion = match ? match[1] : null;
+
+        if (latestVersion) {
+          writeUpdateState({ lastCheck: now, latestVersion });
+        }
+
+        callback(
+          latestVersion && isNewerVersion(currentVersion, latestVersion) ? latestVersion : null,
+        );
+      } catch {
+        callback(null);
+      }
+    },
+  );
 }
 
 /**
