@@ -8,6 +8,10 @@ import {
   displayStateFromSyncedPosition,
 } from '../domain/display/lyrics-state.js';
 import { displayStateFromPlayer } from '../domain/display/player-state.js';
+import {
+  shouldUseRelativeSyncedLyricsPosition,
+  shouldUseSyncedLyricsPosition,
+} from '../domain/display/sync-position-policy.js';
 import { shouldPollSyncedLyrics } from '../domain/display/sync-polling.js';
 import { buildIndicatorViewModel } from '../domain/display/view-model.js';
 import { selectActivePlayer } from '../domain/mpris/selection.js';
@@ -114,6 +118,12 @@ export class LyricBarController {
 
   /** @type {string | null} */
   #lastSyncedLine = null;
+
+  /** @type {string | null} */
+  #syncPositionTrackKey = null;
+
+  /** @type {number | null} */
+  #syncPositionOffsetMs = null;
 
   /**
    * @param {ExtensionHandle} extension
@@ -469,7 +479,9 @@ export class LyricBarController {
     } else if (this.#currentLookup === null) {
       this.#displayState = displayStateFromPlayer(this.#activePlayer);
     } else {
-      this.#displayState = displayStateFromLookup(this.#activePlayer, this.#currentLookup);
+      this.#displayState = displayStateFromLookup(this.#activePlayer, this.#currentLookup, {
+        previousState: this.#displayState,
+      });
     }
 
     this.#render();
@@ -488,6 +500,7 @@ export class LyricBarController {
       return;
     }
 
+    this.#resetSyncPositionOffset();
     this.#logger?.debug('sync-loop-start', {
       intervalMs: POSITION_POLL_INTERVAL_MS,
       title: this.#activePlayer?.title ?? null,
@@ -499,6 +512,7 @@ export class LyricBarController {
         this.#logger?.debug('sync-loop-stop');
         this.#syncSourceId = 0;
         this.#lastSyncedLine = null;
+        this.#resetSyncPositionOffset();
         return GLib.SOURCE_REMOVE;
       }
       this.#pollSyncedPosition();
@@ -514,6 +528,7 @@ export class LyricBarController {
       enabled: this.#enabled,
       player: this.#activePlayer,
       lookup: this.#currentLookup,
+      browserPlayerService: this.#currentSettings?.browserPlayerService ?? 'auto',
     });
   }
 
@@ -531,6 +546,7 @@ export class LyricBarController {
       this.#syncSourceId = 0;
     }
     this.#lastSyncedLine = null;
+    this.#resetSyncPositionOffset();
   }
 
   /**
@@ -558,7 +574,12 @@ export class LyricBarController {
         return;
       }
 
-      const next = displayStateFromSyncedPosition(player, lookup, positionMs);
+      const effectivePositionMs = this.#resolveSyncedPosition(player, lookup, positionMs);
+      if (effectivePositionMs === null) {
+        return;
+      }
+
+      const next = displayStateFromSyncedPosition(player, lookup, effectivePositionMs);
       const line = next.kind === 'lyrics' ? next.line : null;
       if (line === this.#lastSyncedLine) {
         return;
@@ -566,12 +587,87 @@ export class LyricBarController {
 
       this.#lastSyncedLine = line;
       this.#logger?.debug('sync-line-selected', {
-        positionMs,
+        positionMs: effectivePositionMs,
+        rawPositionMs: positionMs,
         text: line,
       });
       this.#displayState = next;
       this.#render();
     });
+  }
+
+  /**
+   * @param {PlayerSnapshot} player
+   * @param {Extract<LyricsProviderResult, { kind: 'synced' }>} lookup
+   * @param {number} rawPositionMs
+   * @returns {number | null}
+   */
+  #resolveSyncedPosition(player, lookup, rawPositionMs) {
+    const options = {
+      browserPlayerService: this.#currentSettings?.browserPlayerService ?? 'auto',
+      trackDurationMs: lookup.track.durationMs,
+    };
+    const trackKey = this.#buildSyncPositionTrackKey(player, lookup);
+
+    if (this.#syncPositionTrackKey !== trackKey) {
+      this.#syncPositionTrackKey = trackKey;
+      this.#syncPositionOffsetMs = null;
+    }
+
+    if (this.#syncPositionOffsetMs !== null) {
+      const normalizedPositionMs = rawPositionMs - this.#syncPositionOffsetMs;
+      if (shouldUseSyncedLyricsPosition(player, normalizedPositionMs, options)) {
+        return normalizedPositionMs;
+      }
+      this.#logger?.debug('sync-position-skipped', {
+        positionMs: normalizedPositionMs,
+        rawPositionMs,
+        title: player.title,
+      });
+      return null;
+    }
+
+    if (shouldUseSyncedLyricsPosition(player, rawPositionMs, options)) {
+      return rawPositionMs;
+    }
+
+    if (shouldUseRelativeSyncedLyricsPosition(player, rawPositionMs, options)) {
+      this.#syncPositionOffsetMs = rawPositionMs;
+      this.#logger?.debug('sync-position-offset-established', {
+        rawPositionMs,
+        title: player.title,
+      });
+      return 0;
+    }
+
+    this.#logger?.debug('sync-position-skipped', {
+      positionMs: rawPositionMs,
+      title: player.title,
+    });
+    return null;
+  }
+
+  /**
+   * @param {PlayerSnapshot} player
+   * @param {Extract<LyricsProviderResult, { kind: 'synced' }>} lookup
+   * @returns {string}
+   */
+  #buildSyncPositionTrackKey(player, lookup) {
+    return [
+      player.busName,
+      player.title,
+      player.artist,
+      lookup.track.trackName,
+      lookup.track.artistName,
+    ].join('\u0000');
+  }
+
+  /**
+   * @returns {void}
+   */
+  #resetSyncPositionOffset() {
+    this.#syncPositionTrackKey = null;
+    this.#syncPositionOffsetMs = null;
   }
 
   /**

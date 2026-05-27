@@ -72,6 +72,21 @@ describe('shouldPollSyncedLyrics', () => {
       }),
     ).toBe(false);
   });
+
+  it('polls synced lyrics for Apple Music Web so per-sample position validation can recover display', () => {
+    expect(
+      shouldPollSyncedLyrics({
+        enabled: true,
+        player: snapshot({
+          busName: 'org.mpris.MediaPlayer2.chromium.instance4621',
+          durationMs: 2308029,
+          trackId: '/org/chromium/MediaPlayer2/TrackList/TrackNatural',
+        }),
+        lookup: syncedLookup,
+        browserPlayerService: 'apple-music',
+      }),
+    ).toBe(true);
+  });
 });
 
 /**

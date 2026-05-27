@@ -2,6 +2,10 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
+import {
+  shouldUseSyncedLyricsPosition,
+  shouldUseSyncedLyricsTiming,
+} from '../../src/domain/display/sync-position-policy.js';
 import { shouldWriteLyricsCache } from '../../src/domain/lyrics/cache-policy.js';
 import { buildTrackIdentityKey } from '../../src/domain/lyrics/track-identity.js';
 import { detectPlayerProfile, PLAYER_PROFILES } from '../../src/domain/mpris/profile.js';
@@ -141,8 +145,12 @@ describe('Apple Music browser MPRIS fixtures', () => {
     expect(shouldWriteLyricsCache(requireSnapshot(mapFixture(stopped)), notFound)).toBe(false);
   });
 
-  it('allows not-found caching for high-confidence Apple Music browser metadata under current policy', () => {
-    expect(shouldWriteLyricsCache(requireSnapshot(mapFixture(normal)), notFound)).toBe(true);
+  it('does not cache not-found results for high-confidence Apple Music browser metadata', () => {
+    expect(
+      shouldWriteLyricsCache(requireSnapshot(mapFixture(normal)), notFound, {
+        browserPlayerService: 'apple-music',
+      }),
+    ).toBe(false);
   });
 
   it('does not cache not-found results for implausible Apple Music browser duration', () => {
@@ -151,6 +159,38 @@ describe('Apple Music browser MPRIS fixtures', () => {
         browserPlayerService: 'apple-music',
       }),
     ).toBe(false);
+  });
+
+  it('uses per-sample synced lyric position validation for bogus Apple Music browser duration', () => {
+    const snapshot = requireSnapshot(mapFixture(bogusDuration));
+
+    expect(
+      shouldUseSyncedLyricsTiming(snapshot, {
+        browserPlayerService: 'apple-music',
+      }),
+    ).toBe(true);
+    expect(
+      shouldUseSyncedLyricsPosition(snapshot, bogusDuration.positionSamplesMs[0], {
+        browserPlayerService: 'apple-music',
+        trackDurationMs: 180000,
+      }),
+    ).toBe(false);
+  });
+
+  it('uses synced lyric timing for plausible Apple Music browser positions', () => {
+    const snapshot = requireSnapshot(mapFixture(normal));
+
+    expect(
+      shouldUseSyncedLyricsTiming(snapshot, {
+        browserPlayerService: 'apple-music',
+      }),
+    ).toBe(true);
+    expect(
+      shouldUseSyncedLyricsPosition(snapshot, normal.positionSamplesMs[0], {
+        browserPlayerService: 'apple-music',
+        trackDurationMs: 180000,
+      }),
+    ).toBe(true);
   });
 });
 

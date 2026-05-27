@@ -4,14 +4,19 @@ import { selectLyricLine } from '../lyrics/lrc.js';
  * @import { PlayerSnapshot } from '../mpris/types.js'
  * @import { LyricsProviderResult } from '../lyrics/types.js'
  * @import { DisplayState, DisplayTrack } from './types.js'
+ *
+ * @typedef {Readonly<{
+ *   previousState?: DisplayState | null | undefined,
+ * }>} DisplayLookupOptions
  */
 
 /**
  * @param {PlayerSnapshot | null | undefined} player
  * @param {LyricsProviderResult | null | undefined} lookup
+ * @param {DisplayLookupOptions} [options]
  * @returns {DisplayState}
  */
-export function displayStateFromLookup(player, lookup) {
+export function displayStateFromLookup(player, lookup, options = {}) {
   if (player === null || player === undefined) {
     return { kind: 'idle' };
   }
@@ -25,6 +30,12 @@ export function displayStateFromLookup(player, lookup) {
 
   switch (lookup.kind) {
     case 'synced':
+      if (
+        options.previousState?.kind === 'lyrics' &&
+        sameDisplayTrack(options.previousState.track, track)
+      ) {
+        return options.previousState;
+      }
       return { kind: 'lyrics', line: extractFirstSyncedLine(lookup), track };
     case 'plain':
       return { kind: 'lyrics', line: extractFirstPlainLine(lookup), track };
@@ -37,6 +48,15 @@ export function displayStateFromLookup(player, lookup) {
     default:
       return { kind: 'track', track };
   }
+}
+
+/**
+ * @param {DisplayTrack} left
+ * @param {DisplayTrack} right
+ * @returns {boolean}
+ */
+function sameDisplayTrack(left, right) {
+  return left.title === right.title && left.artist === right.artist;
 }
 
 /**

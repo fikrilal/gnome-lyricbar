@@ -63,6 +63,54 @@ describe('displayStateFromLookup', () => {
     });
   });
 
+  it('preserves the current synced line for same-track refreshes', () => {
+    expect(
+      displayStateFromLookup(snapshot({}), syncedLookup, {
+        previousState: {
+          kind: 'lyrics',
+          line: 'Look how they shine for you',
+          track: { title: 'Yellow', artist: 'Coldplay' },
+        },
+      }),
+    ).toEqual({
+      kind: 'lyrics',
+      line: 'Look how they shine for you',
+      track: { title: 'Yellow', artist: 'Coldplay' },
+    });
+  });
+
+  it('does not preserve a synced line across track changes', () => {
+    expect(
+      displayStateFromLookup(snapshot({ title: 'Clocks' }), syncedLookup, {
+        previousState: {
+          kind: 'lyrics',
+          line: 'Look how they shine for you',
+          track: { title: 'Yellow', artist: 'Coldplay' },
+        },
+      }),
+    ).toEqual({
+      kind: 'lyrics',
+      line: 'Look at the stars',
+      track: { title: 'Clocks', artist: 'Coldplay' },
+    });
+  });
+
+  it('does not downgrade synced lyrics to track display during lookup refreshes', () => {
+    expect(
+      displayStateFromLookup(snapshot({}), syncedLookup, {
+        previousState: {
+          kind: 'lyrics',
+          line: 'Look how they shine for you',
+          track: { title: 'Yellow', artist: 'Coldplay' },
+        },
+      }),
+    ).toEqual({
+      kind: 'lyrics',
+      line: 'Look how they shine for you',
+      track: { title: 'Yellow', artist: 'Coldplay' },
+    });
+  });
+
   it('falls back to plainText when synced lines are all empty', () => {
     expect(
       displayStateFromLookup(snapshot({}), {
