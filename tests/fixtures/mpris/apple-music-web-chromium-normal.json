@@ -1,0 +1,33 @@
+{
+  "name": "apple-music-web-chromium-normal",
+  "description": "Chrome MPRIS metadata captured from normal Apple Music Web playback with plausible duration.",
+  "busName": "org.mpris.MediaPlayer2.chromium.instance100256",
+  "rootProperties": {
+    "Identity": "Chrome",
+    "CanQuit": false,
+    "CanRaise": false,
+    "HasTrackList": false
+  },
+  "playerProperties": {
+    "PlaybackStatus": "Playing",
+    "Position": 66363296,
+    "Metadata": {
+      "mpris:artUrl": "file:///tmp/.com.google.Chrome.TNRhng",
+      "mpris:length": 189514579,
+      "mpris:trackid": "/org/chromium/MediaPlayer2/TrackList/TrackAD881F63680FE0B3A97734DAC2ED7F63",
+      "xesam:album": "Origins (Deluxe Edition)",
+      "xesam:artist": ["Imagine Dragons"],
+      "xesam:title": "Natural"
+    }
+  },
+  "positionSamplesMs": [66363, 66867, 67369, 67872, 68375],
+  "expectedSnapshot": {
+    "busName": "org.mpris.MediaPlayer2.chromium.instance100256",
+    "title": "Natural",
+    "artist": "Imagine Dragons",
+    "album": "Origins (Deluxe Edition)",
+    "durationMs": 189515,
+    "trackId": "/org/chromium/MediaPlayer2/TrackList/TrackAD881F63680FE0B3A97734DAC2ED7F63",
+    "playbackStatus": "Playing"
+  }
+}

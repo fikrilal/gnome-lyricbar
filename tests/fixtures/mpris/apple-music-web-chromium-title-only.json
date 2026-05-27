@@ -1,0 +1,33 @@
+{
+  "name": "apple-music-web-chromium-title-only",
+  "description": "Browser MPRIS can briefly expose title-only Apple Music metadata before artist data settles.",
+  "busName": "org.mpris.MediaPlayer2.chromium.instance100256",
+  "rootProperties": {
+    "Identity": "Chrome",
+    "CanQuit": false,
+    "CanRaise": false,
+    "HasTrackList": false
+  },
+  "playerProperties": {
+    "PlaybackStatus": "Playing",
+    "Position": 1200000,
+    "Metadata": {
+      "mpris:artUrl": "file:///tmp/.com.google.Chrome.title-only",
+      "mpris:length": 189514579,
+      "mpris:trackid": "/org/chromium/MediaPlayer2/TrackList/TrackTitleOnly",
+      "xesam:album": "",
+      "xesam:artist": [],
+      "xesam:title": "Natural"
+    }
+  },
+  "positionSamplesMs": [1200, 1700, 2200],
+  "expectedSnapshot": {
+    "busName": "org.mpris.MediaPlayer2.chromium.instance100256",
+    "title": "Natural",
+    "artist": "",
+    "album": "",
+    "durationMs": 189515,
+    "trackId": "/org/chromium/MediaPlayer2/TrackList/TrackTitleOnly",
+    "playbackStatus": "Playing"
+  }
+}

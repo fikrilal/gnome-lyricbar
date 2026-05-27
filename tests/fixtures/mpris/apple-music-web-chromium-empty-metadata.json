@@ -1,0 +1,31 @@
+{
+  "name": "apple-music-web-chromium-empty-metadata",
+  "description": "Browser MPRIS can briefly emit empty Apple Music metadata during tab, track, or media-session churn.",
+  "busName": "org.mpris.MediaPlayer2.chromium.instance100256",
+  "rootProperties": {
+    "Identity": "Chrome",
+    "CanQuit": false,
+    "CanRaise": false,
+    "HasTrackList": false
+  },
+  "playerProperties": {
+    "PlaybackStatus": "Stopped",
+    "Position": 0,
+    "Metadata": {
+      "mpris:trackid": "/org/chromium/MediaPlayer2/TrackList/TrackEmpty",
+      "xesam:album": "",
+      "xesam:artist": [],
+      "xesam:title": ""
+    }
+  },
+  "positionSamplesMs": [0, 0, 0],
+  "expectedSnapshot": {
+    "busName": "org.mpris.MediaPlayer2.chromium.instance100256",
+    "title": "",
+    "artist": "",
+    "album": "",
+    "durationMs": null,
+    "trackId": "/org/chromium/MediaPlayer2/TrackList/TrackEmpty",
+    "playbackStatus": "Stopped"
+  }
+}

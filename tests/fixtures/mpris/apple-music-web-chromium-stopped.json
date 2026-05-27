@@ -1,0 +1,33 @@
+{
+  "name": "apple-music-web-chromium-stopped",
+  "description": "Apple Music Web can retain track metadata while Chromium reports the browser player as stopped.",
+  "busName": "org.mpris.MediaPlayer2.chromium.instance100256",
+  "rootProperties": {
+    "Identity": "Chrome",
+    "CanQuit": false,
+    "CanRaise": false,
+    "HasTrackList": false
+  },
+  "playerProperties": {
+    "PlaybackStatus": "Stopped",
+    "Position": 0,
+    "Metadata": {
+      "mpris:artUrl": "file:///tmp/.com.google.Chrome.stopped",
+      "mpris:length": 189514579,
+      "mpris:trackid": "/org/chromium/MediaPlayer2/TrackList/TrackStopped",
+      "xesam:album": "Origins (Deluxe Edition)",
+      "xesam:artist": ["Imagine Dragons"],
+      "xesam:title": "Natural"
+    }
+  },
+  "positionSamplesMs": [0, 0, 0],
+  "expectedSnapshot": {
+    "busName": "org.mpris.MediaPlayer2.chromium.instance100256",
+    "title": "Natural",
+    "artist": "Imagine Dragons",
+    "album": "Origins (Deluxe Edition)",
+    "durationMs": 189515,
+    "trackId": "/org/chromium/MediaPlayer2/TrackList/TrackStopped",
+    "playbackStatus": "Stopped"
+  }
+}
