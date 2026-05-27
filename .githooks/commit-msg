@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+set -eu
+
+if [ ! -d node_modules ]; then
+  echo "commit-msg: node_modules missing; run npm ci before committing." >&2
+  exit 1
+fi
+
+npx --no -- commitlint --edit "$1"

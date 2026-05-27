@@ -10,6 +10,7 @@ This directory is the source of truth for LyricBar product direction, engineerin
 - [Spotify Web support improvements](spotify-web-support-improvements.md): live MPRIS findings and phased improvements for better Spotify browser support.
 - [YouTube Music browser support](youtube-music-browser-support.md): live MPRIS findings and phased work for explicit YouTube Music browser compatibility.
 - [Privacy](privacy.md): network requests, local cache, logs, and data handling.
+- [Commit conventions](commit-conventions.md): semantic scoped commit rules and local hook setup.
 - [Troubleshooting](troubleshooting.md): install, runtime, player selection, lyric sync, and preference issues.
 - [Release checklist](release-checklist.md): public release gates and runtime scenarios.
 - [Agent harness](harness/agent-harness.md): agent-first workflow, verification gates, guardrails, and feedback loops.
@@ -30,6 +31,7 @@ docs/
   spotify-web-support-improvements.md
   youtube-music-browser-support.md
   privacy.md
+  commit-conventions.md
   troubleshooting.md
   release-checklist.md
   harness/

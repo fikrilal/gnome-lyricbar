@@ -49,6 +49,16 @@ npm run verify:docs
 
 If dependencies are not installed, run `npm install` before verification.
 
+## Commit Messages
+
+Use semantic scoped commits:
+
+```text
+type(scope): message
+```
+
+See `docs/commit-conventions.md` for allowed types/scopes and local hook setup. GitHub CI intentionally does not run commitlint.
+
 ## Agent Workflow
 
 For non-trivial implementation work:
