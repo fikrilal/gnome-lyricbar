@@ -1,8 +1,8 @@
 # LyricBar
 
-LyricBar is a GNOME Shell extension that displays synchronized live lyrics in the top bar for Spotify and other MPRIS-compatible music players.
+LyricBar is a GNOME Shell extension that displays synchronized live lyrics in the top bar for MPRIS-compatible music players.
 
-It is built for GNOME Shell 46-49, with Spotify Desktop as the primary target. Lyrics are fetched from LRCLIB, cached locally, and rendered as a single glanceable line in the panel.
+It is built for GNOME Shell 46-49 and supports Spotify Desktop, Spotify Web, YouTube Music Web, Apple Music Web, and other MPRIS players. Lyrics are fetched from LRCLIB, cached locally, and rendered as a single glanceable line in the panel.
 
 ![LyricBar screenshot](docs/assets/lyricbar-panel.png)
 
@@ -11,24 +11,33 @@ It is built for GNOME Shell 46-49, with Spotify Desktop as the primary target. L
 ## Features
 
 - Synced one-line lyric display in the GNOME top bar.
-- Spotify-first MPRIS player selection with configurable player priority.
+- MPRIS player selection with configurable player priority.
+- Browser player profiles for Spotify Web, YouTube Music Web, and Apple Music Web.
+- Apple Music Web position normalization for browsers that expose cumulative media-session position.
 - LRCLIB synced lyric lookup with local cache.
 - Fallback modes for tracks without synced lyrics.
-- Preferences for panel position, maximum width, text alignment, fallback behavior, cache, player priority, and debug logging.
+- Preferences for panel position, maximum width, text alignment, fallback behavior, browser player service, cache, player priority, and debug logging.
 - Small panel menu for quick position/alignment changes and preferences access.
 - Strict local harness: formatting, linting, type checking, architecture checks, unit tests, schema validation, and bundle build.
 
 ## Compatibility
 
-| Target              | Status         |
-| ------------------- | -------------- |
-| GNOME Shell 46-49   | Supported      |
-| Ubuntu 24.04        | Supported      |
-| Fedora GNOME        | Supported      |
-| Spotify Desktop     | Primary target |
-| Other MPRIS players | Best effort    |
+| Target               | Status        |
+| -------------------- | ------------- |
+| GNOME Shell 46-49    | Supported     |
+| Ubuntu 24.04         | Supported     |
+| Fedora GNOME         | Supported     |
+| Spotify Desktop      | Supported     |
+| Spotify Web          | Supported     |
+| YouTube Music Web    | Supported     |
+| Apple Music Web      | Supported     |
+| Other MPRIS players  | Best effort   |
+| Non-GNOME desktops   | Not supported |
+| Browser/website APIs | Not used      |
 
 Broader GNOME Shell versions should be added only after runtime testing. GNOME Shell extension APIs are not stable enough for blanket compatibility claims.
+
+Browser support is powered by the browser's MPRIS integration. LyricBar does not scrape tabs, inspect page DOM, read browser history, or use private Spotify, YouTube, or Apple APIs. If a browser player is ambiguous, use Preferences -> Browser player service to select the intended service.
 
 ## Install
 
@@ -98,6 +107,7 @@ If the panel is blank, lyrics do not sync, or the wrong player is selected, see 
 
 - [Product overview](docs/product.md)
 - [Engineering proposal](docs/engineering-proposal.md)
+- [Player profile architecture](docs/player-profile-architecture.md)
 - [Agent harness](docs/harness/agent-harness.md)
 - [Runtime evidence workflow](docs/harness/runtime-evidence.md)
 - [Release checklist](docs/release-checklist.md)

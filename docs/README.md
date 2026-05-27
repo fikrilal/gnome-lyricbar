@@ -14,6 +14,7 @@ This directory is the source of truth for LyricBar product direction, engineerin
 - [Commit conventions](commit-conventions.md): semantic scoped commit rules and local hook setup.
 - [Troubleshooting](troubleshooting.md): install, runtime, player selection, lyric sync, and preference issues.
 - [Release checklist](release-checklist.md): public release gates and runtime scenarios.
+- [Release notes](release-notes/): curated user-facing notes for GitHub Releases.
 - [Agent harness](harness/agent-harness.md): agent-first workflow, verification gates, guardrails, and feedback loops.
 - [Browser player R&D workflow](harness/browser-player-rnd-workflow.md): mandatory evidence workflow for Spotify Web, YouTube Music, Apple Music Web, and future browser player support.
 - [Nested runtime harness](harness/nested-runtime-harness.md): recommended visual runtime evidence loop with nested GNOME Shell and mock MPRIS.
@@ -37,6 +38,8 @@ docs/
   commit-conventions.md
   troubleshooting.md
   release-checklist.md
+  release-notes/
+    v0.1.8.md
   harness/
     agent-harness.md
     browser-player-rnd-workflow.md
@@ -57,6 +60,7 @@ docs/
 - Agent workflow and harness design belong in `docs/harness/`.
 - Active implementation plans belong in `docs/exec-plans/active/`.
 - Completed implementation plans belong in `docs/exec-plans/completed/`.
+- Curated GitHub Release bodies belong in `docs/release-notes/vX.Y.Z.md`.
 - Durable decisions should become ADRs once the project needs a decision log.
 - Root-level Markdown should stay focused on public entry points and repository policy.
 

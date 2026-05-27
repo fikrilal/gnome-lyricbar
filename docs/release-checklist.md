@@ -137,6 +137,7 @@ Pushing a `v*` tag triggers `.github/workflows/release.yml`, which:
 - checks out the tagged commit on a clean runner
 - runs `npm ci` + `npm run verify` (rebuilds the bundle and runs `validate:bundle`)
 - asserts the tag name matches `metadata.json` `version-name`
+- requires curated release notes at `docs/release-notes/vX.Y.Z.md`
 - uploads `dist/lyricbar@fikrilal.github.io.zip` to the GitHub Release as
   the canonical asset
 
