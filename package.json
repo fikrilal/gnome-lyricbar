@@ -23,10 +23,11 @@
     "typecheck": "tsc -p jsconfig.json --noEmit",
     "inspect:mpris": "node scripts/inspect-mpris.mjs",
     "verify": "npm run verify:safe",
-    "verify:safe": "npm run verify:docs && npm run validate:metadata && npm run validate:schema && npm run check:architecture && npm run format:check && npm run lint && npm run typecheck && npm test && npm run build:extension",
+    "verify:safe": "npm run verify:docs && npm run validate:metadata && npm run validate:schema && npm run check:architecture && npm run format:check && npm run lint && npm run typecheck && npm test && npm run build:extension && npm run validate:bundle",
     "verify:docs": "node scripts/validate-docs.mjs",
     "validate:metadata": "node scripts/validate-metadata.mjs",
     "validate:schema": "node scripts/validate-schema.mjs",
+    "validate:bundle": "node scripts/validate-bundle.mjs",
     "check:architecture": "node scripts/check-architecture.mjs",
     "build:extension": "node scripts/build-extension.mjs"
   },

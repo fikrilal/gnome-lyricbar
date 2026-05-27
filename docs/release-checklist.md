@@ -27,10 +27,16 @@ Expected:
 
 ## Bundle Inspection
 
-Run:
+`npm run verify` now ends with `validate:bundle`, which asserts that the
+`metadata.json` inside `dist/lyricbar@fikrilal.github.io.zip` matches the
+repo `metadata.json`. If you bumped the version but forgot to rebuild, this
+gate fails before the release flow can run.
+
+Sanity check the zip contents:
 
 ```bash
 unzip -l dist/lyricbar@fikrilal.github.io.zip
+unzip -p dist/lyricbar@fikrilal.github.io.zip metadata.json
 ```
 
 The bundle should include only runtime files:
@@ -123,4 +129,16 @@ Only tag after the static gates and runtime scenarios pass:
 
 ```bash
 git tag v0.1.0
+git push origin v0.1.0
 ```
+
+Pushing a `v*` tag triggers `.github/workflows/release.yml`, which:
+
+- checks out the tagged commit on a clean runner
+- runs `npm ci` + `npm run verify` (rebuilds the bundle and runs `validate:bundle`)
+- asserts the tag name matches `metadata.json` `version-name`
+- uploads `dist/lyricbar@fikrilal.github.io.zip` to the GitHub Release as
+  the canonical asset
+
+Do not upload release assets manually. The release-uploader workflow is the
+single source of truth for the published zip.

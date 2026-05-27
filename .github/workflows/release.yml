@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release asset
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libglib2.0-bin zip unzip
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify
+        run: npm run verify
+
+      - name: Verify tag matches metadata version
+        run: |
+          tag_name="${GITHUB_REF#refs/tags/}"
+          tag_version="${tag_name#v}"
+          metadata_version="$(node -p 'require("./metadata.json")["version-name"]')"
+          if [ "$tag_version" != "$metadata_version" ]; then
+            echo "::error::Tag $tag_name implies version-name '$tag_version' but metadata.json says '$metadata_version'." >&2
+            exit 1
+          fi
+          echo "Tag $tag_name matches metadata version-name $metadata_version."
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/lyricbar@fikrilal.github.io.zip
+          fail_on_unmatched_files: true
+          generate_release_notes: true
