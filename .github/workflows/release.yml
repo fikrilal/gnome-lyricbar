@@ -43,9 +43,19 @@ jobs:
           fi
           echo "Tag $tag_name matches metadata version-name $metadata_version."
 
+      - name: Verify curated release notes exist
+        run: |
+          tag_name="${GITHUB_REF#refs/tags/}"
+          notes_path="docs/release-notes/${tag_name}.md"
+          if [ ! -f "$notes_path" ]; then
+            echo "::error::Missing curated release notes at $notes_path." >&2
+            exit 1
+          fi
+          echo "Using curated release notes from $notes_path."
+
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
           files: dist/lyricbar@fikrilal.github.io.zip
           fail_on_unmatched_files: true
-          generate_release_notes: true
+          body_path: docs/release-notes/${{ github.ref_name }}.md
