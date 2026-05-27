@@ -131,6 +131,40 @@ describe('buildTrackIdentityKey', () => {
     );
   });
 
+  it('ignores implausible Apple Music browser duration for identity', () => {
+    const first = browserSnapshot({
+      title: 'Radioactive',
+      artist: 'Imagine Dragons',
+      album: 'Night Visions (Deluxe)',
+      durationMs: 1172197,
+    });
+    const second = {
+      ...first,
+      durationMs: 1000000,
+    };
+
+    expect(buildTrackIdentityKey(first, { browserPlayerService: 'apple-music' })).toBe(
+      buildTrackIdentityKey(second, { browserPlayerService: 'apple-music' }),
+    );
+  });
+
+  it('keeps plausible Apple Music browser duration as part of identity', () => {
+    const first = browserSnapshot({
+      title: 'Natural',
+      artist: 'Imagine Dragons',
+      album: 'Origins (Deluxe Edition)',
+      durationMs: 189515,
+    });
+    const second = {
+      ...first,
+      durationMs: 240000,
+    };
+
+    expect(buildTrackIdentityKey(first, { browserPlayerService: 'apple-music' })).not.toBe(
+      buildTrackIdentityKey(second, { browserPlayerService: 'apple-music' }),
+    );
+  });
+
   it('lowercases the produced key for case-insensitive matching', () => {
     const key = buildTrackIdentityKey(snapshot({ title: 'YELLOW', artist: 'COLDPLAY' }));
     expect(key).toBe(key?.toLowerCase());

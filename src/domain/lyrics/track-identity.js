@@ -1,4 +1,5 @@
 import { detectPlayerProfile } from '../mpris/profile.js';
+import { isImplausibleAppleMusicDuration } from './duration-policy.js';
 
 /**
  * @import { PlayerSnapshot } from '../mpris/types.js'
@@ -35,10 +36,11 @@ export function buildTrackIdentityKey(player, options = {}) {
       ? player.trackId
       : ''
     : '';
-  const duration =
-    typeof player.durationMs === 'number' && Number.isFinite(player.durationMs)
+  const duration = shouldUseDuration(player, options)
+    ? typeof player.durationMs === 'number' && Number.isFinite(player.durationMs)
       ? String(Math.round(player.durationMs / 1000))
-      : '';
+      : ''
+    : '';
 
   return [player.busName, trackId, artist, title, album, duration]
     .map((part) => part.toLowerCase())
@@ -71,4 +73,16 @@ function shouldUseTrackId(player, options) {
     browserPlayerService: options.browserPlayerService ?? 'auto',
   });
   return profile.sourceKind !== 'browser';
+}
+
+/**
+ * @param {PlayerSnapshot} player
+ * @param {TrackIdentityOptions} options
+ * @returns {boolean}
+ */
+function shouldUseDuration(player, options) {
+  const profile = detectPlayerProfile(player, {
+    browserPlayerService: options.browserPlayerService ?? 'auto',
+  });
+  return profile.id !== 'apple-music-web' || !isImplausibleAppleMusicDuration(player.durationMs);
 }

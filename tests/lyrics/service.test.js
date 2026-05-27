@@ -149,6 +149,30 @@ describe('LyricsService', () => {
     expect(harness.listener).toHaveBeenLastCalledWith(second, syncedResult);
   });
 
+  it('does not retrigger Apple Music lookup when only implausible browser duration changes', () => {
+    const harness = createHarness({
+      browserPlayerService: 'apple-music',
+      cachedResult: syncedResult,
+    });
+    const first = browserSnapshot({
+      title: 'Radioactive',
+      artist: 'Imagine Dragons',
+      album: 'Night Visions (Deluxe)',
+      durationMs: 1172197,
+    });
+    const second = {
+      ...first,
+      durationMs: 1000000,
+    };
+
+    harness.service.setActivePlayer(first);
+    harness.service.setActivePlayer(second);
+
+    expect(harness.cache.get).toHaveBeenCalledTimes(1);
+    expect(harness.provider.lookup).not.toHaveBeenCalled();
+    expect(harness.listener).toHaveBeenLastCalledWith(second, syncedResult);
+  });
+
   it('does retrigger browser lookup when song metadata changes with reused browser track id', () => {
     const harness = createHarness({
       browserPlayerService: 'spotify',

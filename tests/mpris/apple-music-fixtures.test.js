@@ -121,14 +121,16 @@ describe('Apple Music browser MPRIS fixtures', () => {
     expect(buildTrackIdentityKey(first)).toBe(buildTrackIdentityKey(second));
   });
 
-  it('documents that bogus Apple Music duration currently affects browser identity', () => {
-    const plausible = requireSnapshot(mapFixture(normal));
-    const implausible = {
-      ...plausible,
-      durationMs: requireSnapshot(mapFixture(bogusDuration)).durationMs,
+  it('ignores bogus Apple Music duration in explicit Apple Music browser identity', () => {
+    const first = requireSnapshot(mapFixture(bogusDuration));
+    const second = {
+      ...first,
+      durationMs: 1000000,
     };
 
-    expect(buildTrackIdentityKey(plausible)).not.toBe(buildTrackIdentityKey(implausible));
+    expect(buildTrackIdentityKey(first, { browserPlayerService: 'apple-music' })).toBe(
+      buildTrackIdentityKey(second, { browserPlayerService: 'apple-music' }),
+    );
   });
 
   it('does not cache not-found results for low-confidence Apple Music browser metadata', () => {
@@ -141,7 +143,14 @@ describe('Apple Music browser MPRIS fixtures', () => {
 
   it('allows not-found caching for high-confidence Apple Music browser metadata under current policy', () => {
     expect(shouldWriteLyricsCache(requireSnapshot(mapFixture(normal)), notFound)).toBe(true);
-    expect(shouldWriteLyricsCache(requireSnapshot(mapFixture(bogusDuration)), notFound)).toBe(true);
+  });
+
+  it('does not cache not-found results for implausible Apple Music browser duration', () => {
+    expect(
+      shouldWriteLyricsCache(requireSnapshot(mapFixture(bogusDuration)), notFound, {
+        browserPlayerService: 'apple-music',
+      }),
+    ).toBe(false);
   });
 });
 

@@ -1,4 +1,5 @@
 import { detectPlayerProfile, PLAYER_PROFILES } from '../mpris/profile.js';
+import { isImplausibleAppleMusicDuration } from './duration-policy.js';
 
 /**
  * @import { LyricsQuery } from './types.js'
@@ -9,8 +10,6 @@ import { detectPlayerProfile, PLAYER_PROFILES } from '../mpris/profile.js';
  *   browserPlayerService?: BrowserPlayerService | null | undefined,
  * }>} LyricsQueryPolicyOptions
  */
-
-const APPLE_MUSIC_IMPLAUSIBLE_DURATION_MS = 15 * 60 * 1000;
 
 /**
  * Applies profile-aware lookup policy to a normalized lyrics query.
@@ -36,16 +35,4 @@ export function applyLyricsQueryPolicy(player, query, options = {}) {
   }
 
   return query;
-}
-
-/**
- * @param {number | null} durationMs
- * @returns {boolean}
- */
-function isImplausibleAppleMusicDuration(durationMs) {
-  return (
-    typeof durationMs === 'number' &&
-    Number.isFinite(durationMs) &&
-    durationMs > APPLE_MUSIC_IMPLAUSIBLE_DURATION_MS
-  );
 }

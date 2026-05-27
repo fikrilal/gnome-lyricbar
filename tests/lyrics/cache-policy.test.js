@@ -193,6 +193,36 @@ describe('shouldWriteLyricsCache', () => {
     ).toBe(true);
   });
 
+  it('blocks Apple Music not-found cache writes when browser duration is implausible', () => {
+    expect(
+      shouldWriteLyricsCache(
+        browserSnapshot({
+          title: 'Radioactive',
+          artist: 'Imagine Dragons',
+          album: 'Night Visions (Deluxe)',
+          durationMs: 1172197,
+        }),
+        notFoundResult,
+        { browserPlayerService: 'apple-music' },
+      ),
+    ).toBe(false);
+  });
+
+  it('allows Apple Music not-found cache writes when browser duration is plausible', () => {
+    expect(
+      shouldWriteLyricsCache(
+        browserSnapshot({
+          title: 'Natural',
+          artist: 'Imagine Dragons',
+          album: 'Origins (Deluxe Edition)',
+          durationMs: 189515,
+        }),
+        notFoundResult,
+        { browserPlayerService: 'apple-music' },
+      ),
+    ).toBe(true);
+  });
+
   it('blocks low-confidence browser not-found results from being cached', () => {
     expect(
       shouldWriteLyricsCache(
@@ -227,6 +257,21 @@ describe('shouldWriteLyricsCache', () => {
         }),
         syncedResult,
         { browserPlayerService: 'youtube-music' },
+      ),
+    ).toBe(true);
+  });
+
+  it('allows positive Apple Music results even when browser duration is implausible', () => {
+    expect(
+      shouldWriteLyricsCache(
+        browserSnapshot({
+          title: 'Radioactive',
+          artist: 'Imagine Dragons',
+          album: 'Night Visions (Deluxe)',
+          durationMs: 1172197,
+        }),
+        syncedResult,
+        { browserPlayerService: 'apple-music' },
       ),
     ).toBe(true);
   });

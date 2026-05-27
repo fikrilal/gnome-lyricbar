@@ -1,5 +1,6 @@
 import { buildLyricsCacheKey } from './cache-key.js';
 import { detectPlayerProfile } from '../mpris/profile.js';
+import { isImplausibleAppleMusicDuration } from './duration-policy.js';
 
 /**
  * @import { LyricsProviderResult, TrackMetadataInput } from './types.js'
@@ -75,7 +76,7 @@ export function shouldWriteLyricsCache(player, result, options = {}) {
     return true;
   }
 
-  return isHighConfidenceBrowserSnapshot(player);
+  return isHighConfidenceBrowserSnapshot(player, options);
 }
 
 /**
@@ -171,9 +172,10 @@ function isBrowserSnapshot(player, options) {
 
 /**
  * @param {PlayerSnapshot} player
+ * @param {CacheDecisionOptions} options
  * @returns {boolean}
  */
-function isHighConfidenceBrowserSnapshot(player) {
+function isHighConfidenceBrowserSnapshot(player, options) {
   const title = normalizeMaybeText(player.title);
   const artist = normalizeMaybeText(player.artist);
   if (title === null || artist === null) {
@@ -185,6 +187,13 @@ function isHighConfidenceBrowserSnapshot(player) {
   }
 
   if (player.playbackStatus === 'Stopped') {
+    return false;
+  }
+
+  const profile = detectPlayerProfile(player, {
+    browserPlayerService: options.browserPlayerService ?? 'auto',
+  });
+  if (profile.id === 'apple-music-web' && isImplausibleAppleMusicDuration(player.durationMs)) {
     return false;
   }
 
