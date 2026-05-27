@@ -12,6 +12,7 @@ Start here:
 - Product overview: `docs/product.md`
 - Engineering proposal: `docs/engineering-proposal.md`
 - Agent harness: `docs/harness/agent-harness.md`
+- Browser player R&D workflow: `docs/harness/browser-player-rnd-workflow.md`
 - Execution plans: `docs/exec-plans/README.md`
 
 ## Non-Negotiables
@@ -20,6 +21,7 @@ Start here:
 - Product behavior integrates through MPRIS over D-Bus; do not scrape Spotify, browser windows, credentials, or private app state.
 - Pure logic under `src/domain/` must not import GNOME Shell, GJS, D-Bus, filesystem, network, or UI APIs.
 - Shell runtime code must clean up signal handlers, D-Bus subscriptions, timeouts, cancellables, and actors on disable.
+- Browser-player support work must follow `docs/harness/browser-player-rnd-workflow.md` before implementation or final recommendations.
 - Async callbacks must be guarded so they do not mutate state after disable.
 - Never use wildcard names with `Gio.bus_watch_name`; it only accepts exact D-Bus names.
 - Treat JavaScript as strict production code: no `any`-style loose shapes in domain logic, no unchecked external data, and keep JSDoc contracts current.

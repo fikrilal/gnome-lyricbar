@@ -1,23 +1,23 @@
 # Apple Music Browser Support Report
 
 Date: 2026-05-27  
-Status: analysis and implementation recommendation  
-Scope: Apple Music Web through browser MPRIS, observed in Chrome/Chromium
+Status: live R&D report and implementation proposal  
+Scope: Apple Music Web through Chrome/Chromium MPRIS on GNOME Shell 46
 
 ## Summary
 
-Apple Music Web is already partially supported by LyricBar through the generic browser MPRIS path. A live inspection while Apple Music was playing showed that Chrome exposes enough MPRIS metadata for LyricBar to select the player, build a lyric query, and poll playback position.
+Apple Music Web already reaches LyricBar through the generic Chromium MPRIS path. In the current live session, Chrome exposed title, artist, album, playback status, artwork, and an advancing position. LyricBar correctly selected the browser player over paused Spotify and rendered the track fallback text.
 
-The current implementation does not have an explicit Apple Music profile. Apple Music playback is classified as `chromium-browser`, which means it receives the generic browser debounce and metadata-retention behavior. That is a reasonable fallback, but it is not a durable support boundary. Apple Music should become a first-class browser service profile, similar to `spotify-web` and `youtube-music-web`, while still avoiding browser scraping or private Apple APIs.
+The missing work is not basic player discovery. The missing work is product-quality Apple Music browser handling:
 
-Recommended direction:
+- first-class `apple-music-web` profile
+- explicit `Browser player service: Apple Music` preference
+- Apple Music fixtures and tests
+- duration sanity policy for browser metadata
+- provider lookup strategy that does not trust clearly bogus Apple Music browser durations
+- diagnostics that make repeated browser lookups explainable
 
-- Add `apple-music-web` as a browser-source player profile.
-- Extend `browser-player-service` with `apple-music`.
-- Keep auto-detection conservative because Chromium does not expose `music.apple.com` through the MPRIS fields currently consumed.
-- Reuse the existing browser stability policy at first.
-- Add Apple Music fixtures and tests before changing runtime behavior.
-- Fix the MPRIS inspection script's string parsing so quoted titles are rendered correctly in reports.
+The most important live finding is that Apple Music Web can report a bad `mpris:length`. For the currently playing track, Chrome reported `Radioactive` by Imagine Dragons with a duration of about 1172 seconds, while LRCLIB search results for the same song are around 186-188 seconds. Exact LRCLIB lookup with the reported Apple Music duration fails; search by artist/title finds synced candidates. This means a plain "add Apple Music profile" implementation is incomplete.
 
 ## Live Evidence
 
@@ -25,62 +25,91 @@ Captured with:
 
 ```bash
 npm run inspect:mpris
+busctl --user list | rg 'org\.mpris\.MediaPlayer2|chrom|firefox|brave|spotify'
 ```
 
 Environment:
 
 ```text
-Timestamp: 2026-05-27T03:24:50.723Z
-GNOME Shell: 46.0
+Timestamp: 2026-05-27T03:36:37.098Z
+GNOME Shell: GNOME Shell 46.0
 Installed LyricBar: 0.1.6
-Extension state: ACTIVE
 Browser identity: Chrome
+Apple Music player bus: org.mpris.MediaPlayer2.chromium.instance100256
+Spotify Desktop bus: org.mpris.MediaPlayer2.spotify
 ```
 
-Observed player:
+Visible MPRIS players:
 
 ```text
-busName=org.mpris.MediaPlayer2.chromium.instance100256
+org.mpris.MediaPlayer2.chromium.instance100256  chrome
+org.mpris.MediaPlayer2.spotify                  spotify
+```
+
+Apple Music Web through Chrome:
+
+```text
 Identity=Chrome
 PlaybackStatus=Playing
-xesam:title=It's Time
+xesam:title=Radioactive
 xesam:artist=Imagine Dragons
 xesam:album=Night Visions (Deluxe)
-mpris:length=441643557
+mpris:length=1172197022 microseconds
+durationMs=1172197
+positionMs=901600, 902102, 902606, 903109, 903612
 mpris:trackid=/org/chromium/MediaPlayer2/TrackList/TrackAD881F63680FE0B3A97734DAC2ED7F63
-mpris:artUrl=file:///tmp/.com.google.Chrome.lsjzqq
 xesam:url=
 ```
 
-Position advanced normally:
+Paused Spotify Desktop:
 
 ```text
-1. status=Playing positionMs=195553
-2. status=Playing positionMs=196057
-3. status=Playing positionMs=196562
-4. status=Playing positionMs=197065
-5. status=Playing positionMs=197568
+PlaybackStatus=Paused
+xesam:title=I'll Be Missing You
+xesam:artist=Diddy
+xesam:url=https://open.spotify.com/track/25tsnA5lDP4UctAQOoa8Ks
 ```
 
-LyricBar runtime logs also showed that the browser player was selected and sent to lyrics lookup:
+LyricBar selected Apple Music correctly:
 
 ```text
-stable-snapshot-decision adapter="browser" profile="chromium-browser" title="It's Time"
-active-player-selected busName="org.mpris.MediaPlayer2.chromium.instance100256" playbackStatus="Playing" title="It's Time"
-lookup-start busName="org.mpris.MediaPlayer2.chromium.instance100256" title="It's Time"
-indicator-render text="Imagine Dragons - It's Time" visible=true
+stable-snapshot-decision adapter="browser" profile="chromium-browser" title="Radioactive"
+active-player-selected busName="org.mpris.MediaPlayer2.chromium.instance100256" playbackStatus="Playing" title="Radioactive"
+lookup-start busName="org.mpris.MediaPlayer2.chromium.instance100256" title="Radioactive"
+indicator-render text="Imagine Dragons - Radioactive" visible=true
 ```
 
-This confirms the base runtime path works:
+## Provider Evidence
 
-- Chromium exposes usable title, artist, album, duration, status, and position.
-- Browser track IDs use generic Chromium object paths and should continue to be ignored for stable browser identity.
-- Apple Music Web does not expose a service-identifying URL through the inspected MPRIS metadata.
-- The active player selection path can prefer Apple Music over paused Spotify because Apple Music is `Playing`.
+Exact LRCLIB lookup using Apple Music's reported duration failed:
+
+```text
+GET /api/get
+artist_name=Imagine Dragons
+track_name=Radioactive
+album_name=Night Visions (Deluxe)
+duration=1172
+
+HTTP 404
+```
+
+LRCLIB search by artist/title returned synced candidates:
+
+```text
+GET /api/search
+artist_name=Imagine Dragons
+track_name=Radioactive
+
+HTTP 200
+candidate durations: 186, 187, 188, 201, ...
+syncedLyrics: present
+```
+
+Conclusion: Apple Music browser metadata is good enough to identify the track, but the reported duration is not trustworthy enough for exact provider matching or cache identity without sanity checks.
 
 ## Current Implementation State
 
-Supported profile IDs in `src/domain/mpris/profile.js`:
+Current profile IDs:
 
 ```text
 spotify-desktop
@@ -91,7 +120,7 @@ firefox-browser
 generic-mpris
 ```
 
-Supported browser service setting values:
+Current browser service setting values:
 
 ```text
 auto
@@ -102,21 +131,17 @@ generic
 
 Current Apple Music behavior:
 
-- Apple Music Web in Chrome maps to `chromium-browser`.
-- It uses `adapterId="browser"`.
-- It receives the shared browser policy:
-  - 350 ms metadata debounce
-  - retain previous valid metadata through empty metadata bursts
-  - retain previous valid metadata through short advertisement bursts
-  - require artist before lookup
-  - poll position when synced lyrics are available
-- It does not get an Apple Music-specific profile, preference option, fixture, or release documentation.
+- Apple Music Web maps to `chromium-browser`.
+- It uses the shared browser stability policy.
+- It can be selected over paused Spotify when Chrome reports `Playing`.
+- It does not have an Apple Music-specific profile, preference option, fixture set, diagnostics, or release wording.
+- Its exact LRCLIB lookup can fail because browser-reported duration is not reliable.
 
-## Constraints
+## Key Findings
 
-### MPRIS Does Not Identify The Web App
+### MPRIS Does Not Identify Apple Music
 
-The browser root identity is only:
+The root MPRIS identity is only:
 
 ```text
 Identity=Chrome
@@ -128,78 +153,164 @@ The inspected metadata did not include:
 xesam:url=https://music.apple.com/...
 ```
 
-The track ID was also generic Chromium state:
+The track ID was a generic Chromium object path:
 
 ```text
 /org/chromium/MediaPlayer2/TrackList/Track...
 ```
 
-So LyricBar should not claim automatic Apple Music detection from MPRIS alone. A preference-driven profile is the correct first implementation.
+So LyricBar should not auto-detect Apple Music from the current MPRIS fields. Apple Music support should start as explicit user selection through the browser service preference.
 
-### Browser Track IDs Must Stay Ignored
+### Title And Artist Are Usable
 
-The existing `buildTrackIdentityKey()` behavior is correct for Apple Music: browser profiles ignore `mpris:trackid`, because Chromium track IDs are browser implementation details and can churn or be reused.
-
-Apple Music identity should continue to be based on:
+Apple Music exposed:
 
 ```text
-busName | artist | title | album | duration bucket
+title=Radioactive
+artist=Imagine Dragons
+album=Night Visions (Deluxe)
 ```
 
-### LRCLIB Matching Is Provider-Dependent
+This is enough for fallback display, basic provider search, diagnostics, and stable user-facing behavior.
 
-The inspected Apple Music track, `It's Time` by Imagine Dragons, produced LRCLIB `not-found` responses in the current logs. That is not necessarily an Apple Music integration failure. It may be a provider catalog mismatch, version mismatch, apostrophe/quote normalization issue, or duration/album mismatch.
+### Duration Is Not Trustworthy
 
-Apple Music support should first make metadata handling correct and observable. Provider matching improvements should be handled separately and tested with known LRCLIB-positive Apple Music tracks.
-
-### Current Inspection Script Has A Reporting Bug
-
-`scripts/inspect-mpris.mjs` printed the normalized title as blank even though raw metadata included:
+Apple Music exposed:
 
 ```text
-xesam:title: <"It's Time">
+durationMs=1172197
 ```
 
-The parser currently handles single-quoted values but not double-quoted GVariant string rendering. LyricBar itself saw the title correctly, so this is a harness/reporting issue, not a runtime metadata issue.
+That is about 19.5 minutes for a normal Radioactive track. This appears to be browser/app metadata drift, playlist/session duration, or a web app media-session bug. Regardless of root cause, LyricBar should not use this value blindly for Apple Music exact lookup or cache identity.
 
-## Recommended Implementation
+### Repeated Lookup Needs Instrumentation
 
-### Phase 1: Add Apple Music Browser Profile
+Logs showed repeated `lookup-start` for the same visible Apple Music track. `LyricsService` should suppress duplicate lookups when the identity key is stable, so repeated lookups imply one of the identity fields is changing across browser snapshots.
 
-Add a profile:
+Likely candidates:
+
+- duration
+- album
+- browser metadata churn around stabilization
+- cache read errors causing no durable hit
+
+Before implementing provider fixes, add debug evidence for the generated track identity key or changed identity fields. Do not guess.
+
+### Inspection Script Has A Separate String Parsing Bug
+
+The inspector printed Spotify's double-quoted title as blank:
 
 ```text
-apple-music-web
+xesam:title=<"I'll Be Missing You">
+Normalized snapshot title=
 ```
 
-Expected shape:
+Runtime code handled browser single-quoted strings correctly, but the diagnostic script needs to parse both single-quoted and double-quoted GVariant strings. This affects support quality because diagnostics are our first-line user evidence.
 
-```js
-export const PLAYER_PROFILES = Object.freeze({
-  // existing profiles...
-  appleMusicWeb: Object.freeze({
-    id: 'apple-music-web',
-    sourceKind: 'browser',
-  }),
-});
-```
+## Recommended Architecture
 
-Update the profile ID typedef to include:
+Apple Music support should be profile-driven, not scraper-driven.
 
-```text
-apple-music-web
-```
+Do:
 
-Policy should initially reuse `BROWSER_POLICY`, matching `spotify-web`, `youtube-music-web`, `chromium-browser`, and `firefox-browser`.
+- Use MPRIS only.
+- Add an explicit Apple Music browser profile.
+- Add a user preference value for Apple Music.
+- Keep browser track IDs ignored for identity.
+- Treat browser duration as lower confidence for Apple Music.
+- Reuse the existing browser stability reducer.
+
+Do not:
+
+- scrape browser tabs
+- use Apple private APIs
+- infer Apple Music from every Chromium music-like track
+- add a magic fallback that affects Spotify Web or YouTube Music
+- trust `mpris:length` from Apple Music without a sanity policy
+
+## Proposed Implementation Plan
+
+### Phase 1: Fix Diagnostics First
+
+Fix `scripts/inspect-mpris.mjs` so it reports GVariant strings rendered with either single quotes or double quotes.
 
 Acceptance:
 
-- `policyForPlayerProfile(PLAYER_PROFILES.appleMusicWeb)` equals browser policy.
-- Existing Spotify, YouTube Music, Chromium, Firefox, and generic tests still pass.
+- `<"I'll Be Missing You">` normalizes to `I'll Be Missing You`.
+- `<'Radioactive'>` still normalizes to `Radioactive`.
+- `npm run inspect:mpris` reports browser and Spotify titles correctly.
 
-### Phase 2: Extend Browser Service Settings
+Why first: all Apple Music work depends on reliable evidence.
 
-Extend the browser service setting from:
+### Phase 2: Add Apple Music Fixtures
+
+Add fixtures under:
+
+```text
+tests/fixtures/mpris/
+```
+
+Recommended fixtures:
+
+```text
+apple-music-web-chromium-normal.json
+apple-music-web-chromium-bogus-duration.json
+apple-music-web-chromium-empty-metadata.json
+apple-music-web-chromium-title-only.json
+apple-music-web-chromium-stopped.json
+```
+
+The first two should be based on the live capture:
+
+```json
+{
+  "busName": "org.mpris.MediaPlayer2.chromium.instance100256",
+  "identity": "Chrome",
+  "playbackStatus": "Playing",
+  "title": "Radioactive",
+  "artist": "Imagine Dragons",
+  "album": "Night Visions (Deluxe)",
+  "durationMs": 1172197,
+  "trackId": "/org/chromium/MediaPlayer2/TrackList/TrackAD881F63680FE0B3A97734DAC2ED7F63"
+}
+```
+
+Acceptance:
+
+- Fixture normalizes to the expected browser snapshot.
+- Browser track ID does not become a lyrics identity key input.
+- Bogus duration is preserved at raw snapshot level but can be sanitized at query/identity policy level.
+
+### Phase 3: Add Apple Music Browser Profile
+
+Add:
+
+```text
+apple-music-web
+```
+
+Initial policy:
+
+```text
+BROWSER_POLICY
+```
+
+Files likely affected:
+
+- `src/domain/mpris/profile.js`
+- `src/domain/mpris/profile-policy.js`
+- profile tests
+- policy tests
+
+Acceptance:
+
+- `PLAYER_PROFILES.appleMusicWeb.id === 'apple-music-web'`
+- `policyForPlayerProfile(PLAYER_PROFILES.appleMusicWeb)` uses the shared browser policy.
+- Auto mode does not classify generic Chromium as Apple Music without evidence.
+
+### Phase 4: Add Browser Service Preference
+
+Extend:
 
 ```text
 auto | spotify | youtube-music | generic
@@ -217,16 +328,16 @@ Files likely affected:
 - `src/domain/settings/types.js`
 - `src/domain/settings/normalize.js`
 - `prefs.js`
-- `src/domain/mpris/profile.js`
-- related tests under `tests/settings/` and `tests/mpris/`
+- settings tests
+- diagnostics output
 
-Preferences label:
+Preference label:
 
 ```text
 Apple Music
 ```
 
-Recommended default remains:
+Default should remain:
 
 ```text
 auto
@@ -234,200 +345,192 @@ auto
 
 Acceptance:
 
-- `normalizeBrowserPlayerService('apple-music')` returns `'apple-music'`.
-- Preferences exposes Apple Music in the browser-service dropdown.
+- `normalizeBrowserPlayerService('apple-music')` returns `apple-music`.
+- Preferences exposes Apple Music.
+- Copy diagnostics includes `apple-music` when selected.
 - Invalid values still normalize to `auto`.
 
-### Phase 3: Map Explicit Apple Music Service To Apple Profile
+### Phase 5: Map Explicit Apple Music To Profile
 
-In `selectBrowserServiceProfile()`:
+When the user chooses:
 
 ```text
 browser-player-service=apple-music
 ```
 
-should map music-like Chromium/Firefox metadata to:
+music-like Chromium/Firefox metadata should map to:
 
 ```text
 apple-music-web
 ```
 
-Do not infer Apple Music in `auto` mode yet. The inspected MPRIS data has no strong Apple-specific signal. If future evidence shows `xesam:url`, `trackId`, or another stable field contains `music.apple.com`, auto detection can be added behind a focused test.
+Do not infer Apple Music in `auto` mode unless future MPRIS evidence gives a stable Apple-specific signal.
 
 Acceptance:
 
-- Chromium with title, artist, duration, and `browserPlayerService: 'apple-music'` maps to `apple-music-web`.
-- Firefox with equivalent metadata also maps to `apple-music-web`.
-- Advertisement and stopped metadata stay on the browser-family profile.
-- `browserPlayerService: 'generic'` keeps `chromium-browser` or `firefox-browser`.
-- `auto` stays browser-family unless strong service evidence exists.
+- Chromium playing music-like metadata maps to `apple-music-web` when configured.
+- Firefox playing music-like metadata maps to `apple-music-web` when configured.
+- `generic` keeps the browser-family profile.
+- `auto` stays `chromium-browser` or `firefox-browser` for the current observed Apple Music evidence.
+- Advertisement, stopped, and incomplete metadata do not map to Apple Music.
 
-### Phase 4: Add Apple Music Fixtures
+### Phase 6: Add Apple Music Duration Policy
 
-Add fixtures under:
+Introduce a profile-aware lyrics query policy before provider lookup.
+
+Recommended first rule:
+
+- For `apple-music-web`, ignore browser duration when it is implausible for a normal song.
+- A conservative threshold can start at `durationMs > 15 * 60 * 1000`.
+- If ignored, exact LRCLIB lookup should omit duration or provider fallback should search by artist/title/album without the bad duration.
+
+Better long-term shape:
 
 ```text
-tests/fixtures/mpris/
+PlayerSnapshot -> LyricsQueryInput -> profile-aware query policy -> LyricsQuery
 ```
 
-Suggested fixtures:
-
-```text
-apple-music-web-chromium-normal.json
-apple-music-web-chromium-empty-metadata.json
-apple-music-web-chromium-title-only.json
-apple-music-web-chromium-stopped.json
-```
-
-Start with the live normal fixture:
-
-```json
-{
-  "name": "apple-music-web-chromium-normal",
-  "busName": "org.mpris.MediaPlayer2.chromium.instance100256",
-  "identity": "Chrome",
-  "properties": {
-    "PlaybackStatus": "Playing",
-    "Metadata": {
-      "xesam:title": "It's Time",
-      "xesam:artist": ["Imagine Dragons"],
-      "xesam:album": "Night Visions (Deluxe)",
-      "mpris:length": 441643557,
-      "mpris:trackid": "/org/chromium/MediaPlayer2/TrackList/TrackAD881F63680FE0B3A97734DAC2ED7F63",
-      "mpris:artUrl": "file:///tmp/.com.google.Chrome.lsjzqq"
-    }
-  },
-  "expectedSnapshot": {
-    "busName": "org.mpris.MediaPlayer2.chromium.instance100256",
-    "title": "It's Time",
-    "artist": "Imagine Dragons",
-    "album": "Night Visions (Deluxe)",
-    "durationMs": 441644,
-    "trackId": "/org/chromium/MediaPlayer2/TrackList/TrackAD881F63680FE0B3A97734DAC2ED7F63",
-    "playbackStatus": "Playing"
-  },
-  "expectedProfileWhenConfigured": "apple-music-web",
-  "expectedProfileInAuto": "chromium-browser"
-}
-```
+This avoids baking Apple Music behavior into LRCLIB itself.
 
 Acceptance:
 
-- Fixture maps to `apple-music-web` only when configured.
-- Browser identity ignores Chromium track ID.
-- Browser stability behavior matches existing browser profile behavior.
+- Apple Music `Radioactive` with `durationMs=1172197` does not perform an exact lookup using `duration=1172`.
+- Search fallback can select a synced LRCLIB candidate by artist/title.
+- Spotify Desktop exact lookup behavior is unchanged.
+- Spotify Web and YouTube Music behavior is unchanged unless their own profile policies opt in later.
 
-### Phase 5: Fix MPRIS Inspection Reporting
+### Phase 7: Stabilize Browser Identity And Cache Behavior
 
-Update `scripts/inspect-mpris.mjs` so `readStringProperty()` handles GVariant strings rendered with either single quotes or double quotes.
-
-Current issue:
-
-```text
-xesam:title: <"It's Time">
-```
-
-was rendered as:
+Current track identity includes duration:
 
 ```text
-title=
+busName | trackId | artist | title | album | duration
 ```
+
+For browser profiles, track ID is already ignored. Apple Music should also ignore or sanitize implausible browser duration in identity keys. Otherwise repeated duration churn can retrigger lookups and produce multiple negative cache entries.
 
 Acceptance:
 
-- The inspection script reports `title=It's Time` for double-quoted GVariant strings.
-- Existing single-quoted parsing still works.
-- Add or update a unit test if script parsing is made testable; otherwise document verification with `npm run inspect:mpris`.
+- Repeated Apple Music snapshots for the same visible title/artist do not retrigger lookup if only implausible duration changes.
+- Low-confidence Apple Music misses are not cached.
+- Positive Apple Music results remain cacheable.
+- Cache keys do not include a bogus 1172-second duration for Apple Music.
+
+### Phase 8: Runtime Evidence
+
+Manual scenarios:
+
+- Apple Music Web starts after LyricBar is enabled.
+- Apple Music Web is already playing when LyricBar starts.
+- Spotify Desktop is paused while Apple Music Web is playing.
+- Track change updates fallback text and lookup once.
+- Pause/resume does not leak timers.
+- Browser tab close clears the active player or falls back correctly.
+- `Browser player service: Apple Music` maps to `apple-music-web`.
+- `Browser player service: Auto` stays generic browser unless strong evidence is added.
+
+Evidence to record:
+
+- `npm run inspect:mpris`
+- `journalctl --user -b` filtered LyricBar logs
+- preference value
+- player list
+- selected bus name
+- title/artist/album/duration
+- lookup count per track
+- provider result
 
 ## Tests To Add
 
 Profile tests:
 
-- Detect configured Apple Music Web in Chromium.
-- Detect configured Apple Music Web in Firefox.
-- Do not infer Apple Music Web in auto mode without strong evidence.
-- Keep generic mode on browser-family profile.
-- Do not classify advertisements as Apple Music Web.
-- Do not classify stopped browser metadata as Apple Music Web.
+- configured Apple Music maps Chromium to `apple-music-web`
+- configured Apple Music maps Firefox to `apple-music-web`
+- auto mode does not infer Apple Music from plain Chrome identity
+- stopped metadata does not classify as Apple Music
+- title-only metadata does not classify as Apple Music
 
-Policy tests:
+Settings tests:
 
-- `apple-music-web` uses browser policy.
+- `apple-music` normalizes as valid
+- schema description includes Apple Music
+- preferences dropdown includes Apple Music
 
-Identity/cache tests:
+Lyrics query tests:
 
-- Browser track IDs remain ignored for Apple Music.
-- Low-confidence Apple Music browser misses do not poison not-found cache.
-- Positive lyric results remain cacheable.
+- Apple Music bogus duration is ignored or sanitized
+- normal desktop duration is preserved
+- query fallback can still search by artist/title
 
-Runtime/harness tests:
+Identity tests:
 
-- Apple Music fixture maps to the expected normalized snapshot.
-- Position polling remains enabled for synced browser lyrics.
-- Transient empty/title-only metadata does not clear a previous stable Apple Music track immediately.
+- Apple Music browser track ID is ignored
+- Apple Music implausible duration does not destabilize identity
+- repeated same-track snapshots suppress duplicate lookup
 
-## Release Notes And Docs
+Cache-policy tests:
 
-Update public docs after implementation:
+- low-confidence Apple Music browser misses are not cached
+- high-confidence positives are cached
+- Spotify Desktop cache behavior is unchanged
 
-- README features/compatibility: add Apple Music Web as supported or experimental.
-- `docs/product.md`: mention Apple Music Web only if runtime evidence is good enough.
-- `docs/troubleshooting.md`: explain the `Browser player service` preference and when to choose Apple Music.
-- `docs/privacy.md`: no new privacy surface if implementation remains MPRIS plus LRCLIB only.
-- Release notes for `0.1.8`: include Apple Music Web browser-profile support.
+Diagnostics tests:
 
-Suggested wording:
+- inspector parses single-quoted GVariant strings
+- inspector parses double-quoted GVariant strings
+
+## Release And Docs
+
+After implementation, update:
+
+- README feature list
+- `docs/product.md`
+- `docs/troubleshooting.md`
+- `docs/privacy.md` only if the implementation changes data handling
+- release notes
+
+Suggested release note:
 
 ```text
-Added explicit Apple Music Web support for browser MPRIS players. Because browsers usually expose only the browser identity over MPRIS, choose Apple Music in Browser player service when using music.apple.com.
+Added explicit Apple Music Web support for browser MPRIS players. Apple Music can be selected in Browser player service, with safer browser-duration handling for lyric lookup.
 ```
 
 ## Risks
 
-### Misclassification In Browser Auto Mode
+### Wrong Auto Detection
 
-Risk: treating all music-like Chromium metadata as Apple Music would break Spotify Web, YouTube Music, and generic browser playback.
+Current MPRIS evidence does not identify `music.apple.com`. Auto-detecting Apple Music from any Chrome music metadata would break Spotify Web, YouTube Music, and generic browser players.
 
-Mitigation: make Apple Music opt-in through `browser-player-service=apple-music` until MPRIS exposes strong service evidence.
+Mitigation: make Apple Music explicit first.
 
-### Provider Mismatch
+### Bad Duration Breaks Lyrics
 
-Risk: Apple Music metadata can represent album versions, deluxe editions, remasters, live editions, or punctuation variants that LRCLIB does not match exactly.
+Apple Music Web can report an implausible duration. Exact provider lookup and cache identity should not trust it.
 
-Mitigation: keep profile work separate from lyrics provider matching. Add provider matching improvements only after collecting known failing and passing tracks.
+Mitigation: add profile-aware duration sanitation before lookup and identity generation.
 
-### Browser Tab Contention
+### Repeated Network Requests
 
-Risk: Chromium exposes one browser-wide MPRIS player, so another tab can replace Apple Music metadata.
+Repeated browser snapshots for the same visible track triggered repeated lookup attempts in the live logs.
 
-Mitigation: reuse existing browser stability policy and keep service selection explicit. Do not scrape tabs to solve this.
+Mitigation: instrument identity changes, sanitize unstable fields, and add tests for duplicate suppression.
 
-### Negative Cache Poisoning
+### Provider Ambiguity
 
-Risk: short-lived browser metadata can trigger `not-found` cache entries.
+LRCLIB search can return many versions of the same song. Picking the wrong synced candidate is possible when duration is removed.
 
-Mitigation: continue high-confidence checks before writing browser misses. Add Apple Music-specific fixtures around low-confidence metadata.
-
-## Proposed Work Order
-
-1. Fix `scripts/inspect-mpris.mjs` double-quoted string parsing.
-2. Add Apple Music fixtures from the live MPRIS capture.
-3. Add `apple-music-web` profile and browser policy mapping.
-4. Add `apple-music` to settings normalization, schema, and preferences.
-5. Add profile, settings, policy, identity, and cache tests.
-6. Run `npm run verify`.
-7. Manually verify with Apple Music Web in Chrome:
-   - extension enabled
-   - `browser-player-service=apple-music`
-   - track starts
-   - track changes
-   - pause/resume
-   - browser tab closed
-   - Spotify paused while Apple Music plays
-8. Record runtime evidence in the relevant execution plan.
+Mitigation: rank candidates by artist/title exactness first, then album similarity, then plausible duration if available. Do not blindly pick the first result without tests.
 
 ## Conclusion
 
-Apple Music Web support should be a small, profile-driven extension of the existing browser MPRIS architecture. The live data is favorable: Apple Music in Chrome exposes normal music metadata and advancing position. The main missing piece is not low-level runtime support; it is an explicit service profile, preference option, fixtures, and documentation.
+Apple Music browser support should be added, but the implementation should not stop at a profile enum. The live evidence shows the browser player path works and Apple Music is selectable, while lyric lookup quality is blocked by unreliable browser duration and insufficient Apple Music-specific query policy.
 
-Do not attempt automatic Apple Music detection from the current MPRIS evidence. The correct first release behavior is explicit user selection through `Browser player service: Apple Music`, backed by browser stability policy and fixture coverage.
+Recommended first implementation:
+
+1. Fix diagnostics string parsing.
+2. Add Apple Music MPRIS fixtures.
+3. Add explicit `apple-music-web` profile and preference value.
+4. Add profile-aware query and identity sanitation for implausible Apple Music browser duration.
+5. Verify duplicate lookup suppression and live Apple Music playback.
+
+This keeps the architecture clean: MPRIS remains the only player integration surface, Apple Music behavior is isolated behind profile policy, and shared browser behavior stays safe for Spotify Web and YouTube Music.

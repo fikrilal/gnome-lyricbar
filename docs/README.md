@@ -9,11 +9,13 @@ This directory is the source of truth for LyricBar product direction, engineerin
 - [Player profile architecture](player-profile-architecture.md): MPRIS profile and metadata stability design for Spotify Desktop, browser players, YouTube Music, and Apple Music.
 - [Spotify Web support improvements](spotify-web-support-improvements.md): live MPRIS findings and phased improvements for better Spotify browser support.
 - [YouTube Music browser support](youtube-music-browser-support.md): live MPRIS findings and phased work for explicit YouTube Music browser compatibility.
+- [Apple Music browser support](apple-music-browser-support.md): live MPRIS findings and implementation plan for Apple Music Web support.
 - [Privacy](privacy.md): network requests, local cache, logs, and data handling.
 - [Commit conventions](commit-conventions.md): semantic scoped commit rules and local hook setup.
 - [Troubleshooting](troubleshooting.md): install, runtime, player selection, lyric sync, and preference issues.
 - [Release checklist](release-checklist.md): public release gates and runtime scenarios.
 - [Agent harness](harness/agent-harness.md): agent-first workflow, verification gates, guardrails, and feedback loops.
+- [Browser player R&D workflow](harness/browser-player-rnd-workflow.md): mandatory evidence workflow for Spotify Web, YouTube Music, Apple Music Web, and future browser player support.
 - [Nested runtime harness](harness/nested-runtime-harness.md): recommended visual runtime evidence loop with nested GNOME Shell and mock MPRIS.
 - [Runtime agent workflow](harness/runtime-agent-workflow.md): step-by-step nested Shell workflow for R&D agents.
 - [Execution plans](exec-plans/README.md): planning workflow for non-trivial agent work.
@@ -30,12 +32,14 @@ docs/
   player-profile-architecture.md
   spotify-web-support-improvements.md
   youtube-music-browser-support.md
+  apple-music-browser-support.md
   privacy.md
   commit-conventions.md
   troubleshooting.md
   release-checklist.md
   harness/
     agent-harness.md
+    browser-player-rnd-workflow.md
     nested-runtime-harness.md
     runtime-agent-workflow.md
   exec-plans/
