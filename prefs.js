@@ -6,6 +6,17 @@ import Soup from 'gi://Soup';
 
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
+const UPDATE_CHECK_INTERVAL_S = 86400;
+const GITHUB_RELEASES_URL = 'https://github.com/fikrilal/gnome-lyricbar/releases/latest';
+const STATE_DIR = GLib.build_filenamev([GLib.get_user_state_dir(), 'lyricbar']);
+const UPDATE_STATE_FILE = GLib.build_filenamev([STATE_DIR, 'update-check.json']);
+const UPDATER_PATH = GLib.build_filenamev([
+  GLib.get_home_dir(),
+  '.local',
+  'bin',
+  'lyricbar-update',
+]);
+
 export default class LyricBarPreferences extends ExtensionPreferences {
   /**
    * @param {any} window
@@ -307,9 +318,51 @@ export default class LyricBarPreferences extends ExtensionPreferences {
     connections.push([openButton, openButtonId]);
     updateRow.add_suffix(openButton);
 
+    const updaterExists = GLib.file_test(UPDATER_PATH, GLib.FileTest.EXISTS);
+    /** @type {any | null} */
+    let updateNowButton = null;
+    /** @type {boolean} */
+    let windowDestroyed = false;
+
+    if (updaterExists) {
+      updateNowButton = new Gtk.Button({
+        label: 'Update Now',
+        valign: Gtk.Align.CENTER,
+        css_classes: ['suggested-action'],
+      });
+      const updateNowId = updateNowButton.connect('clicked', async () => {
+        updateNowButton.sensitive = false;
+        updateNowButton.label = 'Updating...';
+        updateRow.subtitle = 'Running updater...';
+
+        const result = await runSubprocess(UPDATER_PATH, []);
+
+        if (windowDestroyed) {
+          return;
+        }
+
+        if (result.ok) {
+          updateRow.subtitle = 'Updated! Restart GNOME Shell to apply.';
+          updateNowButton.label = 'Done';
+        } else {
+          updateRow.subtitle = 'Update failed. Try again or visit releases page.';
+          updateNowButton.label = 'Retry';
+          updateNowButton.sensitive = true;
+        }
+      });
+      connections.push([updateNowButton, updateNowId]);
+      updateRow.add_suffix(updateNowButton);
+    }
+
     checkForUpdate(currentVersion, (latestVersion) => {
+      if (windowDestroyed) {
+        return;
+      }
       if (latestVersion) {
         updateRow.subtitle = `${latestVersion} is available on GitHub`;
+        if (!updaterExists) {
+          updateRow.subtitle += '. Install auto-updater to enable Update Now.';
+        }
       } else {
         updateRow.visible = false;
       }
@@ -344,6 +397,7 @@ export default class LyricBarPreferences extends ExtensionPreferences {
 
     // Disconnect all listeners when the window is destroyed
     const windowDestroyId = window.connect('destroy', () => {
+      windowDestroyed = true;
       for (const [obj, id] of connections) {
         try {
           obj.disconnect(id);
@@ -367,10 +421,46 @@ function readMetadataText(metadata, key, fallback) {
   return typeof value === 'string' && value.trim() !== '' ? value : fallback;
 }
 
-const UPDATE_CHECK_INTERVAL_S = 86400;
-const GITHUB_RELEASES_URL = 'https://github.com/fikrilal/gnome-lyricbar/releases/latest';
-const STATE_DIR = GLib.build_filenamev([GLib.get_user_state_dir(), 'lyricbar']);
-const UPDATE_STATE_FILE = GLib.build_filenamev([STATE_DIR, 'update-check.json']);
+/**
+ * @param {string} command
+ * @param {readonly string[]} args
+ * @returns {Promise<{ok: boolean, stdout: string, stderr: string}>}
+ */
+function runSubprocess(command, args) {
+  return new Promise((resolve) => {
+    try {
+      const proc = new Gio.Subprocess({
+        argv: [command, ...args],
+        flags: Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE,
+      });
+      proc.init(null);
+
+      proc.communicate_utf8_async(
+        null,
+        null,
+        /**
+         * @param {unknown} _source
+         * @param {unknown} result
+         * @returns {void}
+         */
+        (_source, result) => {
+          try {
+            const [, stdout, stderr] = proc.communicate_utf8_finish(result);
+            resolve({
+              ok: proc.get_successful(),
+              stdout: stdout ?? '',
+              stderr: stderr ?? '',
+            });
+          } catch (e) {
+            resolve({ ok: false, stdout: '', stderr: String(e) });
+          }
+        },
+      );
+    } catch (e) {
+      resolve({ ok: false, stdout: '', stderr: String(e) });
+    }
+  });
+}
 
 /**
  * @returns {{ lastCheck: number, latestVersion: string } | null}
