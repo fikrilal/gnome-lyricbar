@@ -3,6 +3,7 @@
  *   | 'spotify-desktop'
  *   | 'spotify-web'
  *   | 'youtube-music-web'
+ *   | 'apple-music-web'
  *   | 'chromium-browser'
  *   | 'firefox-browser'
  *   | 'generic-mpris'
@@ -43,6 +44,10 @@ export const PLAYER_PROFILES = Object.freeze({
   }),
   youtubeMusicWeb: Object.freeze({
     id: 'youtube-music-web',
+    sourceKind: 'browser',
+  }),
+  appleMusicWeb: Object.freeze({
+    id: 'apple-music-web',
     sourceKind: 'browser',
   }),
   chromiumBrowser: Object.freeze({

@@ -70,6 +70,15 @@ describe('Apple Music browser MPRIS fixtures', () => {
     );
   });
 
+  it('does not infer Apple Music Web from current Apple Music Chromium fixture evidence', () => {
+    expect(detectPlayerProfile(requireSnapshot(mapFixture(normal)))).not.toBe(
+      PLAYER_PROFILES.appleMusicWeb,
+    );
+    expect(detectPlayerProfile(requireSnapshot(mapFixture(bogusDuration)))).not.toBe(
+      PLAYER_PROFILES.appleMusicWeb,
+    );
+  });
+
   it('keeps low-confidence Apple Music browser fixtures on Chromium profile', () => {
     expect(detectPlayerProfile(requireSnapshot(mapFixture(emptyMetadata)))).toBe(
       PLAYER_PROFILES.chromiumBrowser,

@@ -7,6 +7,13 @@ import {
 } from '../../src/domain/mpris/profile.js';
 
 describe('detectPlayerProfile', () => {
+  it('defines Apple Music Web as a browser profile without auto-detecting it', () => {
+    expect(PLAYER_PROFILES.appleMusicWeb).toEqual({
+      id: 'apple-music-web',
+      sourceKind: 'browser',
+    });
+  });
+
   it('detects Spotify Desktop from the exact Spotify MPRIS bus name', () => {
     expect(
       detectPlayerProfile({
