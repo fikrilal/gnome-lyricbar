@@ -1,6 +1,6 @@
 import { buildLyricsCacheKey } from './cache-key.js';
 import { detectPlayerProfile } from '../mpris/profile.js';
-import { isImplausibleAppleMusicDuration } from './duration-policy.js';
+import { shouldIgnoreAppleMusicDuration } from './duration-policy.js';
 
 /**
  * @import { LyricsProviderResult, TrackMetadataInput } from './types.js'
@@ -193,7 +193,7 @@ function isHighConfidenceBrowserSnapshot(player, options) {
   const profile = detectPlayerProfile(player, {
     browserPlayerService: options.browserPlayerService ?? 'auto',
   });
-  if (profile.id === 'apple-music-web' && isImplausibleAppleMusicDuration(player.durationMs)) {
+  if (profile.id === 'apple-music-web' && shouldIgnoreAppleMusicDuration()) {
     return false;
   }
 

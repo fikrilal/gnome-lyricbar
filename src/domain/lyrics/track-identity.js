@@ -1,5 +1,5 @@
 import { detectPlayerProfile } from '../mpris/profile.js';
-import { isImplausibleAppleMusicDuration } from './duration-policy.js';
+import { shouldIgnoreAppleMusicDuration } from './duration-policy.js';
 
 /**
  * @import { PlayerSnapshot } from '../mpris/types.js'
@@ -84,5 +84,5 @@ function shouldUseDuration(player, options) {
   const profile = detectPlayerProfile(player, {
     browserPlayerService: options.browserPlayerService ?? 'auto',
   });
-  return profile.id !== 'apple-music-web' || !isImplausibleAppleMusicDuration(player.durationMs);
+  return profile.id !== 'apple-music-web' || !shouldIgnoreAppleMusicDuration();
 }

@@ -1,13 +1,10 @@
-export const APPLE_MUSIC_IMPLAUSIBLE_DURATION_MS = 15 * 60 * 1000;
-
 /**
- * @param {number | null | undefined} durationMs
+ * Apple Music Web exposes Chrome media-session timing, which can drift and
+ * grow for the same visible track. Do not use it for identity, lookup, cache,
+ * or negative-cache decisions until a stronger MPRIS signal exists.
+ *
  * @returns {boolean}
  */
-export function isImplausibleAppleMusicDuration(durationMs) {
-  return (
-    typeof durationMs === 'number' &&
-    Number.isFinite(durationMs) &&
-    durationMs > APPLE_MUSIC_IMPLAUSIBLE_DURATION_MS
-  );
+export function shouldIgnoreAppleMusicDuration() {
+  return true;
 }

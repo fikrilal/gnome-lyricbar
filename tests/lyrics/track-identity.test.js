@@ -131,7 +131,7 @@ describe('buildTrackIdentityKey', () => {
     );
   });
 
-  it('ignores implausible Apple Music browser duration for identity', () => {
+  it('ignores Apple Music browser duration for identity', () => {
     const first = browserSnapshot({
       title: 'Radioactive',
       artist: 'Imagine Dragons',
@@ -148,7 +148,7 @@ describe('buildTrackIdentityKey', () => {
     );
   });
 
-  it('keeps plausible Apple Music browser duration as part of identity', () => {
+  it('ignores plausible-looking Apple Music browser duration for identity', () => {
     const first = browserSnapshot({
       title: 'Natural',
       artist: 'Imagine Dragons',
@@ -160,7 +160,7 @@ describe('buildTrackIdentityKey', () => {
       durationMs: 240000,
     };
 
-    expect(buildTrackIdentityKey(first, { browserPlayerService: 'apple-music' })).not.toBe(
+    expect(buildTrackIdentityKey(first, { browserPlayerService: 'apple-music' })).toBe(
       buildTrackIdentityKey(second, { browserPlayerService: 'apple-music' }),
     );
   });

@@ -149,7 +149,7 @@ describe('LyricsService', () => {
     expect(harness.listener).toHaveBeenLastCalledWith(second, syncedResult);
   });
 
-  it('does not retrigger Apple Music lookup when only implausible browser duration changes', () => {
+  it('does not retrigger Apple Music lookup when only browser duration changes', () => {
     const harness = createHarness({
       browserPlayerService: 'apple-music',
       cachedResult: syncedResult,
@@ -243,7 +243,7 @@ describe('LyricsService', () => {
     expect(harness.listener).toHaveBeenLastCalledWith(player, notFound);
   });
 
-  it('removes implausible Apple Music browser duration before cache and provider lookup', () => {
+  it('removes Apple Music browser duration before cache and provider lookup', () => {
     const harness = createHarness({
       browserPlayerService: 'apple-music',
       cachedResult: null,
@@ -277,7 +277,7 @@ describe('LyricsService', () => {
     );
   });
 
-  it('preserves plausible Apple Music browser duration for lookup', () => {
+  it('removes plausible-looking Apple Music browser duration for lookup', () => {
     const harness = createHarness({
       browserPlayerService: 'apple-music',
       cachedResult: null,
@@ -296,7 +296,7 @@ describe('LyricsService', () => {
         title: 'Natural',
         artist: 'Imagine Dragons',
         album: 'Origins (Deluxe Edition)',
-        durationMs: 189515,
+        durationMs: null,
       },
       expect.any(Function),
     );

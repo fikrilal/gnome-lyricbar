@@ -1,5 +1,5 @@
 import { detectPlayerProfile, PLAYER_PROFILES } from '../mpris/profile.js';
-import { isImplausibleAppleMusicDuration } from './duration-policy.js';
+import { shouldIgnoreAppleMusicDuration } from './duration-policy.js';
 
 /**
  * @import { LyricsQuery } from './types.js'
@@ -24,10 +24,7 @@ export function applyLyricsQueryPolicy(player, query, options = {}) {
     browserPlayerService: options.browserPlayerService ?? 'auto',
   });
 
-  if (
-    profile.id === PLAYER_PROFILES.appleMusicWeb.id &&
-    isImplausibleAppleMusicDuration(query.durationMs)
-  ) {
+  if (profile.id === PLAYER_PROFILES.appleMusicWeb.id && shouldIgnoreAppleMusicDuration()) {
     return {
       ...query,
       durationMs: null,

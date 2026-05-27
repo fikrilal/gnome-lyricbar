@@ -277,6 +277,32 @@ describe('parseBestSyncedLrclibSearchResponse', () => {
     expect(result).toBeNull();
   });
 
+  it('accepts synced search candidates when query duration is unknown', () => {
+    const result = parseBestSyncedLrclibSearchResponse(
+      [
+        {
+          trackName: 'Radioactive',
+          artistName: 'Imagine Dragons',
+          albumName: '.',
+          duration: 186,
+          syncedLyrics: '[00:01.00] Radioactive line',
+        },
+      ],
+      {
+        artist: 'Imagine Dragons',
+        title: 'Radioactive',
+        album: 'Night Visions (Deluxe)',
+        durationMs: null,
+      },
+    );
+
+    expect(result?.kind).toBe('synced');
+    if (result?.kind === 'synced') {
+      expect(result.track.trackName).toBe('Radioactive');
+      expect(result.track.durationMs).toBe(186000);
+    }
+  });
+
   it('rejects search candidates from a different artist', () => {
     const result = parseBestSyncedLrclibSearchResponse(
       [

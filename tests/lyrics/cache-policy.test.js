@@ -193,7 +193,7 @@ describe('shouldWriteLyricsCache', () => {
     ).toBe(true);
   });
 
-  it('blocks Apple Music not-found cache writes when browser duration is implausible', () => {
+  it('blocks Apple Music not-found cache writes because browser duration is untrusted', () => {
     expect(
       shouldWriteLyricsCache(
         browserSnapshot({
@@ -208,7 +208,7 @@ describe('shouldWriteLyricsCache', () => {
     ).toBe(false);
   });
 
-  it('allows Apple Music not-found cache writes when browser duration is plausible', () => {
+  it('blocks Apple Music not-found cache writes even when browser duration looks plausible', () => {
     expect(
       shouldWriteLyricsCache(
         browserSnapshot({
@@ -220,7 +220,7 @@ describe('shouldWriteLyricsCache', () => {
         notFoundResult,
         { browserPlayerService: 'apple-music' },
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it('blocks low-confidence browser not-found results from being cached', () => {

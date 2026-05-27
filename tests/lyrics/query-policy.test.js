@@ -8,7 +8,7 @@ import { applyLyricsQueryPolicy } from '../../src/domain/lyrics/query-policy.js'
  */
 
 describe('applyLyricsQueryPolicy', () => {
-  it('removes implausible Apple Music Web duration from lyrics query', () => {
+  it('removes Apple Music Web duration from lyrics query', () => {
     expect(
       applyLyricsQueryPolicy(
         appleMusicSnapshot({ durationMs: 1172197 }),
@@ -18,14 +18,14 @@ describe('applyLyricsQueryPolicy', () => {
     ).toEqual(query({ durationMs: null }));
   });
 
-  it('preserves plausible Apple Music Web duration', () => {
+  it('removes plausible-looking Apple Music Web duration from lyrics query', () => {
     expect(
       applyLyricsQueryPolicy(
         appleMusicSnapshot({ durationMs: 189515 }),
         query({ durationMs: 189515 }),
         { browserPlayerService: 'apple-music' },
       ),
-    ).toEqual(query({ durationMs: 189515 }));
+    ).toEqual(query({ durationMs: null }));
   });
 
   it('keeps Spotify Desktop duration unchanged even when long', () => {
