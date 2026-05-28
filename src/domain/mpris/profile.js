@@ -20,6 +20,7 @@
  *   artist?: unknown,
  *   album?: unknown,
  *   trackId?: unknown,
+ *   url?: unknown,
  *   durationMs?: unknown,
  *   playbackStatus?: unknown,
  * }>} PlayerProfileInput
@@ -116,6 +117,11 @@ export function selectBrowserServiceProfile(input, browserProfile, options = {})
     return browserProfile;
   }
 
+  const urlProfile = detectBrowserServiceProfileFromUrl(input);
+  if (urlProfile !== null) {
+    return urlProfile;
+  }
+
   if (browserPlayerService === 'spotify') {
     return isMusicLikeBrowserMetadata(input) ? PLAYER_PROFILES.spotifyWeb : browserProfile;
   }
@@ -174,6 +180,43 @@ function detectBrowserFamilyProfile(applicationName) {
 function hasSpotifyWebEvidence(input) {
   const trackId = normalizeMaybeText(input?.trackId);
   return trackId !== null && trackId.toLowerCase().includes('spotify');
+}
+
+/**
+ * Browser MPRIS can expose the active media URL even when the browser-family
+ * bus name cannot identify the web app. Treat known media-service URLs as
+ * stronger evidence than the user preference because preferences can be stale
+ * after switching from one browser music service to another.
+ *
+ * @param {PlayerProfileInput | null | undefined} input
+ * @returns {PlayerProfile | null}
+ */
+function detectBrowserServiceProfileFromUrl(input) {
+  const url = normalizeMaybeText(input?.url);
+  if (url === null) {
+    return null;
+  }
+
+  let host;
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+
+  if (host === 'music.youtube.com') {
+    return PLAYER_PROFILES.youtubeMusicWeb;
+  }
+
+  if (host === 'open.spotify.com') {
+    return PLAYER_PROFILES.spotifyWeb;
+  }
+
+  if (host === 'music.apple.com') {
+    return PLAYER_PROFILES.appleMusicWeb;
+  }
+
+  return null;
 }
 
 /**

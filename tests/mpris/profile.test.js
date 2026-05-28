@@ -46,6 +46,45 @@ describe('detectPlayerProfile', () => {
     ).toBe(PLAYER_PROFILES.spotifyWeb);
   });
 
+  it('detects YouTube Music Web in auto mode from Firefox media urls', () => {
+    expect(
+      detectPlayerProfile({
+        busName: 'org.mpris.MediaPlayer2.firefox.instance_1_121',
+        title: 'Hall of Fame',
+        artist: 'The Script',
+        album: 'Hall of Fame',
+        durationMs: 202000,
+        trackId: '/org/mpris/MediaPlayer2/firefox',
+        url: 'https://music.youtube.com/watch?v=snx5qGUtVi8&list=RDAMVMBLZWkjBXfN8',
+        playbackStatus: 'Playing',
+      }),
+    ).toBe(PLAYER_PROFILES.youtubeMusicWeb);
+  });
+
+  it('detects Apple Music Web in auto mode from media urls', () => {
+    expect(
+      detectPlayerProfile({
+        busName: 'org.mpris.MediaPlayer2.firefox.instance1',
+        title: 'Natural',
+        artist: 'Imagine Dragons',
+        url: 'https://music.apple.com/us/album/natural/1437948883?i=1437948890',
+        playbackStatus: 'Playing',
+      }),
+    ).toBe(PLAYER_PROFILES.appleMusicWeb);
+  });
+
+  it('detects Spotify Web in auto mode from open.spotify.com urls', () => {
+    expect(
+      detectPlayerProfile({
+        busName: 'org.mpris.MediaPlayer2.firefox.instance1',
+        title: 'Nina',
+        artist: '.Feast',
+        url: 'https://open.spotify.com/track/1',
+        playbackStatus: 'Playing',
+      }),
+    ).toBe(PLAYER_PROFILES.spotifyWeb);
+  });
+
   it('detects Spotify Web when Spotify browser service is configured and metadata looks like music', () => {
     expect(
       detectPlayerProfile(
@@ -107,6 +146,21 @@ describe('detectPlayerProfile', () => {
         { browserPlayerService: 'generic' },
       ),
     ).toBe(PLAYER_PROFILES.chromiumBrowser);
+  });
+
+  it('lets generic mode suppress service-specialized URL detection', () => {
+    expect(
+      detectPlayerProfile(
+        {
+          busName: 'org.mpris.MediaPlayer2.firefox.instance1',
+          title: 'Hall of Fame',
+          artist: 'The Script',
+          url: 'https://music.youtube.com/watch?v=snx5qGUtVi8',
+          playbackStatus: 'Playing',
+        },
+        { browserPlayerService: 'generic' },
+      ),
+    ).toBe(PLAYER_PROFILES.firefoxBrowser);
   });
 
   it('does not infer YouTube Music Web from advertisements', () => {
@@ -236,6 +290,21 @@ describe('selectBrowserServiceProfile', () => {
         },
       ),
     ).toBe(PLAYER_PROFILES.appleMusicWeb);
+  });
+
+  it('lets strong URL evidence override stale explicit service settings', () => {
+    expect(
+      selectBrowserServiceProfile(
+        {
+          ...browserInput,
+          url: 'https://music.youtube.com/watch?v=snx5qGUtVi8',
+        },
+        PLAYER_PROFILES.firefoxBrowser,
+        {
+          browserPlayerService: 'apple-music',
+        },
+      ),
+    ).toBe(PLAYER_PROFILES.youtubeMusicWeb);
   });
 
   it('keeps auto mode on the browser-family profile without strong service evidence', () => {
