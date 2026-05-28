@@ -242,6 +242,7 @@ export class LyricsService {
       current.album === player.album &&
       current.durationMs === player.durationMs &&
       current.trackId === player.trackId &&
+      current.url === player.url &&
       current.playbackStatus === player.playbackStatus
     );
   }

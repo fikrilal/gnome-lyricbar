@@ -18,6 +18,7 @@ function snapshot(overrides) {
     album: 'Album',
     durationMs: 200000,
     trackId: '/com/spotify/track/abc',
+    url: null,
     playbackStatus: 'Playing',
     ...overrides,
   };

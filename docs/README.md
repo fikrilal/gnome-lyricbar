@@ -5,6 +5,7 @@ This directory is the source of truth for LyricBar product direction, engineerin
 ## Start Here
 
 - [Product overview](product.md): product definition, target users, v1 scope, and success criteria.
+- [Compatibility matrix](compatibility.md): tested GNOME Shell versions, browser clients, music clients, and evidence requirements.
 - [Engineering proposal](engineering-proposal.md): architecture, stack, module boundaries, testing, CI, release, and risks.
 - [Player profile architecture](player-profile-architecture.md): MPRIS profile and metadata stability design for Spotify Desktop, browser players, YouTube Music, and Apple Music.
 - [Spotify Web support improvements](spotify-web-support-improvements.md): live MPRIS findings and phased improvements for better Spotify browser support.
@@ -29,6 +30,7 @@ This directory is the source of truth for LyricBar product direction, engineerin
 docs/
   README.md
   product.md
+  compatibility.md
   engineering-proposal.md
   player-profile-architecture.md
   spotify-web-support-improvements.md

@@ -310,6 +310,7 @@ function snapshot(overrides) {
     album: 'Membangun & Menghancurkan',
     durationMs: 277991,
     trackId: '/org/chromium/MediaPlayer2/TrackList/Nina',
+    url: null,
     playbackStatus: 'Playing',
     ...overrides,
   };

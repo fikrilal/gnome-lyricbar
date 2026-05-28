@@ -8,6 +8,7 @@
  *   album: string,
  *   durationMs: number | null,
  *   trackId: string | null,
+ *   url: string | null,
  *   playbackStatus: PlaybackStatus,
  * }>} PlayerSnapshot
  */

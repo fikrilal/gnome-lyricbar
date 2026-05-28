@@ -13,6 +13,7 @@ const KEY_ARTIST = 'xesam:artist';
 const KEY_ALBUM = 'xesam:album';
 const KEY_LENGTH = 'mpris:length';
 const KEY_TRACK_ID = 'mpris:trackid';
+const KEY_URL = 'xesam:url';
 
 /**
  * @param {string} busName
@@ -30,6 +31,7 @@ export function mapMprisProperties(busName, properties) {
     album: metadata.album,
     durationMs: metadata.durationMs,
     trackId: metadata.trackId,
+    url: metadata.url,
     playbackStatus: get(bag, KEY_PLAYBACK_STATUS),
   });
 }
@@ -53,6 +55,7 @@ export function applyPropertyChanges(snapshot, changes) {
    *   album: unknown,
    *   durationMs: unknown,
    *   trackId: unknown,
+   *   url: unknown,
    *   playbackStatus: unknown,
    * }}
    */
@@ -63,6 +66,7 @@ export function applyPropertyChanges(snapshot, changes) {
     album: snapshot.album,
     durationMs: snapshot.durationMs,
     trackId: snapshot.trackId,
+    url: snapshot.url,
     playbackStatus: snapshot.playbackStatus,
   };
 
@@ -73,6 +77,7 @@ export function applyPropertyChanges(snapshot, changes) {
     merged.album = metadata.album;
     merged.durationMs = metadata.durationMs;
     merged.trackId = metadata.trackId;
+    merged.url = metadata.url;
   }
 
   if (Object.hasOwn(bag, KEY_PLAYBACK_STATUS)) {
@@ -102,6 +107,7 @@ export function snapshotsEqual(a, b) {
     a.album === b.album &&
     a.durationMs === b.durationMs &&
     a.trackId === b.trackId &&
+    a.url === b.url &&
     a.playbackStatus === b.playbackStatus
   );
 }
@@ -114,6 +120,7 @@ export function snapshotsEqual(a, b) {
  *   album: unknown,
  *   durationMs: unknown,
  *   trackId: unknown,
+ *   url: unknown,
  * }}
  */
 function readMetadata(value) {
@@ -125,6 +132,7 @@ function readMetadata(value) {
     album: get(bag, KEY_ALBUM),
     durationMs: microsecondsToMilliseconds(get(bag, KEY_LENGTH)),
     trackId: get(bag, KEY_TRACK_ID),
+    url: get(bag, KEY_URL),
   };
 }
 

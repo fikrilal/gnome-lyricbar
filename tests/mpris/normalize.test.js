@@ -15,6 +15,7 @@ describe('normalizePlayerSnapshot', () => {
         album: ' Album ',
         durationMs: 201000,
         trackId: '/com/spotify/track/abc',
+        url: ' https://open.spotify.com/track/abc ',
         playbackStatus: 'Playing',
       }),
     ).toEqual({
@@ -24,6 +25,7 @@ describe('normalizePlayerSnapshot', () => {
       album: 'Album',
       durationMs: 201000,
       trackId: '/com/spotify/track/abc',
+      url: 'https://open.spotify.com/track/abc',
       playbackStatus: 'Playing',
     });
   });
@@ -40,6 +42,7 @@ describe('normalizePlayerSnapshot', () => {
       album: '',
       durationMs: null,
       trackId: null,
+      url: null,
       playbackStatus: 'Stopped',
     });
   });
@@ -105,6 +108,15 @@ describe('normalizePlayerSnapshot', () => {
         busName: 'org.mpris.MediaPlayer2.spotify',
         trackId: '   ',
       })?.trackId,
+    ).toBeNull();
+  });
+
+  it('treats blank urls as missing', () => {
+    expect(
+      normalizePlayerSnapshot({
+        busName: 'org.mpris.MediaPlayer2.firefox.instance1',
+        url: '   ',
+      })?.url,
     ).toBeNull();
   });
 });

@@ -357,6 +357,7 @@ function snapshot(overrides) {
     album: 'Parachutes',
     durationMs: 266773,
     trackId: '/com/spotify/track/yellow',
+    url: null,
     playbackStatus: 'Playing',
     ...overrides,
   };

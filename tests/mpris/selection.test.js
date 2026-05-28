@@ -20,6 +20,7 @@ function snapshot(busName, playbackStatus, overrides = {}) {
     album: overrides.album ?? '',
     durationMs: overrides.durationMs ?? null,
     trackId: overrides.trackId ?? null,
+    url: overrides.url ?? null,
     playbackStatus,
   };
 }

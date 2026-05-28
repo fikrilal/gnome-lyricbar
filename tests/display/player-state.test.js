@@ -18,6 +18,7 @@ function snapshot(overrides) {
     album: '',
     durationMs: null,
     trackId: null,
+    url: null,
     playbackStatus: 'Stopped',
     ...overrides,
   };

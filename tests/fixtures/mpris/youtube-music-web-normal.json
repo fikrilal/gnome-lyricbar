@@ -28,6 +28,7 @@
     "album": "",
     "durationMs": 205341,
     "trackId": "/org/chromium/MediaPlayer2/TrackList/Track22C9441C7D270DC57830A101D2310234",
-    "playbackStatus": "Playing"
+    "playbackStatus": "Playing",
+    "url": null
   }
 }

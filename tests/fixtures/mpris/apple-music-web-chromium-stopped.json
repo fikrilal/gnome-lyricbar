@@ -28,6 +28,7 @@
     "album": "Origins (Deluxe Edition)",
     "durationMs": 189515,
     "trackId": "/org/chromium/MediaPlayer2/TrackList/TrackStopped",
-    "playbackStatus": "Stopped"
+    "playbackStatus": "Stopped",
+    "url": null
   }
 }

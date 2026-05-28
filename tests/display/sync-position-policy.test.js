@@ -121,6 +121,7 @@ function snapshot(overrides) {
     album: 'Origins (Deluxe Edition)',
     durationMs: 230000,
     trackId: '/com/spotify/track/natural',
+    url: null,
     playbackStatus: 'Playing',
     ...overrides,
   };

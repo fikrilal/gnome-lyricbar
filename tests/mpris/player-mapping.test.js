@@ -31,6 +31,7 @@ describe('mapMprisProperties', () => {
           'xesam:album': ' Album ',
           'mpris:length': 201_000_000,
           'mpris:trackid': '/com/spotify/track/abc',
+          'xesam:url': 'https://open.spotify.com/track/abc',
         },
       }),
     ).toEqual({
@@ -40,6 +41,32 @@ describe('mapMprisProperties', () => {
       album: 'Album',
       durationMs: 201000,
       trackId: '/com/spotify/track/abc',
+      url: 'https://open.spotify.com/track/abc',
+      playbackStatus: 'Playing',
+    });
+  });
+
+  it('preserves Firefox YouTube Music media urls', () => {
+    expect(
+      mapMprisProperties('org.mpris.MediaPlayer2.firefox.instance_1_121', {
+        PlaybackStatus: 'Playing',
+        Metadata: {
+          'xesam:title': 'Hall of Fame',
+          'xesam:artist': ['The Script'],
+          'xesam:album': 'Hall of Fame',
+          'mpris:length': 202_000_000,
+          'mpris:trackid': '/org/mpris/MediaPlayer2/firefox',
+          'xesam:url': 'https://music.youtube.com/watch?v=snx5qGUtVi8&list=RDAMVMBLZWkjBXfN8',
+        },
+      }),
+    ).toEqual({
+      busName: 'org.mpris.MediaPlayer2.firefox.instance_1_121',
+      title: 'Hall of Fame',
+      artist: 'The Script',
+      album: 'Hall of Fame',
+      durationMs: 202000,
+      trackId: '/org/mpris/MediaPlayer2/firefox',
+      url: 'https://music.youtube.com/watch?v=snx5qGUtVi8&list=RDAMVMBLZWkjBXfN8',
       playbackStatus: 'Playing',
     });
   });
@@ -54,6 +81,7 @@ describe('mapMprisProperties', () => {
           'xesam:album': variant('The Dichotomy'),
           'mpris:length': variant(212_953_000),
           'mpris:trackid': variant('/com/spotify/track/4Gg1tYCl7rWR4laKbdtPA4'),
+          'xesam:url': variant('https://open.spotify.com/track/4Gg1tYCl7rWR4laKbdtPA4'),
         }),
       }),
     ).toEqual({
@@ -63,6 +91,7 @@ describe('mapMprisProperties', () => {
       album: 'The Dichotomy',
       durationMs: 212953,
       trackId: '/com/spotify/track/4Gg1tYCl7rWR4laKbdtPA4',
+      url: 'https://open.spotify.com/track/4Gg1tYCl7rWR4laKbdtPA4',
       playbackStatus: 'Playing',
     });
   });
@@ -75,6 +104,7 @@ describe('mapMprisProperties', () => {
       album: '',
       durationMs: null,
       trackId: null,
+      url: null,
       playbackStatus: 'Stopped',
     });
   });
@@ -104,6 +134,7 @@ describe('mapMprisProperties', () => {
       album: '',
       durationMs: null,
       trackId: null,
+      url: null,
       playbackStatus: 'Stopped',
     });
   });
@@ -117,6 +148,7 @@ describe('applyPropertyChanges', () => {
     album: 'Old Album',
     durationMs: 100000,
     trackId: '/old',
+    url: 'https://open.spotify.com/track/old',
     playbackStatus: 'Playing',
   });
 
@@ -129,6 +161,7 @@ describe('applyPropertyChanges', () => {
           'xesam:album': 'New Album',
           'mpris:length': 150_000_000,
           'mpris:trackid': '/new',
+          'xesam:url': 'https://open.spotify.com/track/new',
         },
       }),
     ).toEqual({
@@ -138,6 +171,7 @@ describe('applyPropertyChanges', () => {
       album: 'New Album',
       durationMs: 150000,
       trackId: '/new',
+      url: 'https://open.spotify.com/track/new',
       playbackStatus: 'Playing',
     });
   });
@@ -162,6 +196,7 @@ describe('applyPropertyChanges', () => {
           'xesam:album': variant('Stop Stealing The Covers!'),
           'mpris:length': variant(195_000_000),
           'mpris:trackid': variant('/com/spotify/track/new'),
+          'xesam:url': variant('https://open.spotify.com/track/new'),
         }),
         PlaybackStatus: variant('Playing'),
       }),
@@ -172,6 +207,7 @@ describe('applyPropertyChanges', () => {
       album: 'Stop Stealing The Covers!',
       durationMs: 195000,
       trackId: '/com/spotify/track/new',
+      url: 'https://open.spotify.com/track/new',
       playbackStatus: 'Playing',
     });
   });
@@ -190,6 +226,7 @@ describe('snapshotsEqual', () => {
     album: 'Album',
     durationMs: 200000,
     trackId: '/track',
+    url: 'https://open.spotify.com/track/abc',
     playbackStatus: 'Playing',
   });
 
@@ -199,6 +236,7 @@ describe('snapshotsEqual', () => {
 
   it('returns false when any tracked field differs', () => {
     expect(snapshotsEqual(snapshot, { ...snapshot, title: 'Other' })).toBe(false);
+    expect(snapshotsEqual(snapshot, { ...snapshot, url: 'https://example.com/other' })).toBe(false);
     expect(snapshotsEqual(snapshot, { ...snapshot, playbackStatus: 'Paused' })).toBe(false);
   });
 

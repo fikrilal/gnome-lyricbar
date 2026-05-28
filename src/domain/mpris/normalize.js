@@ -11,6 +11,7 @@ const PLAYBACK_STATUSES = new Set(['Playing', 'Paused', 'Stopped']);
  *   album?: unknown,
  *   durationMs?: unknown,
  *   trackId?: unknown,
+ *   url?: unknown,
  *   playbackStatus?: unknown,
  * }>} RawSnapshot
  */
@@ -37,6 +38,7 @@ export function normalizePlayerSnapshot(raw) {
     album: normalizeText(candidate.album),
     durationMs: normalizeDurationMs(candidate.durationMs),
     trackId: normalizeTrackId(candidate.trackId),
+    url: normalizeUrl(candidate.url),
     playbackStatus: normalizePlaybackStatus(candidate.playbackStatus),
   };
 }
@@ -108,6 +110,19 @@ function normalizeDurationMs(value) {
  * @returns {string | null}
  */
 function normalizeTrackId(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed === '' ? null : trimmed;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {string | null}
+ */
+function normalizeUrl(value) {
   if (typeof value !== 'string') {
     return null;
   }

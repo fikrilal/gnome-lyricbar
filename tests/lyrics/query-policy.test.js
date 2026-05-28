@@ -69,6 +69,7 @@ function appleMusicSnapshot(overrides) {
     album: 'Night Visions (Deluxe)',
     durationMs: 1172197,
     trackId: '/org/chromium/MediaPlayer2/TrackList/TrackAD881F63680FE0B3A97734DAC2ED7F63',
+    url: null,
     playbackStatus: 'Playing',
     ...overrides,
   };
