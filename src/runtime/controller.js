@@ -9,6 +9,7 @@ import {
 } from '../domain/display/lyrics-state.js';
 import { displayStateFromPlayer } from '../domain/display/player-state.js';
 import {
+  shouldHoldLowConfidenceSyncedPosition,
   shouldUseRelativeSyncedLyricsPosition,
   shouldUseSyncedLyricsPosition,
 } from '../domain/display/sync-position-policy.js';
@@ -605,6 +606,7 @@ export class LyricBarController {
   #resolveSyncedPosition(player, lookup, rawPositionMs) {
     const options = {
       browserPlayerService: this.#currentSettings?.browserPlayerService ?? 'auto',
+      hasPreviousSyncedLine: this.#lastSyncedLine !== null,
       trackDurationMs: lookup.track.durationMs,
     };
     const trackKey = this.#buildSyncPositionTrackKey(player, lookup);
@@ -622,6 +624,14 @@ export class LyricBarController {
       this.#logger?.debug('sync-position-skipped', {
         positionMs: normalizedPositionMs,
         rawPositionMs,
+        title: player.title,
+      });
+      return null;
+    }
+
+    if (shouldHoldLowConfidenceSyncedPosition(player, rawPositionMs, options)) {
+      this.#logger?.debug('sync-position-held-low-confidence', {
+        positionMs: rawPositionMs,
         title: player.title,
       });
       return null;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  shouldHoldLowConfidenceSyncedPosition,
   shouldUseRelativeSyncedLyricsPosition,
   shouldUseSyncedLyricsPosition,
   shouldUseSyncedLyricsTiming,
@@ -109,6 +110,69 @@ describe('shouldUseRelativeSyncedLyricsPosition', () => {
   });
 });
 
+describe('shouldHoldLowConfidenceSyncedPosition', () => {
+  it('holds Firefox YouTube Music zero-position transition samples after a line rendered', () => {
+    expect(
+      shouldHoldLowConfidenceSyncedPosition(firefoxYoutubeSnapshot({}), 0, {
+        hasPreviousSyncedLine: true,
+      }),
+    ).toBe(true);
+  });
+
+  it('allows the first synced line to render at zero position', () => {
+    expect(
+      shouldHoldLowConfidenceSyncedPosition(firefoxYoutubeSnapshot({}), 0, {
+        hasPreviousSyncedLine: false,
+      }),
+    ).toBe(false);
+  });
+
+  it('does not hold valid positive Firefox YouTube Music positions', () => {
+    expect(
+      shouldHoldLowConfidenceSyncedPosition(firefoxYoutubeSnapshot({}), 1500, {
+        hasPreviousSyncedLine: true,
+      }),
+    ).toBe(false);
+  });
+
+  it('does not hold Firefox YouTube Music samples when duration is available', () => {
+    expect(
+      shouldHoldLowConfidenceSyncedPosition(firefoxYoutubeSnapshot({ durationMs: 202000 }), 0, {
+        hasPreviousSyncedLine: true,
+      }),
+    ).toBe(false);
+  });
+
+  it('does not hold Chromium browser samples', () => {
+    expect(
+      shouldHoldLowConfidenceSyncedPosition(
+        browserSnapshot({
+          durationMs: null,
+          url: 'https://music.youtube.com/watch?v=snx5qGUtVi8',
+        }),
+        0,
+        {
+          hasPreviousSyncedLine: true,
+        },
+      ),
+    ).toBe(false);
+  });
+
+  it('does not hold non-YouTube Firefox browser samples', () => {
+    expect(
+      shouldHoldLowConfidenceSyncedPosition(
+        firefoxYoutubeSnapshot({
+          url: 'https://open.spotify.com/track/abc',
+        }),
+        0,
+        {
+          hasPreviousSyncedLine: true,
+        },
+      ),
+    ).toBe(false);
+  });
+});
+
 /**
  * @param {Partial<PlayerSnapshot>} overrides
  * @returns {PlayerSnapshot}
@@ -135,6 +199,24 @@ function browserSnapshot(overrides) {
   return snapshot({
     busName: 'org.mpris.MediaPlayer2.chromium.instance4621',
     trackId: '/org/chromium/MediaPlayer2/TrackList/Track01FC59808B7916991056915FDB535390',
+    ...overrides,
+  });
+}
+
+/**
+ * @param {Partial<PlayerSnapshot>} overrides
+ * @returns {PlayerSnapshot}
+ */
+function firefoxYoutubeSnapshot(overrides) {
+  return snapshot({
+    busName: 'org.mpris.MediaPlayer2.firefox.instance_1_121',
+    title: 'Hall of Fame',
+    artist: 'The Script',
+    album: 'Hall of Fame',
+    durationMs: null,
+    trackId: '/org/mpris/MediaPlayer2/firefox',
+    url: 'https://music.youtube.com/watch?v=snx5qGUtVi8',
+    playbackStatus: 'Playing',
     ...overrides,
   });
 }
