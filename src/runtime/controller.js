@@ -13,6 +13,7 @@ import {
   shouldUseRelativeSyncedLyricsPosition,
   shouldUseSyncedLyricsPosition,
 } from '../domain/display/sync-position-policy.js';
+import { updateStagnantSyncedPositionEstimate } from '../domain/display/sync-position-estimator.js';
 import { shouldPollSyncedLyrics } from '../domain/display/sync-polling.js';
 import { buildIndicatorViewModel } from '../domain/display/view-model.js';
 import { selectActivePlayer } from '../domain/mpris/selection.js';
@@ -38,6 +39,7 @@ import { SettingsAdapter } from './settings.js';
  * @import { LyricsProviderResult } from '../domain/lyrics/types.js'
  * @import { PlayerSnapshot } from '../domain/mpris/types.js'
  * @import { LyricBarSettings } from '../domain/settings/types.js'
+ * @import { StagnantSyncedPositionEstimate } from '../domain/display/sync-position-estimator.js'
  * @import { GSettingsBackend } from './settings.js'
  *
  * @typedef {Readonly<{
@@ -58,6 +60,7 @@ import { SettingsAdapter } from './settings.js';
  */
 
 const POSITION_POLL_INTERVAL_MS = 500;
+const FIREFOX_STAGNANT_POSITION_THRESHOLD_MS = 2_500;
 
 export class LyricBarController {
   /** @type {ExtensionHandle} */
@@ -125,6 +128,12 @@ export class LyricBarController {
 
   /** @type {number | null} */
   #syncPositionOffsetMs = null;
+
+  /** @type {number | null} */
+  #lastAcceptedSyncPositionMs = null;
+
+  /** @type {StagnantSyncedPositionEstimate | null} */
+  #syncPositionEstimate = null;
 
   /**
    * @param {ExtensionHandle} extension
@@ -614,12 +623,15 @@ export class LyricBarController {
     if (this.#syncPositionTrackKey !== trackKey) {
       this.#syncPositionTrackKey = trackKey;
       this.#syncPositionOffsetMs = null;
+      this.#lastAcceptedSyncPositionMs = null;
+      this.#syncPositionEstimate = null;
+      this.#lastSyncedLine = null;
     }
 
     if (this.#syncPositionOffsetMs !== null) {
       const normalizedPositionMs = rawPositionMs - this.#syncPositionOffsetMs;
       if (shouldUseSyncedLyricsPosition(player, normalizedPositionMs, options)) {
-        return normalizedPositionMs;
+        return this.#acceptSyncedPosition(normalizedPositionMs);
       }
       this.#logger?.debug('sync-position-skipped', {
         positionMs: normalizedPositionMs,
@@ -630,6 +642,23 @@ export class LyricBarController {
     }
 
     if (shouldHoldLowConfidenceSyncedPosition(player, rawPositionMs, options)) {
+      const estimate = updateStagnantSyncedPositionEstimate(this.#syncPositionEstimate, {
+        canEstimate: true,
+        lastAcceptedPositionMs: this.#lastAcceptedSyncPositionMs,
+        nowMs: monotonicNowMs(),
+        rawPositionMs,
+        thresholdMs: FIREFOX_STAGNANT_POSITION_THRESHOLD_MS,
+        trackKey,
+      });
+      this.#syncPositionEstimate = estimate.state;
+      if (estimate.estimated && estimate.positionMs !== null) {
+        this.#logger?.debug('sync-position-estimated', {
+          positionMs: estimate.positionMs,
+          rawPositionMs,
+          title: player.title,
+        });
+        return estimate.positionMs;
+      }
       this.#logger?.debug('sync-position-held-low-confidence', {
         positionMs: rawPositionMs,
         title: player.title,
@@ -638,7 +667,7 @@ export class LyricBarController {
     }
 
     if (shouldUseSyncedLyricsPosition(player, rawPositionMs, options)) {
-      return rawPositionMs;
+      return this.#acceptSyncedPosition(rawPositionMs);
     }
 
     if (shouldUseRelativeSyncedLyricsPosition(player, rawPositionMs, options)) {
@@ -647,7 +676,7 @@ export class LyricBarController {
         rawPositionMs,
         title: player.title,
       });
-      return 0;
+      return this.#acceptSyncedPosition(0);
     }
 
     this.#logger?.debug('sync-position-skipped', {
@@ -655,6 +684,16 @@ export class LyricBarController {
       title: player.title,
     });
     return null;
+  }
+
+  /**
+   * @param {number} positionMs
+   * @returns {number}
+   */
+  #acceptSyncedPosition(positionMs) {
+    this.#lastAcceptedSyncPositionMs = positionMs;
+    this.#syncPositionEstimate = null;
+    return positionMs;
   }
 
   /**
@@ -678,6 +717,8 @@ export class LyricBarController {
   #resetSyncPositionOffset() {
     this.#syncPositionTrackKey = null;
     this.#syncPositionOffsetMs = null;
+    this.#lastAcceptedSyncPositionMs = null;
+    this.#syncPositionEstimate = null;
   }
 
   /**
@@ -716,4 +757,11 @@ function scheduleTimeout(callback, delayMs) {
     GLib.source_remove(sourceId);
     sourceId = 0;
   };
+}
+
+/**
+ * @returns {number}
+ */
+function monotonicNowMs() {
+  return Math.floor(GLib.get_monotonic_time() / 1000);
 }
