@@ -11,13 +11,13 @@ LyricBar talks to players exclusively through MPRIS over D-Bus. It does not scra
 
 ## Supported Players
 
-| Player            | Doc                                | Notes                                              |
-| ----------------- | ---------------------------------- | -------------------------------------------------- |
-| Spotify Desktop   | [profile-architecture.md](profile-architecture.md) | Stable baseline; native MPRIS player.   |
-| Spotify Web       | [spotify-web.md](spotify-web.md)   | Browser MPRIS via Chromium.                        |
-| YouTube Music Web | [youtube-music.md](youtube-music.md) | Browser MPRIS via Chromium.                      |
-| Apple Music Web   | [apple-music.md](apple-music.md)   | Browser MPRIS; cumulative position normalization.  |
-| Firefox players   | [firefox.md](firefox.md)           | Firefox MPRIS findings and limitations.            |
+| Player            | Doc                                                | Notes                                             |
+| ----------------- | -------------------------------------------------- | ------------------------------------------------- |
+| Spotify Desktop   | [profile-architecture.md](profile-architecture.md) | Stable baseline; native MPRIS player.             |
+| Spotify Web       | [spotify-web.md](spotify-web.md)                   | Browser MPRIS via Chromium.                       |
+| YouTube Music Web | [youtube-music.md](youtube-music.md)               | Browser MPRIS via Chromium.                       |
+| Apple Music Web   | [apple-music.md](apple-music.md)                   | Browser MPRIS; cumulative position normalization. |
+| Firefox players   | [firefox.md](firefox.md)                           | Firefox MPRIS findings and limitations.           |
 
 ## Adding a New Player
 
