@@ -2,7 +2,7 @@
 
 LyricBar is a GNOME Shell extension that displays synchronized live lyrics in the top bar for MPRIS-compatible music players.
 
-It is built for GNOME Shell 46-49 and supports Spotify Desktop, Spotify Web, YouTube Music Web, Apple Music Web, and other MPRIS players. Lyrics are fetched from LRCLIB, cached locally, and rendered as a single glanceable line in the panel.
+It is built for GNOME Shell 46-50 and supports Spotify Desktop, Spotify Web, YouTube Music Web, Apple Music Web, and other MPRIS players. Lyrics are fetched from LRCLIB, cached locally, and rendered as a single glanceable line in the panel.
 
 ![LyricBar screenshot](docs/assets/lyricbar-panel.png)
 
@@ -24,7 +24,7 @@ It is built for GNOME Shell 46-49 and supports Spotify Desktop, Spotify Web, You
 
 | Target               | Status        |
 | -------------------- | ------------- |
-| GNOME Shell 46-49    | Supported     |
+| GNOME Shell 46-50    | Supported     |
 | Ubuntu 24.04         | Supported     |
 | Fedora GNOME         | Supported     |
 | Spotify Desktop      | Supported     |
@@ -79,7 +79,7 @@ curl -fsSL https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/script
 
 Requirements:
 
-- GNOME Shell 46-49
+- GNOME Shell 46-50
 - Node.js 22+
 - `glib-compile-schemas`
 - `zip`
@@ -101,16 +101,17 @@ LyricBar does not use telemetry and does not require a Spotify account. For lyri
 
 ## Troubleshooting
 
-If the panel is blank, lyrics do not sync, or the wrong player is selected, see [Troubleshooting](docs/troubleshooting.md).
+If the panel is blank, lyrics do not sync, or the wrong player is selected, see [Troubleshooting](docs/operations/troubleshooting.md).
 
 ## Documentation
 
 - [Product overview](docs/product.md)
-- [Engineering proposal](docs/engineering-proposal.md)
-- [Player profile architecture](docs/player-profile-architecture.md)
+- [Engineering proposal](docs/engineering/proposal.md)
+- [Player support](docs/players/README.md)
+- [Player profile architecture](docs/players/profile-architecture.md)
 - [Agent harness](docs/harness/agent-harness.md)
 - [Runtime evidence workflow](docs/harness/runtime-evidence.md)
-- [Release checklist](docs/release-checklist.md)
+- [Release checklist](docs/operations/release-checklist.md)
 
 ## License
 

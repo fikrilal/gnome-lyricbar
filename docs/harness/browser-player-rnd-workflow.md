@@ -18,18 +18,18 @@ Do not implement or write a final support report after only checking `busctl`, `
 
 ## Required Output
 
-Every browser-player R&D task must produce or update one Markdown report under `docs/`:
+Every browser-player R&D task must produce or update one Markdown report under `docs/players/`:
 
 ```text
-docs/spotify-web-support-improvements.md
-docs/youtube-music-browser-support.md
-docs/apple-music-browser-support.md
+docs/players/spotify-web.md
+docs/players/youtube-music.md
+docs/players/apple-music.md
 ```
 
 For a new service, create:
 
 ```text
-docs/<service>-browser-support.md
+docs/players/<service>.md
 ```
 
 The report must include:
@@ -69,9 +69,9 @@ sed -n '1,260p' src/runtime/lyrics/lrclib.js
 Read the nearest existing support report:
 
 ```bash
-sed -n '1,260p' docs/spotify-web-support-improvements.md
-sed -n '1,260p' docs/youtube-music-browser-support.md
-sed -n '1,260p' docs/apple-music-browser-support.md
+sed -n '1,260p' docs/players/spotify-web.md
+sed -n '1,260p' docs/players/youtube-music.md
+sed -n '1,260p' docs/players/apple-music.md
 ```
 
 If the nearest report is stale, replace it with current evidence instead of appending guesses.

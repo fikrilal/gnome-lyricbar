@@ -30,7 +30,7 @@ Compatibility depends on whether the player exposes useful MPRIS metadata: title
 | Spotify Web                    | Chromium-family browser | Supported    | Tested with browser MPRIS. Includes browser-specific position handling.                                                                                                                                                                                               |
 | Spotify Web                    | Firefox                 | Needs test   | Expected through Firefox MPRIS, but not yet systematically verified.                                                                                                                                                                                                  |
 | YouTube Music Web              | Chromium-family browser | Supported    | Tested with browser MPRIS and explicit YouTube Music browser profile behavior.                                                                                                                                                                                        |
-| YouTube Music Web              | Firefox                 | Smoke tested | Verified on Fedora 44 / GNOME Shell 50.0 VM with Firefox and top-bar lyric rendering. Host inspection later showed Firefox can expose `Position=0` during active playback, so synced timing needs a Firefox-specific fallback before this should be marked supported. |
+| YouTube Music Web              | Firefox                 | Supported    | Firefox can expose `Position=0` during active playback. A Firefox-specific low-confidence position hold plus estimated advance now covers this case. Live-verified on GNOME Shell 46 (v0.1.10) with logs showing `sync-position-held-low-confidence`, `sync-position-estimated`, and advancing lyric lines while Firefox reported `Position=0`. |
 | Apple Music Web                | Chromium-family browser | Supported    | Tested with browser MPRIS, including unreliable duration and position offset handling.                                                                                                                                                                                |
 | Apple Music Web                | Firefox                 | Needs test   | Expected through Firefox MPRIS if metadata and position are exposed correctly.                                                                                                                                                                                        |
 | Other MPRIS-compatible players | Native app or browser   | Needs test   | May work when title, artist, duration, position, and playback status are exposed consistently.                                                                                                                                                                        |
@@ -68,7 +68,6 @@ Before changing support status to **Supported**, capture:
 ## Current Test Priorities
 
 1. Spotify Web on Firefox.
-2. YouTube Music Web on Firefox stagnant-position fallback.
-3. Apple Music Web on Firefox.
-4. GNOME Shell 50.1 confirmation on Fedora 44.
-5. Brave/Vivaldi browser behavior for Spotify Web and YouTube Music Web.
+2. Apple Music Web on Firefox.
+3. GNOME Shell 50.1 confirmation on Fedora 44.
+4. Brave/Vivaldi browser behavior for Spotify Web and YouTube Music Web.

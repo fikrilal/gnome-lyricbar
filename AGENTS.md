@@ -10,7 +10,7 @@ Start here:
 
 - Docs index: `docs/README.md`
 - Product overview: `docs/product.md`
-- Engineering proposal: `docs/engineering-proposal.md`
+- Engineering proposal: `docs/engineering/proposal.md`
 - Agent harness: `docs/harness/agent-harness.md`
 - Browser player R&D workflow: `docs/harness/browser-player-rnd-workflow.md`
 - Execution plans: `docs/exec-plans/README.md`
@@ -59,7 +59,7 @@ Use semantic scoped commits:
 type(scope): message
 ```
 
-See `docs/commit-conventions.md` for allowed types/scopes and local hook setup. GitHub CI intentionally does not run commitlint.
+See `docs/contributing/commit-conventions.md` for allowed types/scopes and local hook setup. GitHub CI intentionally does not run commitlint.
 
 ## Agent Workflow
 
