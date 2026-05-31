@@ -485,7 +485,7 @@ After implementation, update:
 
 - README feature list
 - `docs/product.md`
-- `docs/troubleshooting.md`
+- `docs/operations/troubleshooting.md`
 - `docs/privacy.md` only if the implementation changes data handling
 - release notes
 

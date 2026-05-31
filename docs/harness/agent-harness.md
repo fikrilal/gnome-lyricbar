@@ -82,7 +82,11 @@ Current docs map:
 docs/
   README.md
   product.md
-  engineering-proposal.md
+  players/
+  engineering/
+    proposal.md
+  contributing/
+  operations/
   harness/
   exec-plans/
 ```

@@ -6,20 +6,37 @@ This directory is the source of truth for LyricBar product direction, engineerin
 
 - [Product overview](product.md): product definition, target users, v1 scope, and success criteria.
 - [Compatibility matrix](compatibility.md): tested GNOME Shell versions, browser clients, music clients, and evidence requirements.
-- [Engineering proposal](engineering-proposal.md): architecture, stack, module boundaries, testing, CI, release, and risks.
-- [Player profile architecture](player-profile-architecture.md): MPRIS profile and metadata stability design for Spotify Desktop, browser players, YouTube Music, and Apple Music.
-- [Spotify Web support improvements](spotify-web-support-improvements.md): live MPRIS findings and phased improvements for better Spotify browser support.
-- [YouTube Music browser support](youtube-music-browser-support.md): live MPRIS findings and phased work for explicit YouTube Music browser compatibility.
-- [Apple Music browser support](apple-music-browser-support.md): live MPRIS findings and implementation plan for Apple Music Web support.
 - [Privacy](privacy.md): network requests, local cache, logs, and data handling.
-- [Commit conventions](commit-conventions.md): semantic scoped commit rules and local hook setup.
-- [Troubleshooting](troubleshooting.md): install, runtime, player selection, lyric sync, and preference issues.
-- [Release checklist](release-checklist.md): public release gates and runtime scenarios.
+- [Engineering proposal](engineering/proposal.md): architecture, stack, module boundaries, testing, CI, release, and risks.
+
+## Player Support
+
+- [Player support overview](players/README.md): how LyricBar supports each player and how to add a new one.
+- [Player profile architecture](players/profile-architecture.md): MPRIS profile and metadata stability design for Spotify Desktop, browser players, YouTube Music, and Apple Music.
+- [Spotify Web](players/spotify-web.md): live MPRIS findings and phased improvements for better Spotify browser support.
+- [YouTube Music](players/youtube-music.md): live MPRIS findings and phased work for explicit YouTube Music browser compatibility.
+- [Apple Music](players/apple-music.md): live MPRIS findings and implementation plan for Apple Music Web support.
+- [Firefox](players/firefox.md): live MPRIS findings and limitations for Firefox-backed players.
+
+## Contributing
+
+- [Commit conventions](contributing/commit-conventions.md): semantic scoped commit rules and local hook setup.
+
+## Operations
+
+- [Troubleshooting](operations/troubleshooting.md): install, runtime, player selection, lyric sync, and preference issues.
+- [Release checklist](operations/release-checklist.md): public release gates and runtime scenarios.
 - [Release notes](release-notes/): curated user-facing notes for GitHub Releases.
+
+## Harness
+
 - [Agent harness](harness/agent-harness.md): agent-first workflow, verification gates, guardrails, and feedback loops.
 - [Browser player R&D workflow](harness/browser-player-rnd-workflow.md): mandatory evidence workflow for Spotify Web, YouTube Music, Apple Music Web, and future browser player support.
 - [Nested runtime harness](harness/nested-runtime-harness.md): recommended visual runtime evidence loop with nested GNOME Shell and mock MPRIS.
 - [Runtime agent workflow](harness/runtime-agent-workflow.md): step-by-step nested Shell workflow for R&D agents.
+
+## Execution Plans
+
 - [Execution plans](exec-plans/README.md): planning workflow for non-trivial agent work.
 - [Execution plan template](exec-plans/_template.md): required structure for non-trivial agent work plans.
 - [Technical debt tracker](exec-plans/tech-debt-tracker.md): unresolved harness, product, and architecture debt.
@@ -31,17 +48,23 @@ docs/
   README.md
   product.md
   compatibility.md
-  engineering-proposal.md
-  player-profile-architecture.md
-  spotify-web-support-improvements.md
-  youtube-music-browser-support.md
-  apple-music-browser-support.md
   privacy.md
-  commit-conventions.md
-  troubleshooting.md
-  release-checklist.md
+  players/
+    README.md
+    profile-architecture.md
+    spotify-web.md
+    youtube-music.md
+    apple-music.md
+    firefox.md
+  engineering/
+    proposal.md
+  contributing/
+    commit-conventions.md
+  operations/
+    troubleshooting.md
+    release-checklist.md
   release-notes/
-    v0.1.8.md
+    v0.1.10.md
   harness/
     agent-harness.md
     browser-player-rnd-workflow.md
@@ -58,7 +81,10 @@ docs/
 ## Documentation Rules
 
 - Product intent belongs in `docs/product.md`.
-- Architecture and implementation policy belong in `docs/engineering-proposal.md` until the topic is stable enough to split into focused engineering docs.
+- Architecture and implementation policy belong in `docs/engineering/proposal.md` until the topic is stable enough to split into focused engineering docs.
+- Per-player support docs belong in `docs/players/`, named `players/<service>.md`.
+- Contributor policy belongs in `docs/contributing/`.
+- Operational runbooks and release gates belong in `docs/operations/`.
 - Agent workflow and harness design belong in `docs/harness/`.
 - Active implementation plans belong in `docs/exec-plans/active/`.
 - Completed implementation plans belong in `docs/exec-plans/completed/`.

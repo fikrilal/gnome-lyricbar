@@ -5,7 +5,7 @@ const requiredDocs = [
   'README.md',
   'docs/README.md',
   'docs/product.md',
-  'docs/engineering-proposal.md',
+  'docs/engineering/proposal.md',
   'docs/harness/agent-harness.md',
   'docs/exec-plans/README.md',
   'docs/exec-plans/_template.md',
