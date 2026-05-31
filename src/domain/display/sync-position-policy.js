@@ -8,6 +8,7 @@ const POSITION_DURATION_TOLERANCE_MS = 10_000;
  *
  * @typedef {Readonly<{
  *   browserPlayerService?: BrowserPlayerService | null | undefined,
+ *   hasAcceptedSyncedPosition?: boolean | undefined,
  *   hasPreviousSyncedLine?: boolean | undefined,
  *   trackDurationMs?: number | null | undefined,
  * }>} SyncedTimingOptions
@@ -69,7 +70,7 @@ export function shouldHoldLowConfidenceSyncedPosition(player, positionMs, option
     player === null ||
     player === undefined ||
     positionMs !== 0 ||
-    options.hasPreviousSyncedLine !== true ||
+    (options.hasPreviousSyncedLine !== true && options.hasAcceptedSyncedPosition !== true) ||
     player.durationMs !== null ||
     player.playbackStatus !== 'Playing' ||
     !isFirefoxBrowser(player.busName)

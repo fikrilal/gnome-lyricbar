@@ -187,6 +187,21 @@ describe('applyPropertyChanges', () => {
     });
   });
 
+  it('preserves previous metadata fields when partial Metadata changes omit them', () => {
+    expect(
+      applyPropertyChanges(base, {
+        Metadata: {
+          'xesam:title': 'New Title',
+          'xesam:artist': ['New Artist'],
+        },
+      }),
+    ).toEqual({
+      ...base,
+      title: 'New Title',
+      artist: 'New Artist',
+    });
+  });
+
   it('unwraps nested variant values from changed properties', () => {
     expect(
       applyPropertyChanges(base, {

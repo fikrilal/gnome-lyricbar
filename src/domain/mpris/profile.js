@@ -197,10 +197,8 @@ function detectBrowserServiceProfileFromUrl(input) {
     return null;
   }
 
-  let host;
-  try {
-    host = new URL(url).hostname.toLowerCase();
-  } catch {
+  const host = extractUrlHostname(url);
+  if (host === null) {
     return null;
   }
 
@@ -217,6 +215,19 @@ function detectBrowserServiceProfileFromUrl(input) {
   }
 
   return null;
+}
+
+/**
+ * GJS does not guarantee the WHATWG `URL` global, so keep browser-service URL
+ * evidence parsing platform-free.
+ *
+ * @param {string} url
+ * @returns {string | null}
+ */
+function extractUrlHostname(url) {
+  const match = /^[a-z][a-z0-9+.-]*:\/\/([^/?#:]+)(?::\d+)?(?:[/?#]|$)/iu.exec(url.trim());
+  const host = match?.at(1);
+  return host === undefined || host.trim() === '' ? null : host.toLowerCase();
 }
 
 /**

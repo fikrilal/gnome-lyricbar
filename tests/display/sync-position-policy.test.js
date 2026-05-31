@@ -127,6 +127,15 @@ describe('shouldHoldLowConfidenceSyncedPosition', () => {
     ).toBe(false);
   });
 
+  it('holds after a synced position was accepted even when the rendered line is unknown', () => {
+    expect(
+      shouldHoldLowConfidenceSyncedPosition(firefoxYoutubeSnapshot({}), 0, {
+        hasAcceptedSyncedPosition: true,
+        hasPreviousSyncedLine: false,
+      }),
+    ).toBe(true);
+  });
+
   it('does not hold valid positive Firefox YouTube Music positions', () => {
     expect(
       shouldHoldLowConfidenceSyncedPosition(firefoxYoutubeSnapshot({}), 1500, {

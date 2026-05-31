@@ -615,6 +615,7 @@ export class LyricBarController {
   #resolveSyncedPosition(player, lookup, rawPositionMs) {
     const options = {
       browserPlayerService: this.#currentSettings?.browserPlayerService ?? 'auto',
+      hasAcceptedSyncedPosition: this.#lastAcceptedSyncPositionMs !== null,
       hasPreviousSyncedLine: this.#lastSyncedLine !== null,
       trackDurationMs: lookup.track.durationMs,
     };

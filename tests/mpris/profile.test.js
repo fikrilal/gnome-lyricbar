@@ -61,6 +61,23 @@ describe('detectPlayerProfile', () => {
     ).toBe(PLAYER_PROFILES.youtubeMusicWeb);
   });
 
+  it('detects YouTube Music Web from Firefox search urls without relying on WHATWG URL', () => {
+    expect(
+      detectPlayerProfile(
+        {
+          busName: 'org.mpris.MediaPlayer2.firefox.instance_1_104',
+          title: 'Believe Me',
+          artist: 'Fort Minor',
+          album: 'The Rising Tied (Deluxe Edition)',
+          trackId: '/org/mpris/MediaPlayer2/firefox',
+          url: 'https://music.youtube.com/search?q=in+the+end',
+          playbackStatus: 'Playing',
+        },
+        { browserPlayerService: 'apple-music' },
+      ),
+    ).toBe(PLAYER_PROFILES.youtubeMusicWeb);
+  });
+
   it('detects Apple Music Web in auto mode from media urls', () => {
     expect(
       detectPlayerProfile({

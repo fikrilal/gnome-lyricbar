@@ -72,12 +72,12 @@ export function applyPropertyChanges(snapshot, changes) {
 
   if (Object.hasOwn(bag, KEY_METADATA)) {
     const metadata = readMetadata(get(bag, KEY_METADATA));
-    merged.title = metadata.title;
-    merged.artist = metadata.artist;
-    merged.album = metadata.album;
-    merged.durationMs = metadata.durationMs;
-    merged.trackId = metadata.trackId;
-    merged.url = metadata.url;
+    merged.title = metadata.title ?? snapshot.title;
+    merged.artist = metadata.artist ?? snapshot.artist;
+    merged.album = metadata.album ?? snapshot.album;
+    merged.durationMs = metadata.durationMs ?? snapshot.durationMs;
+    merged.trackId = metadata.trackId ?? snapshot.trackId;
+    merged.url = metadata.url ?? snapshot.url;
   }
 
   if (Object.hasOwn(bag, KEY_PLAYBACK_STATUS)) {
