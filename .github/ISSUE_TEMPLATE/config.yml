@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: LyricBar troubleshooting
+    url: https://github.com/fikrilal/gnome-lyricbar/blob/main/docs/troubleshooting.md
+    about: Check troubleshooting steps before filing a bug.

@@ -1,0 +1,102 @@
+name: Client compatibility request
+description: Request or verify support for a music player, browser, or MPRIS client.
+title: 'Compatibility: '
+labels:
+  - compatibility
+  - needs-evidence
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for music players and browser clients such as Audacious, QMMP, VLC, Strawberry, Spotify Web, YouTube Music Web, and Apple Music Web.
+
+  - type: input
+    id: client
+    attributes:
+      label: Client name
+      placeholder: Audacious, QMMP, VLC, Firefox YouTube Music, etc.
+    validations:
+      required: true
+
+  - type: input
+    id: client-version
+    attributes:
+      label: Client version
+      placeholder: Version number if known
+    validations:
+      required: false
+
+  - type: input
+    id: distro
+    attributes:
+      label: Distro and version
+      placeholder: Ubuntu 24.04, Fedora 44, Arch Linux, etc.
+    validations:
+      required: true
+
+  - type: input
+    id: gnome-shell
+    attributes:
+      label: GNOME Shell version
+      placeholder: Output of `gnome-shell --version`
+    validations:
+      required: true
+
+  - type: dropdown
+    id: session
+    attributes:
+      label: Session type
+      options:
+        - Wayland
+        - X11
+        - Unknown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: current-behavior
+    attributes:
+      label: Current behavior
+      options:
+        - Not tested yet
+        - Not detected by LyricBar
+        - Detected but shows wrong text
+        - Detected but synced lyrics do not advance
+        - Works partially
+        - Works correctly
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected support
+      description: What should LyricBar support for this client?
+      placeholder: Show track title fallback, synced lyrics, plain lyrics, player priority, etc.
+    validations:
+      required: true
+
+  - type: textarea
+    id: mpris
+    attributes:
+      label: MPRIS evidence
+      description: Run `npm run inspect:mpris` while the client is playing and paste the relevant output.
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Screenshots or logs
+      description: Add screenshots, GNOME Shell logs, or notes about what appears in the top bar.
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+    validations:
+      required: false
