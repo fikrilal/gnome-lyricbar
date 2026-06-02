@@ -1,0 +1,98 @@
+name: Bug report
+description: Report LyricBar behavior that is broken or unexpected.
+title: 'Bug: '
+labels:
+  - bug
+  - needs-repro
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a LyricBar issue. Please include concrete evidence so the behavior can be reproduced.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What went wrong?
+      placeholder: Lyrics stay stuck on the first line when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect LyricBar to do?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What did LyricBar do instead?
+    validations:
+      required: true
+
+  - type: input
+    id: distro
+    attributes:
+      label: Distro and version
+      placeholder: Ubuntu 24.04, Fedora 44, Arch Linux, etc.
+    validations:
+      required: true
+
+  - type: input
+    id: gnome-shell
+    attributes:
+      label: GNOME Shell version
+      placeholder: Output of `gnome-shell --version`
+    validations:
+      required: true
+
+  - type: dropdown
+    id: session
+    attributes:
+      label: Session type
+      options:
+        - Wayland
+        - X11
+        - Unknown
+    validations:
+      required: true
+
+  - type: input
+    id: player
+    attributes:
+      label: Music player or browser
+      placeholder: Spotify Desktop, Firefox YouTube Music, Audacious, QMMP, etc.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start ...
+        2. Play ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: Paste safe diagnostics, logs, screenshots, or `npm run inspect:mpris` output when relevant.
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+    validations:
+      required: false
