@@ -22,6 +22,11 @@
       <summary>Fallback mode</summary>
       <description>Display behavior when synced lyrics are unavailable.</description>
     </key>
+    <key name="show-settings-icon" type="b">
+      <default>true</default>
+      <summary>Show settings icon</summary>
+      <description>Whether to show the separate LyricBar settings icon in the GNOME top bar.</description>
+    </key>
     <key name="player-priority" type="as">
       <default>['spotify']</default>
       <summary>Player priority</summary>

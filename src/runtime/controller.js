@@ -19,6 +19,7 @@ import { buildIndicatorViewModel } from '../domain/display/view-model.js';
 import { selectActivePlayer } from '../domain/mpris/selection.js';
 import {
   shouldRefreshPlayerSelection,
+  shouldRefreshSettingsAccess,
   shouldRepositionPanelIndicator,
 } from '../domain/settings/change.js';
 import { LyricBarIndicator, LyricBarSettingsIndicator } from '../shell/indicator.js';
@@ -50,6 +51,7 @@ import { SettingsAdapter } from './settings.js';
  *
  * @typedef {Readonly<{
  *   render(viewModel: IndicatorViewModel): void,
+ *   setPreferencesAction?(callback: (() => void) | null): void,
  *   destroy(): void,
  * }>} IndicatorHandle
  *
@@ -178,6 +180,7 @@ export class LyricBarController {
         debugLogging: settings.debugLogging,
         maxWidth: settings.maxWidth,
         panelPosition: settings.panelPosition,
+        showSettingsIcon: settings.showSettingsIcon,
       });
       if (previousSettings !== null && shouldRepositionPanelIndicator(previousSettings, settings)) {
         this.#logger?.debug('indicator-reposition-requested', {
@@ -185,6 +188,9 @@ export class LyricBarController {
           to: settings.panelPosition,
         });
         this.#replaceIndicator();
+      }
+      if (previousSettings !== null && shouldRefreshSettingsAccess(previousSettings, settings)) {
+        this.#syncSettingsAccess();
       }
       if (previousSettings !== null && shouldRefreshPlayerSelection(previousSettings, settings)) {
         this.#refreshSelection();
@@ -277,6 +283,7 @@ export class LyricBarController {
     this.#logger?.debug('indicator-mounted', {
       panelPosition: this.#currentSettings.panelPosition,
     });
+    this.#syncIndicatorPreferencesAction();
     this.#render();
     lifecycle.add(this.#destroyIndicator);
   }
@@ -286,7 +293,11 @@ export class LyricBarController {
    */
   #mountSettingsIndicator() {
     const lifecycle = this.#lifecycle;
-    if (lifecycle === null) {
+    if (
+      lifecycle === null ||
+      this.#currentSettings?.showSettingsIcon !== true ||
+      this.#settingsIndicator !== null
+    ) {
       return;
     }
 
@@ -310,6 +321,39 @@ export class LyricBarController {
     Main.panel.addToStatusArea(`${this.#extension.uuid}-settings`, settingsIndicator, 0, 'right');
     this.#logger?.debug('settings-indicator-mounted');
     lifecycle.add(this.#destroySettingsIndicator);
+  }
+
+  /**
+   * @returns {void}
+   */
+  #unmountSettingsIndicator() {
+    this.#destroySettingsIndicator?.();
+    this.#destroySettingsIndicator = null;
+  }
+
+  /**
+   * @returns {void}
+   */
+  #syncSettingsAccess() {
+    this.#syncIndicatorPreferencesAction();
+    if (this.#currentSettings?.showSettingsIcon === true) {
+      this.#mountSettingsIndicator();
+      return;
+    }
+    this.#unmountSettingsIndicator();
+  }
+
+  /**
+   * @returns {void}
+   */
+  #syncIndicatorPreferencesAction() {
+    this.#indicator?.setPreferencesAction?.(
+      this.#currentSettings?.showSettingsIcon === false
+        ? () => {
+            this.#extension.openPreferences();
+          }
+        : null,
+    );
   }
 
   /**

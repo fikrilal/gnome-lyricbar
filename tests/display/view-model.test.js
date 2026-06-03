@@ -12,6 +12,7 @@ const baseSettings = {
   maxWidth: 360,
   textAlign: 'left',
   fallbackMode: 'track',
+  showSettingsIcon: true,
   playerPriority: ['spotify'],
   browserPlayerService: 'auto',
   cacheEnabled: true,

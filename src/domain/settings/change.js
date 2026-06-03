@@ -24,6 +24,15 @@ export function shouldRepositionPanelIndicator(previous, next) {
 }
 
 /**
+ * @param {LyricBarSettings} previous
+ * @param {LyricBarSettings} next
+ * @returns {boolean}
+ */
+export function shouldRefreshSettingsAccess(previous, next) {
+  return previous.showSettingsIcon !== next.showSettingsIcon;
+}
+
+/**
  * @param {readonly string[]} left
  * @param {readonly string[]} right
  * @returns {boolean}

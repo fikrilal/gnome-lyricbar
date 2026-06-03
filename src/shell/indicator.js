@@ -16,6 +16,9 @@ class LyricBarIndicatorBase extends PanelMenu.Button {
   _init() {
     super._init(0.0, 'LyricBar');
 
+    this._preferencesAction = null;
+    this._preferencesButtonPressId = 0;
+
     this._lyricBarBox = new St.BoxLayout({
       style_class: 'panel-status-indicators-box lyricbar-container',
     });
@@ -59,12 +62,44 @@ class LyricBarIndicatorBase extends PanelMenu.Button {
     queueRelayout(this);
   }
 
+  /**
+   * @param {(() => void) | null} callback
+   * @returns {void}
+   */
+  setPreferencesAction(callback) {
+    this._disconnectPreferencesAction();
+    this._preferencesAction = callback;
+
+    if (callback === null) {
+      return;
+    }
+
+    this._preferencesButtonPressId = this.connect('button-press-event', () => {
+      this._preferencesAction?.();
+      return true;
+    });
+  }
+
   /** @override */
   destroy() {
+    this._disconnectPreferencesAction();
     this._lyricBarLabel = null;
     this._lyricBarBin = null;
     this._lyricBarBox = null;
+    this._preferencesAction = null;
     super.destroy();
+  }
+
+  /**
+   * @returns {void}
+   */
+  _disconnectPreferencesAction() {
+    if (this._preferencesButtonPressId === 0) {
+      return;
+    }
+    const signalId = /** @type {number} */ (this._preferencesButtonPressId);
+    this.disconnect(signalId);
+    this._preferencesButtonPressId = 0;
   }
 }
 

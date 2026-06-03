@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   shouldRefreshPlayerSelection,
+  shouldRefreshSettingsAccess,
   shouldRepositionPanelIndicator,
 } from '../../src/domain/settings/change.js';
 
@@ -54,6 +55,21 @@ describe('shouldRepositionPanelIndicator', () => {
   });
 });
 
+describe('shouldRefreshSettingsAccess', () => {
+  it('returns false when settings icon visibility is unchanged', () => {
+    expect(shouldRefreshSettingsAccess(settings(['spotify']), settings(['vlc']))).toBe(false);
+  });
+
+  it('returns true when settings icon visibility changes', () => {
+    expect(
+      shouldRefreshSettingsAccess(
+        { ...settings(['spotify']), showSettingsIcon: true },
+        { ...settings(['spotify']), showSettingsIcon: false },
+      ),
+    ).toBe(true);
+  });
+});
+
 /**
  * @param {readonly string[]} playerPriority
  * @returns {import('../../src/domain/settings/types.js').LyricBarSettings}
@@ -64,6 +80,7 @@ function settings(playerPriority, overrides = {}) {
     maxWidth: 360,
     textAlign: 'left',
     fallbackMode: 'track',
+    showSettingsIcon: true,
     playerPriority,
     browserPlayerService: 'spotify',
     cacheEnabled: true,

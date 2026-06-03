@@ -144,10 +144,22 @@ export default class LyricBarPreferences extends ExtensionPreferences {
     });
     connections.push([settings, fallbackChangedId]);
 
+    const showSettingsIconRow = new Adw.SwitchRow({
+      title: 'Show settings icon',
+      subtitle: 'Show a separate top-bar shortcut to LyricBar preferences.',
+    });
+    settings.bind(
+      'show-settings-icon',
+      showSettingsIconRow,
+      'active',
+      Gio.SettingsBindFlags.DEFAULT,
+    );
+
     displayGroup.add(panelPositionRow);
     displayGroup.add(maxWidthRow);
     displayGroup.add(textAlignRow);
     displayGroup.add(fallbackModeRow);
+    displayGroup.add(showSettingsIconRow);
 
     // 2. Behavior Group
     const behaviorGroup = new Adw.PreferencesGroup({
@@ -592,6 +604,7 @@ function buildDiagnosticsMarkdown(metadata, settings) {
     `| Text alignment | ${escapeMarkdownTable(settings.get_string('text-align'))} |`,
     `| Maximum width | ${settings.get_int('max-width')} |`,
     `| Fallback mode | ${escapeMarkdownTable(settings.get_string('fallback-mode'))} |`,
+    `| Show settings icon | ${formatBoolean(settings.get_boolean('show-settings-icon'))} |`,
     `| Player priority | ${escapeMarkdownTable(settings.get_strv('player-priority').join(', '))} |`,
     `| Browser player service | ${escapeMarkdownTable(settings.get_string('browser-player-service'))} |`,
     `| Cache enabled | ${formatBoolean(settings.get_boolean('cache-enabled'))} |`,

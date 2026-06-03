@@ -17,6 +17,7 @@ describe('SettingsAdapter', () => {
       maxWidth: 360,
       textAlign: 'right',
       fallbackMode: 'track',
+      showSettingsIcon: true,
       playerPriority: ['spotify'],
       browserPlayerService: 'auto',
       cacheEnabled: true,
@@ -32,16 +33,16 @@ describe('SettingsAdapter', () => {
 
     adapter.subscribe(callback);
 
-    expect(backend.connect).toHaveBeenCalledTimes(8);
+    expect(backend.connect).toHaveBeenCalledTimes(9);
     backend.emit('changed::max-width');
 
     expect(callback).toHaveBeenCalledWith(adapter.read());
 
     lifecycle.dispose();
 
-    expect(backend.disconnect).toHaveBeenCalledTimes(8);
-    expect(backend.disconnect).toHaveBeenNthCalledWith(1, 8);
-    expect(backend.disconnect).toHaveBeenNthCalledWith(8, 1);
+    expect(backend.disconnect).toHaveBeenCalledTimes(9);
+    expect(backend.disconnect).toHaveBeenNthCalledWith(1, 9);
+    expect(backend.disconnect).toHaveBeenNthCalledWith(9, 1);
   });
 });
 
@@ -72,7 +73,7 @@ function createSettingsBackend(overrides = {}) {
     }),
     get_int: vi.fn(() => 360),
     get_strv: vi.fn(() => ['spotify']),
-    get_boolean: vi.fn((key) => key === 'cache-enabled'),
+    get_boolean: vi.fn((key) => key === 'cache-enabled' || key === 'show-settings-icon'),
     connect: vi.fn((signal, callback) => {
       const signalHandlers = handlers.get(signal) ?? [];
       signalHandlers.push(callback);

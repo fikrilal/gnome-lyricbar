@@ -39,6 +39,7 @@ export function normalizeSettings(raw) {
     maxWidth: normalizeMaxWidth(raw.maxWidth),
     textAlign: normalizeTextAlign(raw.textAlign),
     fallbackMode: normalizeFallbackMode(raw.fallbackMode),
+    showSettingsIcon: normalizeBoolean(raw.showSettingsIcon, true),
     playerPriority: normalizePlayerPriority(raw.playerPriority),
     browserPlayerService: normalizeBrowserPlayerService(raw.browserPlayerService),
     cacheEnabled: normalizeBoolean(raw.cacheEnabled, true),
