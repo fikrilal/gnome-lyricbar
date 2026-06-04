@@ -8,6 +8,8 @@ import {
   normalizePlayerPriority,
   normalizeSettings,
   normalizeTextAlign,
+  normalizeTextColorMode,
+  normalizeCustomTextColor,
 } from '../../src/domain/settings/normalize.js';
 
 describe('normalizeSettings', () => {
@@ -23,6 +25,9 @@ describe('normalizeSettings', () => {
         browserPlayerService: 'generic',
         cacheEnabled: false,
         debugLogging: true,
+        textColorMode: 'custom',
+        customTextColor: '#ff007f',
+        textShadowEnabled: false,
       }),
     ).toEqual({
       panelPosition: 'left',
@@ -34,6 +39,9 @@ describe('normalizeSettings', () => {
       browserPlayerService: 'generic',
       cacheEnabled: false,
       debugLogging: true,
+      textColorMode: 'custom',
+      customTextColor: '#ff007f',
+      textShadowEnabled: false,
     });
   });
 
@@ -49,6 +57,9 @@ describe('normalizeSettings', () => {
         browserPlayerService: 'bad',
         cacheEnabled: 'yes',
         debugLogging: 'no',
+        textColorMode: 'orange',
+        customTextColor: 'rgb(255,0,0)',
+        textShadowEnabled: 'yes',
       }),
     ).toEqual({
       panelPosition: 'center',
@@ -60,6 +71,9 @@ describe('normalizeSettings', () => {
       browserPlayerService: 'auto',
       cacheEnabled: true,
       debugLogging: false,
+      textColorMode: 'default',
+      customTextColor: '#ffffff',
+      textShadowEnabled: true,
     });
   });
 });
@@ -128,5 +142,34 @@ describe('normalizeTextAlign', () => {
 
   it('rejects unknown text aligns', () => {
     expect(normalizeTextAlign('top')).toBe('left');
+  });
+});
+
+describe('normalizeTextColorMode', () => {
+  it('accepts known color preset types', () => {
+    expect(normalizeTextColorMode('system')).toBe('system');
+    expect(normalizeTextColorMode('white')).toBe('white');
+    expect(normalizeTextColorMode('black')).toBe('black');
+    expect(normalizeTextColorMode('custom')).toBe('custom');
+    expect(normalizeTextColorMode('default')).toBe('default');
+  });
+
+  it('rejects unknown types', () => {
+    expect(normalizeTextColorMode('blue')).toBe('default');
+  });
+});
+
+describe('normalizeCustomTextColor', () => {
+  it('accepts valid hex colors', () => {
+    expect(normalizeCustomTextColor('#fff')).toBe('#fff');
+    expect(normalizeCustomTextColor('#FF0033')).toBe('#FF0033');
+    expect(normalizeCustomTextColor('  #12f45a  ')).toBe('#12f45a');
+  });
+
+  it('rejects invalid inputs and returns default', () => {
+    expect(normalizeCustomTextColor('red')).toBe('#ffffff');
+    expect(normalizeCustomTextColor('#1234')).toBe('#ffffff');
+    expect(normalizeCustomTextColor('123456')).toBe('#ffffff');
+    expect(normalizeCustomTextColor(123)).toBe('#ffffff');
   });
 });

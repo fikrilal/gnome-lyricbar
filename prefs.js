@@ -6,6 +6,12 @@ import Soup from 'gi://Soup';
 
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
+import {
+  isHexColor,
+  TEXT_COLOR_MODES,
+  textColorModeIndex,
+} from './src/domain/settings/appearance.js';
+
 const UPDATE_CHECK_INTERVAL_S = 86400;
 const GITHUB_RELEASES_URL = 'https://github.com/fikrilal/gnome-lyricbar/releases/latest';
 const STATE_DIR = GLib.build_filenamev([GLib.get_user_state_dir(), 'lyricbar']);
@@ -160,6 +166,83 @@ export default class LyricBarPreferences extends ExtensionPreferences {
     displayGroup.add(textAlignRow);
     displayGroup.add(fallbackModeRow);
     displayGroup.add(showSettingsIconRow);
+
+    // 1.5 Appearance Group
+    const appearanceGroup = new Adw.PreferencesGroup({
+      title: 'Appearance',
+      description: 'Customize lyric text style.',
+    });
+
+    const textColorPresetRow = new Adw.ComboRow({
+      title: 'Text color preset',
+      subtitle: 'Preset text color style for the lyric label.',
+      model: new Gtk.StringList({
+        strings: ['Default (White)', 'Theme default', 'White', 'Black', 'Custom color'],
+      }),
+    });
+    const currentColorType = settings.get_string('style-text-color-type');
+    const colorTypeIndex = textColorModeIndex(currentColorType);
+    if (colorTypeIndex !== -1) {
+      textColorPresetRow.selected = colorTypeIndex;
+    }
+
+    const textColorCustomRow = new Adw.EntryRow({
+      title: 'Custom text color (HEX)',
+      show_apply_button: true,
+    });
+    textColorCustomRow.text = settings.get_string('style-text-color-custom');
+
+    const updateCustomColorVisibility = () => {
+      textColorCustomRow.visible = textColorPresetRow.selected === 4;
+    };
+    updateCustomColorVisibility();
+
+    const colorTypeNotifyId = textColorPresetRow.connect('notify::selected', () => {
+      const { selected } = textColorPresetRow;
+      if (selected >= 0 && selected < TEXT_COLOR_MODES.length) {
+        settings.set_string('style-text-color-type', TEXT_COLOR_MODES[selected]);
+        updateCustomColorVisibility();
+      }
+    });
+    connections.push([textColorPresetRow, colorTypeNotifyId]);
+
+    const colorTypeChangedId = settings.connect('changed::style-text-color-type', () => {
+      const current = settings.get_string('style-text-color-type');
+      const idx = textColorModeIndex(current);
+      if (idx !== -1 && textColorPresetRow.selected !== idx) {
+        textColorPresetRow.selected = idx;
+        updateCustomColorVisibility();
+      }
+    });
+    connections.push([settings, colorTypeChangedId]);
+
+    const textColorCustomApplyId = textColorCustomRow.connect('apply', () => {
+      const text = textColorCustomRow.text.trim();
+      if (isHexColor(text)) {
+        settings.set_string('style-text-color-custom', text);
+      } else {
+        textColorCustomRow.text = settings.get_string('style-text-color-custom');
+      }
+    });
+    connections.push([textColorCustomRow, textColorCustomApplyId]);
+
+    const textColorCustomChangedId = settings.connect('changed::style-text-color-custom', () => {
+      const current = settings.get_string('style-text-color-custom');
+      if (textColorCustomRow.text !== current) {
+        textColorCustomRow.text = current;
+      }
+    });
+    connections.push([settings, textColorCustomChangedId]);
+
+    const textShadowRow = new Adw.SwitchRow({
+      title: 'Text drop shadow',
+      subtitle: 'Show a drop shadow behind the lyric text for readability.',
+    });
+    settings.bind('style-text-shadow', textShadowRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+
+    appearanceGroup.add(textColorPresetRow);
+    appearanceGroup.add(textColorCustomRow);
+    appearanceGroup.add(textShadowRow);
 
     // 2. Behavior Group
     const behaviorGroup = new Adw.PreferencesGroup({
@@ -401,6 +484,7 @@ export default class LyricBarPreferences extends ExtensionPreferences {
     aboutGroup.add(websiteRow);
 
     page.add(displayGroup);
+    page.add(appearanceGroup);
     page.add(behaviorGroup);
     page.add(debuggingGroup);
     page.add(aboutGroup);
@@ -609,6 +693,9 @@ function buildDiagnosticsMarkdown(metadata, settings) {
     `| Browser player service | ${escapeMarkdownTable(settings.get_string('browser-player-service'))} |`,
     `| Cache enabled | ${formatBoolean(settings.get_boolean('cache-enabled'))} |`,
     `| Debug logging | ${formatBoolean(settings.get_boolean('debug-logging'))} |`,
+    `| Style text color type | ${escapeMarkdownTable(settings.get_string('style-text-color-type'))} |`,
+    `| Style text color custom | ${escapeMarkdownTable(settings.get_string('style-text-color-custom'))} |`,
+    `| Style text shadow | ${formatBoolean(settings.get_boolean('style-text-shadow'))} |`,
     '',
     'This diagnostic block intentionally excludes lyrics, listening history, logs, local file paths, and MPRIS metadata.',
   ].join('\n');

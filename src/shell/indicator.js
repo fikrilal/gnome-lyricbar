@@ -7,6 +7,8 @@ import St from 'gi://St';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
+import { buildLabelStyleString } from '../domain/display/style.js';
+
 /**
  * @import { IndicatorViewModel } from '../domain/display/view-model.js'
  */
@@ -50,10 +52,9 @@ class LyricBarIndicatorBase extends PanelMenu.Button {
     setActorVisible(this, viewModel.visible);
     setLabelText(this._lyricBarLabel, viewModel.text);
     setActorWidth(this._lyricBarLabel, viewModel.maxWidth);
-    setActorStyle(
-      this._lyricBarLabel,
-      `width: ${viewModel.maxWidth}px; min-width: 1px; text-align: ${viewModel.textAlign};`,
-    );
+
+    const style = buildLabelStyleString(viewModel);
+    setActorStyle(this._lyricBarLabel, style);
     setLabelAlignment(this._lyricBarLabel, viewModel.textAlign);
 
     queueRelayout(this._lyricBarLabel);

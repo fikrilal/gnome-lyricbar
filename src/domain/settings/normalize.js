@@ -1,3 +1,11 @@
+import {
+  DEFAULT_CUSTOM_TEXT_COLOR,
+  DEFAULT_TEXT_COLOR_MODE,
+  DEFAULT_TEXT_SHADOW_ENABLED,
+  isHexColor,
+  isTextColorMode,
+} from './appearance.js';
+
 const DEFAULT_PANEL_POSITION = 'center';
 const DEFAULT_MAX_WIDTH = 360;
 const MIN_MAX_WIDTH = 120;
@@ -26,6 +34,7 @@ const TEXT_ALIGNS = new Set(['left', 'center', 'right']);
  *   PanelPosition,
  *   RawSettings,
  *   TextAlign,
+ *   TextColorMode,
  * } from './types.js'
  */
 
@@ -44,6 +53,9 @@ export function normalizeSettings(raw) {
     browserPlayerService: normalizeBrowserPlayerService(raw.browserPlayerService),
     cacheEnabled: normalizeBoolean(raw.cacheEnabled, true),
     debugLogging: normalizeBoolean(raw.debugLogging, false),
+    textColorMode: normalizeTextColorMode(raw.textColorMode),
+    customTextColor: normalizeCustomTextColor(raw.customTextColor),
+    textShadowEnabled: normalizeBoolean(raw.textShadowEnabled, DEFAULT_TEXT_SHADOW_ENABLED),
   };
 }
 
@@ -124,4 +136,20 @@ export function normalizeTextAlign(value) {
   return typeof value === 'string' && TEXT_ALIGNS.has(value)
     ? /** @type {TextAlign} */ (value)
     : DEFAULT_TEXT_ALIGN;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {TextColorMode}
+ */
+export function normalizeTextColorMode(value) {
+  return isTextColorMode(value) ? value : DEFAULT_TEXT_COLOR_MODE;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function normalizeCustomTextColor(value) {
+  return isHexColor(value) ? value.trim() : DEFAULT_CUSTOM_TEXT_COLOR;
 }

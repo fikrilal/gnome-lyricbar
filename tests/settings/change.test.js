@@ -85,6 +85,9 @@ function settings(playerPriority, overrides = {}) {
     browserPlayerService: 'spotify',
     cacheEnabled: true,
     debugLogging: false,
+    textColorMode: 'default',
+    customTextColor: '#ffffff',
+    textShadowEnabled: true,
     ...overrides,
   };
 }

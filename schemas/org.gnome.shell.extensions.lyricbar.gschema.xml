@@ -47,5 +47,20 @@
       <summary>Debug logging</summary>
       <description>Whether verbose diagnostic logging should be enabled.</description>
     </key>
+    <key name="style-text-color-type" type="s">
+      <default>'default'</default>
+      <summary>Text color preset type</summary>
+      <description>Choose the text color preset style ('default', 'system', 'white', 'black', or 'custom').</description>
+    </key>
+    <key name="style-text-color-custom" type="s">
+      <default>'#ffffff'</default>
+      <summary>Custom text color hex</summary>
+      <description>Custom HEX color code when color type is 'custom'.</description>
+    </key>
+    <key name="style-text-shadow" type="b">
+      <default>true</default>
+      <summary>Text shadow</summary>
+      <description>Enable or disable the text drop shadow.</description>
+    </key>
   </schema>
 </schemalist>

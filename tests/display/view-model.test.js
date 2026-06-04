@@ -17,6 +17,9 @@ const baseSettings = {
   browserPlayerService: 'auto',
   cacheEnabled: true,
   debugLogging: false,
+  textColorMode: 'default',
+  customTextColor: '#ffffff',
+  textShadowEnabled: true,
 };
 
 describe('buildIndicatorViewModel', () => {
@@ -34,6 +37,9 @@ describe('buildIndicatorViewModel', () => {
       visible: true,
       maxWidth: 360,
       textAlign: 'left',
+      textColorMode: 'default',
+      customTextColor: '#ffffff',
+      textShadowEnabled: true,
     });
   });
 
@@ -54,6 +60,9 @@ describe('buildIndicatorViewModel', () => {
       visible: false,
       maxWidth: 240,
       textAlign: 'left',
+      textColorMode: 'default',
+      customTextColor: '#ffffff',
+      textShadowEnabled: true,
     });
   });
 });

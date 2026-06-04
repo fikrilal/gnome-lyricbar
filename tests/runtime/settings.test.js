@@ -22,6 +22,9 @@ describe('SettingsAdapter', () => {
       browserPlayerService: 'auto',
       cacheEnabled: true,
       debugLogging: false,
+      textColorMode: 'default',
+      customTextColor: '#ffffff',
+      textShadowEnabled: true,
     });
   });
 
@@ -33,16 +36,16 @@ describe('SettingsAdapter', () => {
 
     adapter.subscribe(callback);
 
-    expect(backend.connect).toHaveBeenCalledTimes(9);
+    expect(backend.connect).toHaveBeenCalledTimes(12);
     backend.emit('changed::max-width');
 
     expect(callback).toHaveBeenCalledWith(adapter.read());
 
     lifecycle.dispose();
 
-    expect(backend.disconnect).toHaveBeenCalledTimes(9);
-    expect(backend.disconnect).toHaveBeenNthCalledWith(1, 9);
-    expect(backend.disconnect).toHaveBeenNthCalledWith(9, 1);
+    expect(backend.disconnect).toHaveBeenCalledTimes(12);
+    expect(backend.disconnect).toHaveBeenNthCalledWith(1, 12);
+    expect(backend.disconnect).toHaveBeenNthCalledWith(12, 1);
   });
 });
 
@@ -69,11 +72,20 @@ function createSettingsBackend(overrides = {}) {
       if (key === 'browser-player-service') {
         return 'auto';
       }
+      if (key === 'style-text-color-type') {
+        return 'default';
+      }
+      if (key === 'style-text-color-custom') {
+        return '#ffffff';
+      }
       return '';
     }),
     get_int: vi.fn(() => 360),
     get_strv: vi.fn(() => ['spotify']),
-    get_boolean: vi.fn((key) => key === 'cache-enabled' || key === 'show-settings-icon'),
+    get_boolean: vi.fn(
+      (key) =>
+        key === 'cache-enabled' || key === 'show-settings-icon' || key === 'style-text-shadow',
+    ),
     connect: vi.fn((signal, callback) => {
       const signalHandlers = handlers.get(signal) ?? [];
       signalHandlers.push(callback);

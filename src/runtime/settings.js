@@ -24,6 +24,9 @@ const SETTING_KEYS = [
   'browser-player-service',
   'cache-enabled',
   'debug-logging',
+  'style-text-color-type',
+  'style-text-color-custom',
+  'style-text-shadow',
 ];
 
 export class SettingsAdapter {
@@ -53,6 +56,9 @@ export class SettingsAdapter {
       browserPlayerService: this.#settings.get_string('browser-player-service'),
       cacheEnabled: this.#settings.get_boolean('cache-enabled'),
       debugLogging: this.#settings.get_boolean('debug-logging'),
+      textColorMode: this.#settings.get_string('style-text-color-type'),
+      customTextColor: this.#settings.get_string('style-text-color-custom'),
+      textShadowEnabled: this.#settings.get_boolean('style-text-shadow'),
     });
   }
 

@@ -9,6 +9,9 @@ import { formatDisplayState } from './state.js';
  *   visible: boolean,
  *   maxWidth: number,
  *   textAlign: import('../settings/types.js').TextAlign,
+ *   textColorMode: import('../settings/types.js').TextColorMode,
+ *   customTextColor: string,
+ *   textShadowEnabled: boolean,
  * }>} IndicatorViewModel
  */
 
@@ -25,5 +28,8 @@ export function buildIndicatorViewModel(state, settings) {
     visible: display.visible,
     maxWidth: settings.maxWidth,
     textAlign: settings.textAlign,
+    textColorMode: settings.textColorMode,
+    customTextColor: settings.customTextColor,
+    textShadowEnabled: settings.textShadowEnabled,
   };
 }
