@@ -1,4 +1,5 @@
 import Adw from 'gi://Adw';
+import Gdk from 'gi://Gdk';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
@@ -7,10 +8,20 @@ import Soup from 'gi://Soup';
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 import {
+  DEFAULT_CUSTOM_TEXT_COLOR,
   isHexColor,
   TEXT_COLOR_MODES,
   textColorModeIndex,
 } from './src/domain/settings/appearance.js';
+
+/**
+ * @typedef {{
+ *   red: number,
+ *   green: number,
+ *   blue: number,
+ *   alpha: number,
+ * }} RgbaColor
+ */
 
 const UPDATE_CHECK_INTERVAL_S = 86400;
 const GITHUB_RELEASES_URL = 'https://github.com/fikrilal/gnome-lyricbar/releases/latest';
@@ -192,6 +203,17 @@ export default class LyricBarPreferences extends ExtensionPreferences {
     });
     textColorCustomRow.text = settings.get_string('style-text-color-custom');
 
+    const colorPickerButton = new Gtk.ColorDialogButton({
+      dialog: new Gtk.ColorDialog({
+        title: 'Pick text color',
+        modal: true,
+        with_alpha: false,
+      }),
+      rgba: rgbaFromHex(settings.get_string('style-text-color-custom')),
+      valign: Gtk.Align.CENTER,
+    });
+    textColorCustomRow.add_suffix(colorPickerButton);
+
     const updateCustomColorVisibility = () => {
       textColorCustomRow.visible = textColorPresetRow.selected === 4;
     };
@@ -226,10 +248,21 @@ export default class LyricBarPreferences extends ExtensionPreferences {
     });
     connections.push([textColorCustomRow, textColorCustomApplyId]);
 
+    const textColorPickerChangedId = colorPickerButton.connect('notify::rgba', () => {
+      const hex = hexFromRgba(colorPickerButton.rgba);
+      if (settings.get_string('style-text-color-custom') !== hex) {
+        settings.set_string('style-text-color-custom', hex);
+      }
+    });
+    connections.push([colorPickerButton, textColorPickerChangedId]);
+
     const textColorCustomChangedId = settings.connect('changed::style-text-color-custom', () => {
       const current = settings.get_string('style-text-color-custom');
       if (textColorCustomRow.text !== current) {
         textColorCustomRow.text = current;
+      }
+      if (hexFromRgba(colorPickerButton.rgba) !== current) {
+        colorPickerButton.rgba = rgbaFromHex(current);
       }
     });
     connections.push([settings, textColorCustomChangedId]);
@@ -729,4 +762,33 @@ function formatBoolean(value) {
  */
 function escapeMarkdownTable(value) {
   return value.replaceAll('|', '\\|').replaceAll('\n', ' ');
+}
+
+/**
+ * @param {string} hex
+ * @returns {RgbaColor}
+ */
+function rgbaFromHex(hex) {
+  const rgba = new Gdk.RGBA();
+  rgba.parse(isHexColor(hex) ? hex.trim() : DEFAULT_CUSTOM_TEXT_COLOR);
+  rgba.alpha = 1;
+  return rgba;
+}
+
+/**
+ * @param {RgbaColor} rgba
+ * @returns {string}
+ */
+function hexFromRgba(rgba) {
+  return `#${channelToHex(rgba.red)}${channelToHex(rgba.green)}${channelToHex(rgba.blue)}`;
+}
+
+/**
+ * @param {number} channel
+ * @returns {string}
+ */
+function channelToHex(channel) {
+  return Math.round(Math.min(1, Math.max(0, channel)) * 255)
+    .toString(16)
+    .padStart(2, '0');
 }

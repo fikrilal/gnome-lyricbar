@@ -32,6 +32,22 @@ declare module 'gi://GObject' {
   export default GObject;
 }
 
+declare module 'gi://Gdk' {
+  export class RGBA {
+    red: number;
+    green: number;
+    blue: number;
+    alpha: number;
+
+    parse(input: string): boolean;
+  }
+
+  const Gdk: {
+    RGBA: typeof RGBA;
+  };
+  export default Gdk;
+}
+
 declare module 'gi://Gtk' {
   const Gtk: any;
   export default Gtk;
