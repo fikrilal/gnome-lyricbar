@@ -48,6 +48,29 @@ describe('reduceStablePlayerSnapshot', () => {
     });
   });
 
+  it('clears the previous browser track when Chromium emits stopped empty metadata', () => {
+    expect(
+      reduceStablePlayerSnapshot({
+        previousStable: snapshot({}),
+        pendingCandidate: null,
+        candidate: snapshot({
+          title: '',
+          artist: '',
+          album: '',
+          durationMs: 0,
+          trackId: null,
+          playbackStatus: 'Stopped',
+        }),
+        policy: browserPolicy,
+        nowMs: 1000,
+      }),
+    ).toEqual({
+      stableSnapshot: null,
+      pendingCandidate: null,
+      decision: 'cleared',
+    });
+  });
+
   it('clears empty metadata for desktop profiles', () => {
     expect(
       reduceStablePlayerSnapshot({

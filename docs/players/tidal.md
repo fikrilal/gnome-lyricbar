@@ -441,14 +441,27 @@ tests/fixtures/mpris/tidal-web-chromium-stopped.json
 
 ### Phase 4: Minimal Code Change If Evidence Requires It
 
-Do this only if evidence shows the generic Chromium path is insufficient.
+Status: complete for the observed stopped/empty Chrome transition.
 
-Potential changes:
+Change:
 
-- metadata adapter for title/artist cleanup
-- profile policy for TIDAL-specific churn
-- lookup/cache policy if duration or album is unreliable
-- settings UI change only if explicit user disambiguation is necessary
+- `src/domain/mpris/stability.js` now clears stopped/empty browser snapshots instead of retaining the previous stable track.
+- Non-stopped empty browser snapshots still retain the previous stable track.
+- The change is generic browser MPRIS behavior, not a TIDAL-specific profile.
+
+Reason:
+
+- Phase 2 showed Chrome/TIDAL can emit stopped/empty metadata during a next-track transition.
+- Retaining that snapshot caused LyricBar to restart stale `Carry On` synced lyrics at position `0` before `Heathens` arrived.
+- Clearing the stable snapshot avoids showing stale lyrics during that transition.
+
+Verification:
+
+```bash
+npx vitest run tests/mpris/stability.test.js tests/mpris/tidal-fixtures.test.js
+```
+
+Result: 2 test files passed, 24 tests passed.
 
 ## Tests And Fixtures
 
@@ -471,6 +484,11 @@ Coverage:
 - Current browser stability reducer behavior for stopped/empty metadata retention.
 - Acceptance of the recovered next track after the debounce window.
 
+Phase 4 updated the stopped/empty stability expectation:
+
+- `tidal-web-chromium-track-transition-empty-stopped.json` now verifies that the reducer clears the previous stable track.
+- `tests/mpris/stability.test.js` verifies that non-stopped empty browser metadata still retains the previous stable track.
+
 Verification:
 
 ```bash
@@ -479,6 +497,14 @@ npx vitest run tests/mpris/tidal-fixtures.test.js
 
 Result: 1 test file passed, 10 tests passed.
 
+Phase 4 targeted verification:
+
+```bash
+npx vitest run tests/mpris/stability.test.js tests/mpris/tidal-fixtures.test.js
+```
+
+Result: 2 test files passed, 24 tests passed.
+
 ## Risks
 
 - This is a single TIDAL Web on Chrome sample, not broad TIDAL support.
@@ -486,7 +512,7 @@ Result: 1 test file passed, 10 tests passed.
 - Browser MPRIS did not expose a TIDAL URL, so service identity cannot be proven from MPRIS alone.
 - Other browser media can compete for the same Chrome MPRIS player.
 - LRCLIB coverage can vary by track; provider failure is not the same as TIDAL client failure.
-- Stopped/empty browser transition metadata can briefly retain stale lyrics before the next real track arrives.
+- Stopped/empty browser transition metadata previously retained stale lyrics before the next real track arrived. Phase 4 changes the reducer to clear stopped/empty snapshots.
 
 ## Conclusion
 

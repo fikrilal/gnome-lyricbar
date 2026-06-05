@@ -50,6 +50,14 @@ export function reduceStablePlayerSnapshot(input) {
   }
 
   if (isEmptySnapshot(candidate)) {
+    if (candidate.playbackStatus === 'Stopped') {
+      return {
+        stableSnapshot: null,
+        pendingCandidate: null,
+        decision: 'cleared',
+      };
+    }
+
     if (previousStable !== null && input.policy.retainLastValidOnEmpty) {
       return {
         stableSnapshot: previousStable,

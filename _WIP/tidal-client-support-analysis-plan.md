@@ -706,3 +706,41 @@ npx vitest run tests/mpris/tidal-fixtures.test.js
 Result: 1 test file passed, 10 tests passed.
 
 Phase 3 does not change runtime behavior. It preserves the observed behavior and gives Phase 4 a concrete failing/passing target if we decide to change generic browser stopped/empty transition handling.
+
+## Phase 4 Stability Change
+
+Date: 2026-06-05  
+Status: implemented locally
+
+Behavior change:
+
+- stopped/empty browser metadata now clears the previous stable snapshot
+- non-stopped empty browser metadata still retains the previous stable snapshot
+- recovered full browser metadata still follows the existing debounce window and then becomes stable
+
+Files changed:
+
+```text
+src/domain/mpris/stability.js
+tests/mpris/stability.test.js
+tests/mpris/tidal-fixtures.test.js
+docs/players/tidal.md
+docs/exec-plans/active/2026-06-05_tidal-browser-transition-stability.md
+```
+
+Reason:
+
+Phase 2 showed Chrome/TIDAL emitted stopped/empty metadata during next-track transition. The previous reducer retained `Carry On`, restarted synced lyrics at `0ms`, and briefly rendered stale lyrics before `Heathens` arrived. Clearing stopped/empty browser metadata avoids that stale state while preserving non-stopped empty metadata retention for short browser churn.
+
+Verification so far:
+
+```bash
+npx vitest run tests/mpris/stability.test.js tests/mpris/tidal-fixtures.test.js
+```
+
+Result: 2 test files passed, 24 tests passed.
+
+Remaining before commit:
+
+- run `npm run verify`
+- update the execution plan with final verification result
