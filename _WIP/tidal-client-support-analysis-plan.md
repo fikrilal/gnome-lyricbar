@@ -584,3 +584,125 @@ Next best step is documentation and fixtures:
 2. Mark this exact runtime as TIDAL Web via Chrome, smoke tested.
 3. Add fixtures for the observed Chrome metadata shape only if we want regression coverage for the documentation claim.
 4. Defer a TIDAL-specific profile, settings enum, adapter, or cache policy until evidence shows a behavior that generic Chromium handling cannot cover.
+
+## Phase 2 Runtime Evidence Captured
+
+Date: 2026-06-05  
+Browser bus: `org.mpris.MediaPlayer2.chromium.instance4608`  
+Scope: TIDAL Web through Chrome MPRIS, same GNOME Shell 46/X11 environment.
+
+### Baseline
+
+Observed track:
+
+```text
+title=Carry On
+artist=fun.
+album=Some Nights
+playbackStatus=Playing
+durationMs=278488
+positionMs=162733
+trackId=/org/chromium/MediaPlayer2/TrackList/TrackADA31A8E30FC47629D668EB1B187366E
+url=
+```
+
+Position advanced normally:
+
+```text
+162733
+163237
+163739
+164242
+164744
+```
+
+LRCLIB exact lookup for `fun. / Carry On / Some Nights / 278s` returned synced lyrics.
+
+### Pause And Resume
+
+MPRIS pause via `gdbus` succeeded. Logs showed `PlaybackStatus=Paused`, stable snapshot accepted, active-player refresh, and the visible lyric line retained. Playback then returned to `Playing`; LyricBar refreshed the active player without a new lyric lookup.
+
+### Seek
+
+MPRIS seek via `gdbus` succeeded. Chrome/TIDAL did not apply the full requested offset, but exposed position moved backward from about `189239ms` to `182895ms`. LyricBar selected the earlier matching lyric line and continued advancing.
+
+### Track Change
+
+MPRIS next via `gdbus` succeeded. Chrome first emitted a stopped/empty transition:
+
+```text
+PlaybackStatus=Stopped
+title=
+artist=
+album=
+durationMs=0
+positionMs=0
+CanGoNext=false
+CanGoPrevious=false
+CanPause=false
+CanPlay=false
+CanSeek=false
+```
+
+LyricBar briefly retained `Carry On`, hit synced cache, restarted the sync loop at position `0`, and rendered the first line of the previous track.
+
+Several seconds later Chrome emitted the next real track:
+
+```text
+title=Heathens
+artist=twenty one pilots
+album=Heathens
+playbackStatus=Playing
+durationMs=196034
+positionMs=47872
+trackId=/org/chromium/MediaPlayer2/TrackList/TrackADA31A8E30FC47629D668EB1B187366E
+url=
+```
+
+LyricBar accepted `Heathens`, hit synced cache, restarted the sync loop, and rendered correct lyrics. Final position samples advanced normally.
+
+### Phase 2 Conclusion
+
+Pause/resume, seek, and track-change recovery work through Chrome MPRIS. The notable gap is generic browser transition behavior: stopped/empty metadata can briefly retain and restart stale previous-track lyrics before the next real track arrives.
+
+This still does not justify a TIDAL-specific profile. The next implementation-oriented step should be fixtures for the stopped/empty browser transition, then a domain-level stability decision if the product owner wants to eliminate stale lyric retention in this case.
+
+## Phase 3 Fixtures Captured
+
+Date: 2026-06-05  
+Status: complete
+
+Added fixtures:
+
+```text
+tests/fixtures/mpris/tidal-web-chromium-normal.json
+tests/fixtures/mpris/tidal-web-chromium-track-transition-empty-stopped.json
+tests/fixtures/mpris/tidal-web-chromium-next-normal.json
+```
+
+Added test file:
+
+```text
+tests/mpris/tidal-fixtures.test.js
+```
+
+The tests cover:
+
+- mapping the observed TIDAL Web Chrome MPRIS snapshots into expected `PlayerSnapshot` values
+- keeping TIDAL Web Chrome on the generic `chromium-browser` profile in auto mode
+- monotonic position samples during normal playback
+- identity changes based on song metadata even when Chromium reuses the same generic track ID
+- skipped `not-found` cache writes for the stopped/empty transition
+- allowed `not-found` cache writes for high-confidence normal browser metadata
+- current browser stability behavior that retains the previous stable track on stopped/empty metadata
+- acceptance of the recovered next track after the debounce window
+
+Verification:
+
+```bash
+npx vitest run tests/mpris/tidal-fixtures.test.js
+```
+
+Result: 1 test file passed, 10 tests passed.
+
+Phase 3 does not change runtime behavior. It preserves the observed behavior and gives Phase 4 a concrete failing/passing target if we decide to change generic browser stopped/empty transition handling.

@@ -1,0 +1,34 @@
+{
+  "name": "tidal-web-chromium-next-normal",
+  "description": "Chrome MPRIS metadata captured after TIDAL Web recovered from the stopped/empty transition and started the next track.",
+  "busName": "org.mpris.MediaPlayer2.chromium.instance4608",
+  "rootProperties": {
+    "Identity": "Chrome",
+    "CanQuit": false,
+    "CanRaise": false,
+    "HasTrackList": false
+  },
+  "playerProperties": {
+    "PlaybackStatus": "Playing",
+    "Position": 47871767,
+    "Metadata": {
+      "mpris:artUrl": "file:///tmp/.com.google.Chrome.v2bXpn",
+      "mpris:length": 196034000,
+      "mpris:trackid": "/org/chromium/MediaPlayer2/TrackList/TrackADA31A8E30FC47629D668EB1B187366E",
+      "xesam:album": "Heathens",
+      "xesam:artist": ["twenty one pilots"],
+      "xesam:title": "Heathens"
+    }
+  },
+  "positionSamplesMs": [47872, 48373, 48898, 49400, 49903],
+  "expectedSnapshot": {
+    "busName": "org.mpris.MediaPlayer2.chromium.instance4608",
+    "title": "Heathens",
+    "artist": "twenty one pilots",
+    "album": "Heathens",
+    "durationMs": 196034,
+    "trackId": "/org/chromium/MediaPlayer2/TrackList/TrackADA31A8E30FC47629D668EB1B187366E",
+    "playbackStatus": "Playing",
+    "url": null
+  }
+}

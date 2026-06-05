@@ -118,6 +118,171 @@ sync-loop-start intervalMs=500 title="Stressed Out"
 
 Earlier in the same session, another TIDAL Web track produced a provider `synced` result and wrote that result to cache. This confirms provider lookup can also work from a cache miss with Chrome-backed TIDAL metadata.
 
+## Additional Runtime Evidence
+
+Additional runtime checks were collected on 2026-06-05 against the same TIDAL Web through Chrome MPRIS path. The active browser bus changed after Chrome restart:
+
+```text
+org.mpris.MediaPlayer2.chromium.instance4608
+```
+
+### Baseline Track
+
+Observed baseline track:
+
+```text
+title=Carry On
+artist=fun.
+album=Some Nights
+playbackStatus=Playing
+durationMs=278488
+positionMs=162733
+trackId=/org/chromium/MediaPlayer2/TrackList/TrackADA31A8E30FC47629D668EB1B187366E
+url=
+```
+
+Position samples advanced normally:
+
+```text
+162733
+163237
+163739
+164242
+164744
+```
+
+LyricBar selected this Chrome player, hit synced lyrics from cache, started the sync loop, and rendered advancing lyric lines.
+
+### Pause And Resume
+
+A direct MPRIS pause call succeeded:
+
+```bash
+gdbus call --session \
+  --dest org.mpris.MediaPlayer2.chromium.instance4608 \
+  --object-path /org/mpris/MediaPlayer2 \
+  --method org.mpris.MediaPlayer2.Player.Pause
+```
+
+LyricBar logs showed Chrome reporting `Paused` for `Carry On`. The same stable track was retained, active-player selection refreshed, and the visible lyric line was preserved:
+
+```text
+snapshot-changed playbackStatus="Paused" title="Carry On"
+stable-snapshot-decision decision="accepted" playbackStatus="Paused" profile="chromium-browser"
+active-player-selected playbackStatus="Paused" title="Carry On"
+active-player-refresh playbackStatus="Paused" title="Carry On"
+indicator-render text="'Cause we are, we are shining stars" visible=true
+```
+
+Playback then returned to `Playing`, and LyricBar refreshed the same active player without starting a new lyric lookup:
+
+```text
+snapshot-changed playbackStatus="Playing" title="Carry On"
+stable-snapshot-decision decision="accepted" playbackStatus="Playing" profile="chromium-browser"
+active-player-selected playbackStatus="Playing" title="Carry On"
+active-player-refresh playbackStatus="Playing" title="Carry On"
+```
+
+### Seek
+
+A direct MPRIS seek call succeeded:
+
+```bash
+gdbus call --session \
+  --dest org.mpris.MediaPlayer2.chromium.instance4608 \
+  --object-path /org/mpris/MediaPlayer2 \
+  --method org.mpris.MediaPlayer2.Player.Seek 'int64 -60000000'
+```
+
+Chrome/TIDAL did not apply the full requested offset, but the exposed MPRIS position moved backward from approximately `189239ms` to `182895ms`. LyricBar selected the earlier matching lyric line and continued advancing:
+
+```text
+sync-line-selected positionMs=189239 rawPositionMs=189239 text="So we'll come, we will find our way home"
+sync-line-selected positionMs=182895 rawPositionMs=182895 text="We are invincible, we are who we are"
+sync-line-selected positionMs=184807 rawPositionMs=184807 text="On our darkest day when we're miles away"
+```
+
+This confirms LyricBar can recover sync from a TIDAL Web seek event when Chrome exposes the changed position.
+
+### Track Change
+
+A direct MPRIS next call succeeded:
+
+```bash
+gdbus call --session \
+  --dest org.mpris.MediaPlayer2.chromium.instance4608 \
+  --object-path /org/mpris/MediaPlayer2 \
+  --method org.mpris.MediaPlayer2.Player.Next
+```
+
+Chrome first emitted a stopped/empty state:
+
+```text
+PlaybackStatus=Stopped
+title=
+artist=
+album=
+durationMs=0
+positionMs=0
+CanGoNext=false
+CanGoPrevious=false
+CanPause=false
+CanPlay=false
+CanSeek=false
+```
+
+During the transition, LyricBar briefly retained the previous `Carry On` track and restarted synced lyrics at position `0`:
+
+```text
+stable-snapshot-decision decision="accepted" playbackStatus="Stopped" title="Carry On"
+active-player-selected playbackStatus="Stopped" title="Carry On"
+lookup-start title="Carry On"
+sync-loop-stop
+cache-hit kind="synced"
+sync-loop-start intervalMs=500 title="Carry On"
+sync-line-selected positionMs=0 rawPositionMs=0 text="Well, I woke up to the sound of silence and cries"
+```
+
+Several seconds later Chrome emitted the next real track:
+
+```text
+title=Heathens
+artist=twenty one pilots
+album=Heathens
+playbackStatus=Playing
+durationMs=196034
+positionMs=47872
+trackId=/org/chromium/MediaPlayer2/TrackList/TrackADA31A8E30FC47629D668EB1B187366E
+url=
+```
+
+LyricBar accepted the new track, hit synced cache, restarted the sync loop, and rendered the correct lyrics:
+
+```text
+stable-snapshot-decision decision="accepted" playbackStatus="Playing" title="Heathens"
+active-player-selected playbackStatus="Playing" title="Heathens"
+lookup-start title="Heathens"
+cache-hit kind="synced"
+sync-loop-start intervalMs=500 title="Heathens"
+sync-line-selected positionMs=12662 rawPositionMs=12662 text="Wait for them to ask you who you know"
+```
+
+The final current-state inspector confirmed `Heathens` was playing with complete metadata and advancing position:
+
+```text
+47872
+48373
+48898
+49400
+49903
+```
+
+### Phase 2 Finding
+
+Pause/resume and seek behavior are usable through Chrome MPRIS. Track transitions also recover once Chrome emits the next real track.
+
+The main observed risk is the stopped/empty browser transition. Existing browser stabilization can briefly retain the previous track and restart synced lyrics at position `0` before the next real track arrives. This is not TIDAL-specific yet; it is a generic browser MPRIS transition risk worth covering with fixtures before any runtime change.
+
 ## Provider Evidence
 
 Exact LRCLIB lookup was checked for the observed current track:
@@ -146,6 +311,28 @@ LRCLIB search fallback also returned synced candidates, including duration-compa
 
 Provider success means the observed client path can support synced lyrics when TIDAL exposes clean title, artist, album, and duration metadata.
 
+Exact LRCLIB lookup was also checked for the Phase 2 baseline track:
+
+```text
+artist_name=fun.
+track_name=Carry On
+album_name=Some Nights
+duration=278
+```
+
+Result summary:
+
+```text
+id=1031288
+name=Carry On
+artistName=fun.
+albumName=Some Nights
+duration=278
+instrumental=false
+syncedLyrics=true
+plainLyrics=true
+```
+
 ## Current Implementation State
 
 The current codebase already contains the pieces needed for this observed TIDAL Web session:
@@ -169,6 +356,9 @@ No TIDAL-specific code is currently required for the sampled Chrome-backed behav
 - Existing active-player selection handled competition with paused Spotify Desktop correctly.
 - Existing LRCLIB lookup behavior works with the sampled TIDAL metadata.
 - Existing generic Chromium handling is the right support boundary unless future evidence shows a TIDAL-specific quirk.
+- Pause/resume and seek work through Chrome MPRIS for the sampled TIDAL Web session.
+- Track-change recovery works once Chrome emits the next real track.
+- Chrome can emit a stopped/empty transition state, during which LyricBar may briefly retain stale previous-track lyrics.
 
 ## Recommended Architecture
 
@@ -180,6 +370,7 @@ The current evidence points to a documentation-only support update:
 - Keep browser-service auto-detection conservative because the tested snapshot had no TIDAL URL evidence.
 - Avoid adding a `browser-player-service` enum value for TIDAL until users need explicit disambiguation from other browser media.
 - Avoid adding a TIDAL metadata adapter until evidence shows decorated title/artist shapes, missing artist, bad duration, or repeated lookup churn.
+- Treat the stopped/empty track-transition behavior as a generic browser stability issue, not a TIDAL-specific profile requirement yet.
 
 If later evidence shows TIDAL-specific behavior, revisit these possible changes:
 
@@ -205,23 +396,44 @@ Work:
 
 ### Phase 2: Additional Runtime Evidence
 
-Collect before changing code:
+Status: complete for pause/resume, seek, and one next-track transition on TIDAL Web through Chrome.
+
+Collected:
 
 - pause and resume samples
 - seek forward/backward samples
 - track-change samples
+
+Still needed before broad support:
+
 - a track without synced LRCLIB lyrics to confirm fallback behavior
 - confirmation from the visible browser that the playing tab is TIDAL Web
 - TIDAL Desktop, Flatpak, wrapper, or bridge evidence if those clients are in scope
 
 ### Phase 3: Fixtures If Needed
 
-Only add fixtures for observed behavior that should be protected.
+Status: complete for the observed TIDAL Web Chrome track-transition behavior.
 
-Possible fixture names:
+Fixtures added:
 
 ```text
 tests/fixtures/mpris/tidal-web-chromium-normal.json
+tests/fixtures/mpris/tidal-web-chromium-track-transition-empty-stopped.json
+tests/fixtures/mpris/tidal-web-chromium-next-normal.json
+tests/mpris/tidal-fixtures.test.js
+```
+
+The fixtures preserve:
+
+- normal `Carry On` playback metadata
+- the stopped/empty transition emitted by Chrome during next-track handling
+- recovered `Heathens` playback metadata
+- reused Chromium track ID across different songs
+- current stability behavior that retains the previous track through empty browser metadata
+
+Potential future fixtures if more evidence appears:
+
+```text
 tests/fixtures/mpris/tidal-web-chromium-empty-metadata.json
 tests/fixtures/mpris/tidal-web-chromium-title-only.json
 tests/fixtures/mpris/tidal-web-chromium-stopped.json
@@ -240,9 +452,32 @@ Potential changes:
 
 ## Tests And Fixtures
 
-No fixture was added for Phase 1 because the observed behavior is already covered by the generic Chromium/browser path at runtime and this phase is documentation-only.
+Phase 3 added TIDAL Web Chrome fixtures and tests:
 
-If future work claims support beyond smoke testing, add fixtures before runtime changes.
+```text
+tests/fixtures/mpris/tidal-web-chromium-normal.json
+tests/fixtures/mpris/tidal-web-chromium-track-transition-empty-stopped.json
+tests/fixtures/mpris/tidal-web-chromium-next-normal.json
+tests/mpris/tidal-fixtures.test.js
+```
+
+Coverage:
+
+- MPRIS mapping for normal, stopped/empty transition, and recovered next-track snapshots.
+- Generic Chromium profile classification in auto mode.
+- Monotonic position samples for normal playback.
+- Browser identity behavior when Chromium reuses a generic track ID for different songs.
+- Cache policy for high-confidence metadata vs low-confidence stopped/empty transition metadata.
+- Current browser stability reducer behavior for stopped/empty metadata retention.
+- Acceptance of the recovered next track after the debounce window.
+
+Verification:
+
+```bash
+npx vitest run tests/mpris/tidal-fixtures.test.js
+```
+
+Result: 1 test file passed, 10 tests passed.
 
 ## Risks
 
@@ -251,6 +486,7 @@ If future work claims support beyond smoke testing, add fixtures before runtime 
 - Browser MPRIS did not expose a TIDAL URL, so service identity cannot be proven from MPRIS alone.
 - Other browser media can compete for the same Chrome MPRIS player.
 - LRCLIB coverage can vary by track; provider failure is not the same as TIDAL client failure.
+- Stopped/empty browser transition metadata can briefly retain stale lyrics before the next real track arrives.
 
 ## Conclusion
 

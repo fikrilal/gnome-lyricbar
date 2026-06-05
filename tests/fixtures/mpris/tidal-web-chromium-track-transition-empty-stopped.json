@@ -1,0 +1,35 @@
+{
+  "name": "tidal-web-chromium-track-transition-empty-stopped",
+  "description": "Chrome MPRIS stopped/empty metadata captured during a TIDAL Web next-track transition.",
+  "busName": "org.mpris.MediaPlayer2.chromium.instance4608",
+  "rootProperties": {
+    "Identity": "Chrome",
+    "CanQuit": false,
+    "CanRaise": false,
+    "HasTrackList": false
+  },
+  "playerProperties": {
+    "PlaybackStatus": "Stopped",
+    "Position": 0,
+    "CanGoNext": false,
+    "CanGoPrevious": false,
+    "CanPause": false,
+    "CanPlay": false,
+    "CanSeek": false,
+    "Metadata": {
+      "mpris:artUrl": "file:///tmp/.com.google.Chrome.UJLJvz",
+      "mpris:length": 0
+    }
+  },
+  "positionSamplesMs": [0, 0, 0, 0, 0],
+  "expectedSnapshot": {
+    "busName": "org.mpris.MediaPlayer2.chromium.instance4608",
+    "title": "",
+    "artist": "",
+    "album": "",
+    "durationMs": 0,
+    "trackId": null,
+    "playbackStatus": "Stopped",
+    "url": null
+  }
+}

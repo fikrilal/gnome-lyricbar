@@ -1,0 +1,34 @@
+{
+  "name": "tidal-web-chromium-normal",
+  "description": "Chrome MPRIS metadata captured from normal TIDAL Web playback.",
+  "busName": "org.mpris.MediaPlayer2.chromium.instance4608",
+  "rootProperties": {
+    "Identity": "Chrome",
+    "CanQuit": false,
+    "CanRaise": false,
+    "HasTrackList": false
+  },
+  "playerProperties": {
+    "PlaybackStatus": "Playing",
+    "Position": 162733337,
+    "Metadata": {
+      "mpris:artUrl": "file:///tmp/.com.google.Chrome.pAYfKl",
+      "mpris:length": 278488000,
+      "mpris:trackid": "/org/chromium/MediaPlayer2/TrackList/TrackADA31A8E30FC47629D668EB1B187366E",
+      "xesam:album": "Some Nights",
+      "xesam:artist": ["fun."],
+      "xesam:title": "Carry On"
+    }
+  },
+  "positionSamplesMs": [162733, 163237, 163739, 164242, 164744],
+  "expectedSnapshot": {
+    "busName": "org.mpris.MediaPlayer2.chromium.instance4608",
+    "title": "Carry On",
+    "artist": "fun.",
+    "album": "Some Nights",
+    "durationMs": 278488,
+    "trackId": "/org/chromium/MediaPlayer2/TrackList/TrackADA31A8E30FC47629D668EB1B187366E",
+    "playbackStatus": "Playing",
+    "url": null
+  }
+}
