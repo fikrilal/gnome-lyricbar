@@ -16,6 +16,7 @@ This directory is the source of truth for LyricBar product direction, engineerin
 - [Spotify Web](players/spotify-web.md): live MPRIS findings and phased improvements for better Spotify browser support.
 - [YouTube Music](players/youtube-music.md): live MPRIS findings and phased work for explicit YouTube Music browser compatibility.
 - [Apple Music](players/apple-music.md): live MPRIS findings and implementation plan for Apple Music Web support.
+- [TIDAL](players/tidal.md): live MPRIS findings for TIDAL Web through Chrome browser MPRIS.
 - [Firefox](players/firefox.md): live MPRIS findings and limitations for Firefox-backed players.
 
 ## Contributing
@@ -55,6 +56,7 @@ docs/
     spotify-web.md
     youtube-music.md
     apple-music.md
+    tidal.md
     firefox.md
   engineering/
     proposal.md
