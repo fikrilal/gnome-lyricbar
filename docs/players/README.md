@@ -9,16 +9,18 @@ LyricBar talks to players exclusively through MPRIS over D-Bus. It does not scra
 - [Profile architecture](profile-architecture.md): the shared MPRIS runtime and profile-driven model for player selection, metadata stability, and lyric lookup readiness. Read this first.
 - [Browser player R&D workflow](../harness/browser-player-rnd-workflow.md): the mandatory evidence workflow you must follow before implementing or recommending browser-player support.
 
-## Supported Players
+## Player Evidence
 
-| Player            | Doc                                                | Notes                                             |
-| ----------------- | -------------------------------------------------- | ------------------------------------------------- |
-| Spotify Desktop   | [profile-architecture.md](profile-architecture.md) | Stable baseline; native MPRIS player.             |
-| Spotify Web       | [spotify-web.md](spotify-web.md)                   | Browser MPRIS via Chromium.                       |
-| YouTube Music Web | [youtube-music.md](youtube-music.md)               | Browser MPRIS via Chromium.                       |
-| Apple Music Web   | [apple-music.md](apple-music.md)                   | Browser MPRIS; cumulative position normalization. |
-| TIDAL Web         | [tidal.md](tidal.md)                               | Smoke tested through Chrome browser MPRIS.        |
-| Firefox players   | [firefox.md](firefox.md)                           | Firefox MPRIS findings and limitations.           |
+This index includes supported profiles and observed compatibility routes. A service appearing here does not imply that LyricBar can identify it from MPRIS metadata; consult the linked evidence and the [compatibility matrix](../compatibility.md) for the exact status.
+
+| Player            | Doc                                                | Evidence boundary                                                     |
+| ----------------- | -------------------------------------------------- | --------------------------------------------------------------------- |
+| Spotify Desktop   | [profile-architecture.md](profile-architecture.md) | Stable baseline; native MPRIS player.                                 |
+| Spotify Web       | [spotify-web.md](spotify-web.md)                   | Browser MPRIS via Chromium.                                           |
+| YouTube Music Web | [youtube-music.md](youtube-music.md)               | Browser MPRIS via Chromium.                                           |
+| Apple Music Web   | [apple-music.md](apple-music.md)                   | Browser MPRIS; cumulative position normalization.                     |
+| TIDAL Web         | [tidal.md](tidal.md)                               | Observed through generic Chrome MPRIS; no TIDAL detection or profile. |
+| Firefox players   | [firefox.md](firefox.md)                           | Firefox MPRIS findings and limitations.                               |
 
 ## Adding a New Player
 

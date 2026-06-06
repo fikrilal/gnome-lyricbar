@@ -1,8 +1,10 @@
-# TIDAL Support Report
+# TIDAL Web Through Chrome: Compatibility Observation
 
-Date: 2026-06-05  
-Status: smoke tested for TIDAL Web in Google Chrome  
-Scope: TIDAL Web through Chrome MPRIS on GNOME Shell 46
+Date: 2026-06-05
+
+Status: observed compatibility through generic Chrome MPRIS; no dedicated TIDAL support
+
+Scope: externally confirmed TIDAL Web playback routed through Chrome MPRIS on GNOME Shell 46
 
 ## Summary
 
@@ -20,7 +22,24 @@ The existing Chromium browser support path handled the observed playback correct
 - LRCLIB exact lookup returned synced lyrics for the sampled track.
 - LyricBar rendered synced lyrics in the top bar using the existing sync loop.
 
-This evidence does not justify a TIDAL-specific runtime profile yet. For TIDAL Web in Chrome, the current generic Chromium browser path is sufficient for the sampled track.
+This evidence does not establish TIDAL detection or a TIDAL-specific runtime capability. LyricBar saw only Chrome and could not distinguish TIDAL from another media website on the same browser MPRIS service. For the sampled tracks, the existing generic Chromium path was sufficient.
+
+## Support Classification
+
+What the evidence proves:
+
+- TIDAL Web playback can work when Chrome exposes complete, stable music metadata and advancing position.
+- The existing generic Chromium profile can fetch and render synchronized lyrics for those snapshots.
+- The browser transition policy applies because the observed states are generic Chrome behavior.
+
+What the evidence does not prove:
+
+- LyricBar can detect that Chrome is playing TIDAL.
+- LyricBar has a TIDAL profile, adapter, preference, or provider integration.
+- The captured fixtures exercise TIDAL-specific behavior.
+- TIDAL Desktop, wrappers, Flatpak clients, Firefox, or other browser routes are compatible.
+
+In this document, “TIDAL” records the externally known source of the capture. It is provenance, not a runtime identity available to LyricBar.
 
 ## Live Evidence
 
@@ -281,7 +300,7 @@ The final current-state inspector confirmed `Heathens` was playing with complete
 
 Pause/resume and seek behavior are usable through Chrome MPRIS. Track transitions also recover once Chrome emits the next real track.
 
-The main observed risk is the stopped/empty browser transition. Existing browser stabilization can briefly retain the previous track and restart synced lyrics at position `0` before the next real track arrives. This is not TIDAL-specific yet; it is a generic browser MPRIS transition risk worth covering with fixtures before any runtime change.
+The main observed risk was the stopped/empty browser transition. The original behavior could restart previous-track lyrics at position `0`, while immediate clearing could select an unrelated paused player. The generic browser grace-period remediation now retains selection without reading unsafe position data. This remains a browser MPRIS concern, not TIDAL-specific behavior.
 
 ## Provider Evidence
 
@@ -366,7 +385,7 @@ Do not add a `tidal-web` profile yet.
 
 The current evidence points to a documentation-only support update:
 
-- Treat TIDAL Web in Chrome as smoke tested through generic Chromium browser MPRIS support.
+- Classify TIDAL Web in Chrome as an observed route through generic Chromium MPRIS, not a supported service profile.
 - Keep browser-service auto-detection conservative because the tested snapshot had no TIDAL URL evidence.
 - Avoid adding a `browser-player-service` enum value for TIDAL until users need explicit disambiguation from other browser media.
 - Avoid adding a TIDAL metadata adapter until evidence shows decorated title/artist shapes, missing artist, bad duration, or repeated lookup churn.
@@ -439,29 +458,31 @@ tests/fixtures/mpris/tidal-web-chromium-title-only.json
 tests/fixtures/mpris/tidal-web-chromium-stopped.json
 ```
 
-### Phase 4: Minimal Code Change If Evidence Requires It
+### Phase 4: Generic Browser Transition Remediation
 
 Status: complete for the observed stopped/empty Chrome transition.
 
 Change:
 
-- `src/domain/mpris/stability.js` now clears stopped/empty browser snapshots instead of retaining the previous stable track.
+- Browser profiles retain the previous stable snapshot for a bounded 3000 ms stopped/empty grace period.
+- Raw position reads remain suppressed during the grace period and recovered-track metadata debounce.
+- Persistent stopped/empty state clears the browser after the grace period.
 - Non-stopped empty browser snapshots still retain the previous stable track.
 - The change is generic browser MPRIS behavior, not a TIDAL-specific profile.
 
 Reason:
 
-- Phase 2 showed Chrome/TIDAL can emit stopped/empty metadata during a next-track transition.
-- Retaining that snapshot caused LyricBar to restart stale `Carry On` synced lyrics at position `0` before `Heathens` arrived.
-- Clearing the stable snapshot avoids showing stale lyrics during that transition.
+- The captured Chrome route emitted stopped/empty metadata during a next-track transition.
+- Immediate clearing allowed an unrelated paused preferred player to win active-player selection.
+- Retaining the browser briefly while suppressing position reads prevents both stale lyric restart and cross-player selection churn.
 
 Verification:
 
 ```bash
-npx vitest run tests/mpris/stability.test.js tests/mpris/tidal-fixtures.test.js
+npx vitest run tests/mpris/profile-policy.test.js tests/mpris/stability.test.js tests/mpris/stable-player.test.js tests/mpris/tidal-fixtures.test.js tests/mpris/selection.test.js
 ```
 
-Result: 2 test files passed, 24 tests passed.
+Result: 5 test files passed, 59 tests passed.
 
 ## Tests And Fixtures
 
@@ -486,7 +507,9 @@ Coverage:
 
 Phase 4 updated the stopped/empty stability expectation:
 
-- `tidal-web-chromium-track-transition-empty-stopped.json` now verifies that the reducer clears the previous stable track.
+- The captured stopped/empty transition now verifies bounded retention followed by clearing after timeout.
+- Composition coverage verifies that paused preferred Spotify cannot replace the playing browser during the grace period.
+- Stable-player coverage verifies that raw position reads remain suppressed until the recovered track is accepted.
 - `tests/mpris/stability.test.js` verifies that non-stopped empty browser metadata still retains the previous stable track.
 
 Verification:
@@ -500,10 +523,10 @@ Result: 1 test file passed, 10 tests passed.
 Phase 4 targeted verification:
 
 ```bash
-npx vitest run tests/mpris/stability.test.js tests/mpris/tidal-fixtures.test.js
+npx vitest run tests/mpris/profile-policy.test.js tests/mpris/stability.test.js tests/mpris/stable-player.test.js tests/mpris/tidal-fixtures.test.js tests/mpris/selection.test.js
 ```
 
-Result: 2 test files passed, 24 tests passed.
+Result: 5 test files passed, 59 tests passed.
 
 ## Risks
 
@@ -512,10 +535,10 @@ Result: 2 test files passed, 24 tests passed.
 - Browser MPRIS did not expose a TIDAL URL, so service identity cannot be proven from MPRIS alone.
 - Other browser media can compete for the same Chrome MPRIS player.
 - LRCLIB coverage can vary by track; provider failure is not the same as TIDAL client failure.
-- Stopped/empty browser transition metadata previously retained stale lyrics before the next real track arrived. Phase 4 changes the reducer to clear stopped/empty snapshots.
+- Stopped/empty browser transition metadata previously restarted stale lyrics or allowed selection to fall through to another paused player. The generic browser grace-period policy now covers that transition.
 
 ## Conclusion
 
-TIDAL Web in Google Chrome is smoke tested through the existing generic Chromium browser support path. The sampled session worked end to end for synced lyrics.
+TIDAL Web in Google Chrome was observed working through the existing generic Chromium browser path. This is compatibility evidence for that route, not a claim that LyricBar detects or independently supports TIDAL.
 
 The next correct step is more evidence, not TIDAL-specific implementation. A dedicated TIDAL profile or setting should wait until live MPRIS evidence shows behavior the generic browser profile cannot handle.

@@ -93,6 +93,13 @@ It does not support these claims:
 
 Issue #5 should remain open until its intended scope is explicitly resolved. A TIDAL-specific profile or setting must not be added without stable identification evidence.
 
+Resolution on 2026-06-06:
+
+- The compatibility matrix now classifies this as an **Observed route**, not dedicated support.
+- The player index distinguishes evidence entries from supported profiles.
+- The TIDAL report states that the service name is capture provenance and is not visible to LyricBar at runtime.
+- No TIDAL profile, adapter, preference, or runtime branch was added.
+
 ### P2: Fixture Names Encode an Identity That Is Not Present
 
 The `tidal-web-chromium-*` fixtures contain generic Chrome MPRIS snapshots with no TIDAL identifier. Naming them as TIDAL-specific can mislead future contributors into believing the fixtures validate service detection or TIDAL-specific semantics.
@@ -164,6 +171,17 @@ Implemented on `development` on 2026-06-06:
 
 The remaining phases cover fixture naming, documentation consolidation, and live runtime evidence.
 
+### Progress: P1 Support Classification
+
+Completed on `development` on 2026-06-06:
+
+- Added an **Observed route** compatibility status for externally known services that LyricBar cannot identify from MPRIS.
+- Reclassified the TIDAL Web Chrome capture under that status.
+- Updated the player index and evidence report to distinguish capture provenance from runtime detection.
+- Confirmed that no TIDAL profile, adapter, preference, provider integration, or application-specific branch exists.
+
+Fixture names still encode TIDAL provenance and are handled by the separate P2 fixture-remediation phase.
+
 ### Phase 1: Specify Transition Semantics
 
 - Define the desired stopped/empty grace-period behavior as pure domain rules.
@@ -216,7 +234,7 @@ Record logs showing stable-snapshot decisions and active-player selection throug
 3. Persistent stopped/empty metadata eventually clears the browser snapshot.
 4. Recovered Chrome metadata follows the normal debounce and lookup flow.
 5. Tests cover reducer behavior and cross-player selection composition.
-6. Documentation says TIDAL Web is smoke-tested through generic Chrome MPRIS, not detected through a dedicated TIDAL profile.
+6. Documentation classifies TIDAL Web as an observed route through generic Chrome MPRIS, not a dedicated TIDAL profile.
 7. Generic fixtures are not named as if they contain TIDAL identity evidence.
 8. `npm run verify` passes.
 9. Post-change live runtime evidence is recorded before release.
