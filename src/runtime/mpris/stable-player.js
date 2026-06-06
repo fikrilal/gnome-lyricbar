@@ -171,6 +171,7 @@ export class StablePlayerProxy {
     this.#pendingCandidate = result.pendingCandidate;
     this.#positionReadsSuppressed = shouldSuppressPositionReads(
       positionReadsWereSuppressed,
+      result.stableSnapshot,
       result.pendingCandidate,
     );
     this.#logger?.debug('stable-snapshot-decision', {
@@ -249,15 +250,42 @@ export class StablePlayerProxy {
  * from being driven by the new track's zero-based position during debounce.
  *
  * @param {boolean} previouslySuppressed
+ * @param {PlayerSnapshot | null} stableSnapshot
  * @param {PendingStableCandidate | null} pendingCandidate
  * @returns {boolean}
  */
-function shouldSuppressPositionReads(previouslySuppressed, pendingCandidate) {
+function shouldSuppressPositionReads(previouslySuppressed, stableSnapshot, pendingCandidate) {
   if (pendingCandidate?.kind === 'stopped-empty') {
     return true;
   }
 
+  if (
+    pendingCandidate?.kind === 'metadata' &&
+    stableSnapshot !== null &&
+    !sameMetadataTrack(stableSnapshot, pendingCandidate.snapshot)
+  ) {
+    return true;
+  }
+
   return previouslySuppressed && pendingCandidate !== null;
+}
+
+/**
+ * Browser track IDs are implementation details and can be reused across songs.
+ * Suppression only needs to know whether pending metadata describes the same
+ * displayed track, so use user-visible music identity fields.
+ *
+ * @param {PlayerSnapshot} left
+ * @param {PlayerSnapshot} right
+ * @returns {boolean}
+ */
+function sameMetadataTrack(left, right) {
+  return (
+    left.title === right.title &&
+    left.artist === right.artist &&
+    left.album === right.album &&
+    left.durationMs === right.durationMs
+  );
 }
 
 /**

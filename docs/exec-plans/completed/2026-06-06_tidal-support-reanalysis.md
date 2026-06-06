@@ -147,16 +147,18 @@ Resolution on 2026-06-06:
 
 ### P3: Documentation Is Excessive and Inconsistently Organized
 
-The committed `_WIP/tidal-client-support-analysis-plan.md` is approximately 746 lines and duplicates substantial parts of `docs/players/tidal.md` and the execution plan.
+The committed `_WIP/tidal-client-support-analysis-plan.md` was approximately 746 lines and duplicated substantial parts of `docs/players/tidal.md` and the execution plan.
 
-The transition plan remains under `docs/exec-plans/active/` even though it claims implementation and verification are complete.
+The transition plan remained under `docs/exec-plans/active/` even though it claimed implementation and verification were complete.
 
 Required correction:
 
-- Consolidate durable evidence in `docs/players/tidal.md`.
-- Remove the committed `_WIP` document after preserving unique evidence.
-- Replace or supersede the old transition plan with this remediation plan.
-- Move completed plans to `docs/exec-plans/completed/` only after post-change runtime evidence exists.
+Resolution on 2026-06-06:
+
+- Condensed durable evidence in `docs/players/tidal.md`.
+- Removed the committed `_WIP` document after preserving the support boundary and representative evidence.
+- Moved the superseded June 5 transition plan to `docs/exec-plans/completed/`.
+- Kept this remediation plan active until live runtime evidence is captured.
 
 ## Architecture Decision
 
@@ -204,6 +206,42 @@ Completed on `development` on 2026-06-06:
 - Added a full browser-transition composition test with paused preferred Spotify and recovered Chrome metadata.
 - Updated TIDAL documentation to preserve provenance while pointing executable coverage at generic Chromium fixtures.
 
+### Progress: Live Metadata-Debounce Finding
+
+Runtime install on 2026-06-06 exposed another browser transition shape: Chrome changed directly from one track's metadata to the next without an empty/stopped snapshot. During the 350 ms browser metadata debounce, raw position had already reset for the new track, so the old lyric could briefly render near position zero.
+
+Remediation:
+
+- Suppress raw position reads while pending browser metadata describes a different track from the currently stable snapshot.
+- Keep same-track metadata refreshes polling normally.
+- Resume raw position reads after the pending track is accepted.
+- Added `StablePlayerProxy` coverage for direct browser track metadata debounce.
+
+### Progress: Live Runtime Evidence
+
+Collected on 2026-06-06 after installing the `development` bundle into GNOME Shell 46:
+
+```text
+Extension: lyricbar@fikrilal.github.io
+State: ACTIVE
+Chrome bus: org.mpris.MediaPlayer2.chromium.instance4276
+Spotify bus: org.mpris.MediaPlayer2.spotify
+Spotify state: Paused
+```
+
+Runtime checks:
+
+- Triggered Chrome `Player.Next` through MPRIS with paused preferred Spotify present.
+- Chrome remained the selected player during the tested browser transitions; paused Spotify did not steal active selection after Chrome had stabilized.
+- Direct metadata-change transitions held browser candidates until debounce acceptance.
+- After the direct metadata-debounce fix and explicit extension reload, no old lyric line was selected at the new track's near-zero raw position before the accepted new track lookup.
+- Recovered Chrome track `Runaway` was accepted and looked up through the Chromium browser path.
+- No LyricBar JS errors were observed in the collected logs.
+
+Important boundary observed:
+
+- Chrome can expose unrelated browser media on the same MPRIS bus. During one transition it exposed a non-music/video-like title before returning to a music track. This reinforces the support classification: the current evidence is generic Chrome-route compatibility, not TIDAL-specific detection.
+
 ### Phase 1: Specify Transition Semantics
 
 - Define the desired stopped/empty grace-period behavior as pure domain rules.
@@ -244,14 +282,17 @@ Test on the live Chrome session with paused Spotify present:
 - seek
 - next and previous track
 - stopped/empty transition shorter than the grace period
+- direct browser metadata change without stopped/empty transition
 - persistent stopped state
 - switching Chrome media ownership between TIDAL and another tab
 
 Record logs showing stable-snapshot decisions and active-player selection through each transition.
 
+Status: completed for the available live Chrome transition shapes. The live route did not reproduce a stopped/empty state after the final fix; that shape remains covered by fixtures and unit tests.
+
 ## Acceptance Criteria
 
-1. A transient stopped/empty Chrome snapshot does not restart stale lyrics at zero.
+1. A transient Chrome transition does not restart stale lyrics at zero, including stopped/empty and direct metadata-change shapes.
 2. A transient stopped/empty Chrome snapshot does not select paused Spotify or another unrelated player.
 3. Persistent stopped/empty metadata eventually clears the browser snapshot.
 4. Recovered Chrome metadata follows the normal debounce and lookup flow.
@@ -284,6 +325,6 @@ These tests now cover the identified cross-player regression. Live Chrome transi
 
 ## Release Recommendation
 
-Do not release the TIDAL compatibility work yet.
+The remediation work is releaseable as a generic browser stability improvement, not as dedicated TIDAL support.
 
-The P1 transition selection defect is remediated. Complete generic fixture naming, documentation cleanup, and live transition verification before release.
+Issue #5 should remain open or be narrowed explicitly as “TIDAL Web observed through Chrome MPRIS.” Broader TIDAL support still needs native/wrapper/Firefox/browser-specific evidence.

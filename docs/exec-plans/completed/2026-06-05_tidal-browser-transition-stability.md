@@ -46,7 +46,7 @@ The fix should stay generic to browser MPRIS stability. Current evidence does no
 - [x] Add or update stability reducer tests for stopped/empty browser metadata.
 - [x] Update the TIDAL fixture test to expect cleared state for the stopped/empty transition.
 - [x] Implement the smallest reducer change in `src/domain/mpris/stability.js`.
-- [x] Update TIDAL docs and `_WIP` plan with Phase 4 outcome.
+- [x] Update TIDAL docs with Phase 4 outcome. Historical `_WIP` analysis was later removed during documentation consolidation.
 - [x] Run targeted tests.
 - [x] Run `npm run verify`.
 - [x] Record verification evidence.
@@ -100,7 +100,7 @@ Required because this changes browser player stability behavior.
   - Chrome later emitted `Heathens` metadata and LyricBar recovered.
 - Artifact path(s):
   - `docs/players/tidal.md`
-  - `_WIP/tidal-client-support-analysis-plan.md`
+  - removed historical `_WIP/tidal-client-support-analysis-plan.md`
   - `tests/fixtures/mpris/chromium-browser-transition-empty-stopped.json`
 - Notes: Post-change live runtime re-test is optional unless requested; fixture coverage captures the observed D-Bus state.
 

@@ -150,6 +150,40 @@ describe('StablePlayerProxy', () => {
     expect(harness.raw.readPosition).toHaveBeenCalledWith(acceptedCallback);
   });
 
+  it('suppresses position reads during direct browser track metadata debounce', () => {
+    const harness = createHarness({
+      busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
+      nowMs: 1000,
+    });
+    const previous = snapshot({ title: 'Shadow of the Day', artist: 'Linkin Park' });
+    const next = snapshot({
+      title: 'From the Inside',
+      artist: 'Linkin Park',
+      album: 'Meteora',
+      durationMs: 175621,
+    });
+    const debounceCallback = vi.fn();
+    const acceptedCallback = vi.fn();
+
+    harness.stable.start();
+    harness.raw.emit(previous);
+    harness.scheduler.advance(350);
+    expect(harness.stable.snapshot()).toEqual(previous);
+
+    harness.raw.emit(next);
+    expect(harness.stable.snapshot()).toEqual(previous);
+
+    harness.stable.readPosition(debounceCallback);
+    expect(debounceCallback).toHaveBeenCalledWith(null);
+    expect(harness.raw.readPosition).not.toHaveBeenCalled();
+
+    harness.scheduler.advance(350);
+    expect(harness.stable.snapshot()).toEqual(next);
+
+    harness.stable.readPosition(acceptedCallback);
+    expect(harness.raw.readPosition).toHaveBeenCalledWith(acceptedCallback);
+  });
+
   it('holds full browser metadata until the debounce timer fires', () => {
     const harness = createHarness({
       busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
