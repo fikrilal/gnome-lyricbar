@@ -1,6 +1,6 @@
 {
   "name": "gnome-lyricbar",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "Production-grade GNOME Shell extension for synced live lyrics in the top bar.",
   "license": "MIT",
   "homepage": "https://github.com/fikrilal/gnome-lyricbar#readme",
