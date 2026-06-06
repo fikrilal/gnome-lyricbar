@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { selectActivePlayer } from '../../src/domain/mpris/selection.js';
 import { LifecycleRegistry } from '../../src/runtime/lifecycle.js';
 import { StablePlayerProxy } from '../../src/runtime/mpris/stable-player.js';
 
@@ -59,6 +60,94 @@ describe('StablePlayerProxy', () => {
     harness.scheduler.advance(1);
     expect(harness.listener).toHaveBeenLastCalledWith(null);
     expect(harness.stable.snapshot()).toBeNull();
+  });
+
+  it('retains a stopped empty browser transition until the grace period expires', () => {
+    const harness = createHarness({
+      busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
+      nowMs: 1000,
+    });
+    const stableSnapshot = snapshot({});
+
+    harness.stable.start();
+    harness.raw.emit(stableSnapshot);
+    harness.scheduler.advance(350);
+    harness.raw.emit(stoppedEmptySnapshot());
+
+    harness.scheduler.advance(2999);
+    expect(harness.stable.snapshot()).toEqual(stableSnapshot);
+    expect(harness.listener).toHaveBeenLastCalledWith(stableSnapshot);
+
+    harness.scheduler.advance(1);
+    expect(harness.stable.snapshot()).toBeNull();
+    expect(harness.listener).toHaveBeenLastCalledWith(null);
+  });
+
+  it('keeps a playing browser selected over paused preferred Spotify during transition grace', () => {
+    const harness = createHarness({
+      busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
+      nowMs: 1000,
+    });
+    const browser = snapshot({});
+    const spotify = snapshot({
+      busName: 'org.mpris.MediaPlayer2.spotify',
+      playbackStatus: 'Paused',
+    });
+
+    harness.stable.start();
+    harness.raw.emit(browser);
+    harness.scheduler.advance(350);
+    harness.raw.emit(stoppedEmptySnapshot());
+
+    expect(
+      selectActivePlayer(
+        [harness.stable.snapshot(), spotify].filter(isPlayerSnapshot),
+        browser.busName,
+        ['spotify'],
+      ),
+    ).toEqual(browser);
+
+    harness.scheduler.advance(3000);
+    expect(
+      selectActivePlayer(
+        [harness.stable.snapshot(), spotify].filter(isPlayerSnapshot),
+        browser.busName,
+        ['spotify'],
+      ),
+    ).toEqual(spotify);
+  });
+
+  it('suppresses position reads until a recovered browser track is accepted', () => {
+    const harness = createHarness({
+      busName: 'org.mpris.MediaPlayer2.chromium.instance58782',
+      nowMs: 1000,
+    });
+    const previous = snapshot({});
+    const next = snapshot({ title: 'Lampu Merah', artist: 'The Lantis' });
+    const transitionCallback = vi.fn();
+    const debounceCallback = vi.fn();
+    const acceptedCallback = vi.fn();
+
+    harness.stable.start();
+    harness.raw.emit(previous);
+    harness.scheduler.advance(350);
+    harness.raw.emit(stoppedEmptySnapshot());
+
+    harness.stable.readPosition(transitionCallback);
+    expect(transitionCallback).toHaveBeenCalledWith(null);
+    expect(harness.raw.readPosition).not.toHaveBeenCalled();
+
+    harness.scheduler.advance(1000);
+    harness.raw.emit(next);
+    harness.stable.readPosition(debounceCallback);
+    expect(debounceCallback).toHaveBeenCalledWith(null);
+    expect(harness.raw.readPosition).not.toHaveBeenCalled();
+
+    harness.scheduler.advance(350);
+    expect(harness.stable.snapshot()).toEqual(next);
+
+    harness.stable.readPosition(acceptedCallback);
+    expect(harness.raw.readPosition).toHaveBeenCalledWith(acceptedCallback);
   });
 
   it('holds full browser metadata until the debounce timer fires', () => {
@@ -314,4 +403,24 @@ function snapshot(overrides) {
     playbackStatus: 'Playing',
     ...overrides,
   };
+}
+
+/** @returns {PlayerSnapshot} */
+function stoppedEmptySnapshot() {
+  return snapshot({
+    title: '',
+    artist: '',
+    album: '',
+    durationMs: 0,
+    trackId: null,
+    playbackStatus: 'Stopped',
+  });
+}
+
+/**
+ * @param {PlayerSnapshot | null} value
+ * @returns {value is PlayerSnapshot}
+ */
+function isPlayerSnapshot(value) {
+  return value !== null;
 }

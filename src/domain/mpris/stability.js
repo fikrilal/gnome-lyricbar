@@ -5,7 +5,7 @@
  * @typedef {Readonly<{
  *   snapshot: PlayerSnapshot,
  *   firstSeenAtMs: number,
- *   kind: 'metadata' | 'advertisement',
+ *   kind: 'metadata' | 'advertisement' | 'stopped-empty',
  * }>} PendingStableCandidate
  *
  * @typedef {Readonly<{
@@ -51,11 +51,13 @@ export function reduceStablePlayerSnapshot(input) {
 
   if (isEmptySnapshot(candidate)) {
     if (candidate.playbackStatus === 'Stopped') {
-      return {
-        stableSnapshot: null,
-        pendingCandidate: null,
-        decision: 'cleared',
-      };
+      return reduceStoppedEmptySnapshot({
+        previousStable,
+        pendingCandidate,
+        candidate,
+        policy: input.policy,
+        nowMs: input.nowMs,
+      });
     }
 
     if (previousStable !== null && input.policy.retainLastValidOnEmpty) {
@@ -133,6 +135,51 @@ export function reduceStablePlayerSnapshot(input) {
   }
 
   return accept(candidate);
+}
+
+/**
+ * @param {{
+ *   previousStable: PlayerSnapshot | null,
+ *   pendingCandidate: PendingStableCandidate | null,
+ *   candidate: PlayerSnapshot,
+ *   policy: PlayerProfilePolicy,
+ *   nowMs: number,
+ * }} input
+ * @returns {StableSnapshotResult}
+ */
+function reduceStoppedEmptySnapshot(input) {
+  if (input.previousStable === null || input.policy.stoppedEmptyRetentionMs <= 0) {
+    return {
+      stableSnapshot: null,
+      pendingCandidate: null,
+      decision: 'cleared',
+    };
+  }
+
+  const pendingStoppedEmpty =
+    input.pendingCandidate?.kind === 'stopped-empty' ? input.pendingCandidate : null;
+  const pendingCandidate =
+    pendingStoppedEmpty === null
+      ? {
+          snapshot: input.candidate,
+          firstSeenAtMs: input.nowMs,
+          kind: /** @type {'stopped-empty'} */ ('stopped-empty'),
+        }
+      : pendingStoppedEmpty;
+
+  if (input.nowMs - pendingCandidate.firstSeenAtMs < input.policy.stoppedEmptyRetentionMs) {
+    return {
+      stableSnapshot: input.previousStable,
+      pendingCandidate,
+      decision: 'retained-previous',
+    };
+  }
+
+  return {
+    stableSnapshot: null,
+    pendingCandidate: null,
+    decision: 'cleared',
+  };
 }
 
 /**

@@ -11,6 +11,7 @@ describe('policyForPlayerProfile', () => {
     expect(policyForPlayerProfile(PLAYER_PROFILES.spotifyDesktop)).toEqual({
       debounceMetadataMs: 0,
       advertisementRetentionMs: 0,
+      stoppedEmptyRetentionMs: 0,
       retainLastValidOnEmpty: false,
       retainLastValidOnAdvertisement: false,
       requireArtistForLookup: true,
@@ -22,6 +23,7 @@ describe('policyForPlayerProfile', () => {
     expect(policyForPlayerProfile(PLAYER_PROFILES.chromiumBrowser)).toEqual({
       debounceMetadataMs: 350,
       advertisementRetentionMs: 2000,
+      stoppedEmptyRetentionMs: 3000,
       retainLastValidOnEmpty: true,
       retainLastValidOnAdvertisement: true,
       requireArtistForLookup: true,
@@ -57,6 +59,7 @@ describe('policyForPlayerProfile', () => {
     expect(policyForPlayerProfile(PLAYER_PROFILES.genericMpris)).toEqual({
       debounceMetadataMs: 0,
       advertisementRetentionMs: 0,
+      stoppedEmptyRetentionMs: 0,
       retainLastValidOnEmpty: false,
       retainLastValidOnAdvertisement: false,
       requireArtistForLookup: true,

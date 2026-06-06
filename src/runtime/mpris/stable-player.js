@@ -54,6 +54,9 @@ export class StablePlayerProxy {
   /** @type {(() => void) | null} */
   #cancelPendingTimer = null;
 
+  /** @type {boolean} */
+  #positionReadsSuppressed = false;
+
   /** @type {Set<PlayerSnapshotCallback>} */
   #listeners = new Set();
 
@@ -80,6 +83,7 @@ export class StablePlayerProxy {
       this.#listeners.clear();
       this.#stableSnapshot = null;
       this.#pendingCandidate = null;
+      this.#positionReadsSuppressed = false;
     });
   }
 
@@ -124,6 +128,11 @@ export class StablePlayerProxy {
    * @returns {void}
    */
   readPosition(callback) {
+    if (this.#positionReadsSuppressed) {
+      callback(null);
+      return;
+    }
+
     this.#rawProxy.readPosition(callback);
   }
 
@@ -149,6 +158,7 @@ export class StablePlayerProxy {
     );
     const policy = policyForPlayerProfile(profile);
     const previous = this.#stableSnapshot;
+    const positionReadsWereSuppressed = this.#positionReadsSuppressed;
     const result = reduceStablePlayerSnapshot({
       previousStable: this.#stableSnapshot,
       pendingCandidate: this.#pendingCandidate,
@@ -159,6 +169,10 @@ export class StablePlayerProxy {
 
     this.#stableSnapshot = result.stableSnapshot;
     this.#pendingCandidate = result.pendingCandidate;
+    this.#positionReadsSuppressed = shouldSuppressPositionReads(
+      positionReadsWereSuppressed,
+      result.pendingCandidate,
+    );
     this.#logger?.debug('stable-snapshot-decision', {
       busName: this.busName,
       adapter: adapted?.adapterId ?? null,
@@ -171,6 +185,7 @@ export class StablePlayerProxy {
     this.#updatePendingTimer({
       advertisementRetentionMs: policy.advertisementRetentionMs,
       debounceMetadataMs: policy.debounceMetadataMs,
+      stoppedEmptyRetentionMs: policy.stoppedEmptyRetentionMs,
     });
     if (!snapshotsEqual(previous, this.#stableSnapshot)) {
       this.#emit();
@@ -178,7 +193,11 @@ export class StablePlayerProxy {
   }
 
   /**
-   * @param {{ advertisementRetentionMs: number, debounceMetadataMs: number }} policy
+   * @param {{
+   *   advertisementRetentionMs: number,
+   *   debounceMetadataMs: number,
+   *   stoppedEmptyRetentionMs: number,
+   * }} policy
    * @returns {void}
    */
   #updatePendingTimer(policy) {
@@ -187,10 +206,7 @@ export class StablePlayerProxy {
       return;
     }
 
-    const delayMs =
-      this.#pendingCandidate.kind === 'advertisement'
-        ? policy.advertisementRetentionMs
-        : policy.debounceMetadataMs;
+    const delayMs = pendingDelayMs(this.#pendingCandidate.kind, policy);
     if (delayMs <= 0) {
       return;
     }
@@ -225,4 +241,42 @@ export class StablePlayerProxy {
       listener(this.#stableSnapshot);
     }
   }
+}
+
+/**
+ * Keep position reads paused until a browser transition either accepts the
+ * recovered track or clears the stale player. This prevents the old lyrics
+ * from being driven by the new track's zero-based position during debounce.
+ *
+ * @param {boolean} previouslySuppressed
+ * @param {PendingStableCandidate | null} pendingCandidate
+ * @returns {boolean}
+ */
+function shouldSuppressPositionReads(previouslySuppressed, pendingCandidate) {
+  if (pendingCandidate?.kind === 'stopped-empty') {
+    return true;
+  }
+
+  return previouslySuppressed && pendingCandidate !== null;
+}
+
+/**
+ * @param {PendingStableCandidate['kind']} kind
+ * @param {{
+ *   advertisementRetentionMs: number,
+ *   debounceMetadataMs: number,
+ *   stoppedEmptyRetentionMs: number,
+ * }} policy
+ * @returns {number}
+ */
+function pendingDelayMs(kind, policy) {
+  if (kind === 'advertisement') {
+    return policy.advertisementRetentionMs;
+  }
+
+  if (kind === 'stopped-empty') {
+    return policy.stoppedEmptyRetentionMs;
+  }
+
+  return policy.debounceMetadataMs;
 }

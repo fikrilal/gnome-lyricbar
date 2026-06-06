@@ -48,21 +48,59 @@ describe('reduceStablePlayerSnapshot', () => {
     });
   });
 
-  it('clears the previous browser track when Chromium emits stopped empty metadata', () => {
+  it('retains the previous browser track during a stopped empty transition', () => {
+    const previousStable = snapshot({});
+    const candidate = stoppedEmptySnapshot();
+
     expect(
       reduceStablePlayerSnapshot({
-        previousStable: snapshot({}),
+        previousStable,
         pendingCandidate: null,
-        candidate: snapshot({
-          title: '',
-          artist: '',
-          album: '',
-          durationMs: 0,
-          trackId: null,
-          playbackStatus: 'Stopped',
-        }),
+        candidate,
         policy: browserPolicy,
         nowMs: 1000,
+      }),
+    ).toEqual({
+      stableSnapshot: previousStable,
+      pendingCandidate: {
+        snapshot: candidate,
+        firstSeenAtMs: 1000,
+        kind: 'stopped-empty',
+      },
+      decision: 'retained-previous',
+    });
+  });
+
+  it('clears the previous browser track when stopped empty metadata persists', () => {
+    const previousStable = snapshot({});
+    const candidate = stoppedEmptySnapshot();
+    const pendingCandidate = {
+      snapshot: candidate,
+      firstSeenAtMs: 1000,
+      kind: /** @type {'stopped-empty'} */ ('stopped-empty'),
+    };
+
+    expect(
+      reduceStablePlayerSnapshot({
+        previousStable,
+        pendingCandidate,
+        candidate,
+        policy: browserPolicy,
+        nowMs: 3999,
+      }),
+    ).toEqual({
+      stableSnapshot: previousStable,
+      pendingCandidate,
+      decision: 'retained-previous',
+    });
+
+    expect(
+      reduceStablePlayerSnapshot({
+        previousStable,
+        pendingCandidate,
+        candidate,
+        policy: browserPolicy,
+        nowMs: 4000,
       }),
     ).toEqual({
       stableSnapshot: null,
@@ -343,4 +381,16 @@ function snapshot(overrides) {
     playbackStatus: 'Playing',
     ...overrides,
   };
+}
+
+/** @returns {PlayerSnapshot} */
+function stoppedEmptySnapshot() {
+  return snapshot({
+    title: '',
+    artist: '',
+    album: '',
+    durationMs: 0,
+    trackId: null,
+    playbackStatus: 'Stopped',
+  });
 }

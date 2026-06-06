@@ -88,18 +88,35 @@ describe('TIDAL Web Chrome MPRIS fixtures', () => {
     expect(shouldWriteLyricsCache(requireSnapshot(mapFixture(nextNormal)), notFound)).toBe(true);
   });
 
-  it('clears the previous stable track for the stopped empty transition', () => {
+  it('retains the previous stable track during the stopped empty transition grace period', () => {
     const previousStable = requireSnapshot(mapFixture(normal));
     const transition = requireSnapshot(mapFixture(transitionEmptyStopped));
     const policy = policyForPlayerProfile(PLAYER_PROFILES.chromiumBrowser);
 
+    const first = reduceStablePlayerSnapshot({
+      previousStable,
+      pendingCandidate: null,
+      candidate: transition,
+      policy,
+      nowMs: 1000,
+    });
+
+    expect(first).toEqual({
+      stableSnapshot: previousStable,
+      pendingCandidate: {
+        snapshot: transition,
+        firstSeenAtMs: 1000,
+        kind: 'stopped-empty',
+      },
+      decision: 'retained-previous',
+    });
     expect(
       reduceStablePlayerSnapshot({
         previousStable,
-        pendingCandidate: null,
+        pendingCandidate: first.pendingCandidate,
         candidate: transition,
         policy,
-        nowMs: 1000,
+        nowMs: 4000,
       }),
     ).toEqual({
       stableSnapshot: null,
