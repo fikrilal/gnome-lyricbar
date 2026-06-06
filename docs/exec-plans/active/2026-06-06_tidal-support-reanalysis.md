@@ -110,6 +110,13 @@ Required correction:
 - Preserve the TIDAL support report as the provenance of the observed runtime state.
 - Keep only genuinely service-specific fixtures under a service-specific name.
 
+Resolution on 2026-06-06:
+
+- Renamed the captured transition fixture set to `chromium-browser-transition-*`.
+- Renamed the test file to `tests/mpris/chromium-browser-transition-fixtures.test.js`.
+- Updated fixture descriptions to state that TIDAL was externally observed but MPRIS exposed only Chrome identity.
+- Kept the TIDAL report as provenance instead of encoding TIDAL into executable fixture names.
+
 ### P2: Missing Cross-player Integration Coverage
 
 Add a test for the complete behavioral sequence:
@@ -130,6 +137,13 @@ Expected behavior:
 - the next Chrome track becomes active after stabilization
 
 Testing the reducer and selector independently is insufficient because the regression occurs at their composition boundary.
+
+Resolution on 2026-06-06:
+
+- Added a composition test that drives `StablePlayerProxy`, `selectActivePlayer`, and `LyricsService` together.
+- Covered Chrome playing with paused preferred Spotify present.
+- Covered Chrome stopped/empty transition, raw position suppression, recovered Chrome metadata debounce, and final next-track acceptance.
+- Verified lookup titles stay on `Carry On` and `Heathens`; paused Spotify `ECHO` is never queried.
 
 ### P3: Documentation Is Excessive and Inconsistently Organized
 
@@ -180,7 +194,15 @@ Completed on `development` on 2026-06-06:
 - Updated the player index and evidence report to distinguish capture provenance from runtime detection.
 - Confirmed that no TIDAL profile, adapter, preference, provider integration, or application-specific branch exists.
 
-Fixture names still encode TIDAL provenance and are handled by the separate P2 fixture-remediation phase.
+Fixture names were remediated in the P2 fixture-name phase.
+
+### Progress: P2 Fixture Names And Composition Coverage
+
+Completed on `development` on 2026-06-06:
+
+- Renamed generic Chrome fixtures away from `tidal-web-chromium-*`.
+- Added a full browser-transition composition test with paused preferred Spotify and recovered Chrome metadata.
+- Updated TIDAL documentation to preserve provenance while pointing executable coverage at generic Chromium fixtures.
 
 ### Phase 1: Specify Transition Semantics
 
@@ -253,9 +275,9 @@ bundle metadata matches version-name 0.1.11
 Focused transition tests also pass:
 
 ```text
-npx vitest run tests/mpris/profile-policy.test.js tests/mpris/stability.test.js tests/mpris/stable-player.test.js tests/mpris/tidal-fixtures.test.js tests/mpris/selection.test.js
+npx vitest run tests/mpris/profile-policy.test.js tests/mpris/stability.test.js tests/mpris/stable-player.test.js tests/mpris/chromium-browser-transition-fixtures.test.js tests/mpris/selection.test.js
 5 test files passed
-59 tests passed
+60 tests passed
 ```
 
 These tests now cover the identified cross-player regression. Live Chrome transition evidence remains required before release.

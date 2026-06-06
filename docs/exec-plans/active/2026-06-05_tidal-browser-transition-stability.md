@@ -1,14 +1,20 @@
 # Plan: TIDAL Browser Transition Stability
 
-Date: 2026-06-05  
-Owner: Dante  
-Status: active  
-Risk class: medium  
+Date: 2026-06-05
+
+Owner: Dante
+
+Status: superseded by `2026-06-06_tidal-support-reanalysis.md`
+
+Risk class: medium
+
 Related issue/PR: https://github.com/fikrilal/gnome-lyricbar/issues/5
 
 ## Objective
 
 Stop LyricBar from briefly restarting stale synced lyrics when Chrome-backed browser playback emits stopped/empty metadata during a TIDAL Web track transition.
+
+This plan is retained as historical context only. The immediate-clear decision below was superseded because it could let an unrelated paused preferred player steal selection during a short browser transition. Current behavior is documented in `2026-06-06_tidal-support-reanalysis.md`: generic browser profiles retain the previous snapshot for a bounded stopped/empty grace period while suppressing raw position reads.
 
 The fix should stay generic to browser MPRIS stability. Current evidence does not justify a TIDAL-specific player profile, setting, or adapter.
 
@@ -20,7 +26,7 @@ The fix should stay generic to browser MPRIS stability. Current evidence does no
   - Do not branch the controller on TIDAL-specific behavior.
 - Product/runtime constraints:
   - Preserve existing browser resilience for short non-stopped empty metadata churn.
-  - Clear stopped/empty browser metadata so stale lyrics do not restart at position `0`.
+  - Superseded: immediate clearing was replaced by bounded retention plus position suppression.
   - Let recovered full metadata enter the existing debounce/acceptance path.
 - Out of scope:
   - TIDAL-specific profile or `browser-player-service` option.
@@ -29,7 +35,7 @@ The fix should stay generic to browser MPRIS stability. Current evidence does no
 
 ## Acceptance Criteria
 
-1. Stopped/empty browser metadata clears the previous stable snapshot instead of retaining it.
+1. Superseded: stopped/empty browser metadata is retained briefly and clears only after timeout.
 2. Non-stopped empty browser metadata still retains the previous stable snapshot.
 3. TIDAL Chrome fixtures document the new stopped/empty transition behavior.
 4. Existing browser metadata debounce and recovered-track acceptance behavior remains intact.
@@ -56,7 +62,7 @@ The fix should stay generic to browser MPRIS stability. Current evidence does no
 List exact commands and outcomes.
 
 ```bash
-npx vitest run tests/mpris/stability.test.js tests/mpris/tidal-fixtures.test.js
+npx vitest run tests/mpris/stability.test.js tests/mpris/chromium-browser-transition-fixtures.test.js
 npm run verify
 ```
 
@@ -64,7 +70,7 @@ Result:
 
 ```text
 Targeted:
-npx vitest run tests/mpris/stability.test.js tests/mpris/tidal-fixtures.test.js
+npx vitest run tests/mpris/stability.test.js tests/mpris/chromium-browser-transition-fixtures.test.js
 2 test files passed, 24 tests passed.
 
 Full:
@@ -95,7 +101,7 @@ Required because this changes browser player stability behavior.
 - Artifact path(s):
   - `docs/players/tidal.md`
   - `_WIP/tidal-client-support-analysis-plan.md`
-  - `tests/fixtures/mpris/tidal-web-chromium-track-transition-empty-stopped.json`
+  - `tests/fixtures/mpris/chromium-browser-transition-empty-stopped.json`
 - Notes: Post-change live runtime re-test is optional unless requested; fixture coverage captures the observed D-Bus state.
 
 ## Risks And Mitigations
@@ -109,7 +115,7 @@ Required because this changes browser player stability behavior.
 
 ## Completion Notes
 
-Implemented and verified. Stopped/empty browser metadata now clears the previous stable snapshot, while non-stopped empty metadata still retains the previous stable snapshot.
+Superseded. Stopped/empty browser metadata now uses bounded retention plus position suppression, while persistent stopped/empty metadata clears after timeout.
 
 ## Follow-Ups
 

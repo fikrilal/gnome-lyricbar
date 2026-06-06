@@ -1,6 +1,6 @@
 {
-  "name": "tidal-web-chromium-next-normal",
-  "description": "Chrome MPRIS metadata captured after TIDAL Web recovered from the stopped/empty transition and started the next track.",
+  "name": "chromium-browser-transition-after",
+  "description": "Generic Chrome MPRIS metadata captured after a browser recovered from the stopped/empty transition and started the next track. TIDAL Web was the externally observed tab, but MPRIS exposed only Chrome identity.",
   "busName": "org.mpris.MediaPlayer2.chromium.instance4608",
   "rootProperties": {
     "Identity": "Chrome",

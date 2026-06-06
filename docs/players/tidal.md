@@ -431,15 +431,15 @@ Still needed before broad support:
 
 ### Phase 3: Fixtures If Needed
 
-Status: complete for the observed TIDAL Web Chrome track-transition behavior.
+Status: complete for the observed Chrome track-transition behavior.
 
 Fixtures added:
 
 ```text
-tests/fixtures/mpris/tidal-web-chromium-normal.json
-tests/fixtures/mpris/tidal-web-chromium-track-transition-empty-stopped.json
-tests/fixtures/mpris/tidal-web-chromium-next-normal.json
-tests/mpris/tidal-fixtures.test.js
+tests/fixtures/mpris/chromium-browser-transition-before.json
+tests/fixtures/mpris/chromium-browser-transition-empty-stopped.json
+tests/fixtures/mpris/chromium-browser-transition-after.json
+tests/mpris/chromium-browser-transition-fixtures.test.js
 ```
 
 The fixtures preserve:
@@ -448,14 +448,15 @@ The fixtures preserve:
 - the stopped/empty transition emitted by Chrome during next-track handling
 - recovered `Heathens` playback metadata
 - reused Chromium track ID across different songs
-- current stability behavior that retains the previous track through empty browser metadata
+- generic Chromium metadata shape with no service-identifying TIDAL fields
+- current stability behavior that retains the previous track through stopped/empty browser metadata
 
 Potential future fixtures if more evidence appears:
 
 ```text
-tests/fixtures/mpris/tidal-web-chromium-empty-metadata.json
-tests/fixtures/mpris/tidal-web-chromium-title-only.json
-tests/fixtures/mpris/tidal-web-chromium-stopped.json
+tests/fixtures/mpris/tidal-native-normal.json
+tests/fixtures/mpris/tidal-wrapper-normal.json
+tests/fixtures/mpris/tidal-browser-service-identified-normal.json
 ```
 
 ### Phase 4: Generic Browser Transition Remediation
@@ -479,20 +480,20 @@ Reason:
 Verification:
 
 ```bash
-npx vitest run tests/mpris/profile-policy.test.js tests/mpris/stability.test.js tests/mpris/stable-player.test.js tests/mpris/tidal-fixtures.test.js tests/mpris/selection.test.js
+npx vitest run tests/mpris/profile-policy.test.js tests/mpris/stability.test.js tests/mpris/stable-player.test.js tests/mpris/chromium-browser-transition-fixtures.test.js tests/mpris/selection.test.js
 ```
 
-Result: 5 test files passed, 59 tests passed.
+Result: 5 test files passed, 60 tests passed.
 
 ## Tests And Fixtures
 
-Phase 3 added TIDAL Web Chrome fixtures and tests:
+Phase 3 added generic Chromium browser transition fixtures and tests. The TIDAL support report preserves capture provenance; the executable fixture names describe the runtime identity LyricBar can actually observe.
 
 ```text
-tests/fixtures/mpris/tidal-web-chromium-normal.json
-tests/fixtures/mpris/tidal-web-chromium-track-transition-empty-stopped.json
-tests/fixtures/mpris/tidal-web-chromium-next-normal.json
-tests/mpris/tidal-fixtures.test.js
+tests/fixtures/mpris/chromium-browser-transition-before.json
+tests/fixtures/mpris/chromium-browser-transition-empty-stopped.json
+tests/fixtures/mpris/chromium-browser-transition-after.json
+tests/mpris/chromium-browser-transition-fixtures.test.js
 ```
 
 Coverage:
@@ -504,6 +505,8 @@ Coverage:
 - Cache policy for high-confidence metadata vs low-confidence stopped/empty transition metadata.
 - Current browser stability reducer behavior for stopped/empty metadata retention.
 - Acceptance of the recovered next track after the debounce window.
+- Composition coverage for Chrome playing, paused preferred Spotify present, stopped/empty transition, and recovered next-track metadata.
+- Lookup coverage proving paused Spotify is not queried during the Chrome transition.
 
 Phase 4 updated the stopped/empty stability expectation:
 
@@ -515,18 +518,18 @@ Phase 4 updated the stopped/empty stability expectation:
 Verification:
 
 ```bash
-npx vitest run tests/mpris/tidal-fixtures.test.js
+npx vitest run tests/mpris/chromium-browser-transition-fixtures.test.js
 ```
 
-Result: 1 test file passed, 10 tests passed.
+Result: 1 test file passed, 11 tests passed.
 
 Phase 4 targeted verification:
 
 ```bash
-npx vitest run tests/mpris/profile-policy.test.js tests/mpris/stability.test.js tests/mpris/stable-player.test.js tests/mpris/tidal-fixtures.test.js tests/mpris/selection.test.js
+npx vitest run tests/mpris/profile-policy.test.js tests/mpris/stability.test.js tests/mpris/stable-player.test.js tests/mpris/chromium-browser-transition-fixtures.test.js tests/mpris/selection.test.js
 ```
 
-Result: 5 test files passed, 59 tests passed.
+Result: 5 test files passed, 60 tests passed.
 
 ## Risks
 

@@ -1,6 +1,6 @@
 {
-  "name": "tidal-web-chromium-normal",
-  "description": "Chrome MPRIS metadata captured from normal TIDAL Web playback.",
+  "name": "chromium-browser-transition-before",
+  "description": "Generic Chrome MPRIS metadata captured before a browser next-track transition. TIDAL Web was the externally observed tab, but MPRIS exposed only Chrome identity.",
   "busName": "org.mpris.MediaPlayer2.chromium.instance4608",
   "rootProperties": {
     "Identity": "Chrome",
