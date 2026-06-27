@@ -7,3 +7,11 @@
   padding-left: 8px;
   padding-right: 8px;
 }
+
+.lyricbar-settings-button {
+  -natural-hpadding: 0px;
+  -minimum-hpadding: 0px;
+  padding-left: 0px;
+  padding-right: 0px;
+  width: 36px;
+}

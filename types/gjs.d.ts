@@ -145,6 +145,7 @@ declare module 'resource:///org/gnome/shell/ui/panelMenu.js' {
     constructor(menuAlignment?: number, nameText?: string | null, dontCreateMenu?: boolean);
     _init(menuAlignment: number, nameText?: string | null, dontCreateMenu?: boolean): void;
     add_child(actor: unknown): void;
+    add_style_class_name(name: string): void;
     destroy(): void;
     connect(signal: string, callback: (...args: any[]) => any): number;
     disconnect(id: number): void;
