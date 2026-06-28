@@ -117,6 +117,8 @@ class LyricBarSettingsIndicatorBase extends PanelMenu.Button {
   _init(settings, extension) {
     super._init(0.0, 'LyricBar Settings', false);
 
+    this.add_style_class_name('lyricbar-settings-button');
+
     this._settings = settings;
     this._extension = extension;
 
