@@ -68,6 +68,20 @@ GSETTINGS_SCHEMA_DIR="$HOME/.local/share/gnome-shell/extensions/lyricbar@fikrila
   gsettings set org.gnome.shell.extensions.lyricbar debug-logging false
 ```
 
+## Lyrics Appear Too Early or Too Late
+
+Some tracks are synced slightly differently from your player's copy. Shift lyric timing with the `lyrics-offset-ms` setting (Preferences -> Behavior -> Lyrics offset). Positive values delay the lyrics; negative values show them earlier:
+
+```bash
+GSETTINGS_SCHEMA_DIR="$HOME/.local/share/gnome-shell/extensions/lyricbar@fikrilal.github.io/schemas" \
+  gsettings set org.gnome.shell.extensions.lyricbar lyrics-offset-ms -250
+
+GSETTINGS_SCHEMA_DIR="$HOME/.local/share/gnome-shell/extensions/lyricbar@fikrilal.github.io/schemas" \
+  gsettings get org.gnome.shell.extensions.lyricbar lyrics-offset-ms
+```
+
+The range is -5000 to 5000 milliseconds. Reset the value to 0 to disable the offset.
+
 ## Track Has No Synced Lyrics
 
 Some tracks do not have synced LRCLIB results. LyricBar falls back according to `fallback-mode`:

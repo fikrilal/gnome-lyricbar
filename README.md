@@ -16,7 +16,8 @@ It is built for GNOME Shell 46-50 and supports Spotify Desktop, Spotify Web, You
 - Apple Music Web position normalization for browsers that expose cumulative media-session position.
 - LRCLIB synced lyric lookup with local cache.
 - Fallback modes for tracks without synced lyrics.
-- Preferences for panel position, maximum width, text alignment, fallback behavior, browser player service, cache, player priority, and debug logging.
+- Adjustable lyrics timing offset to display lines earlier or later.
+- Preferences for panel position, maximum width, text alignment, fallback behavior, lyrics timing offset, browser player service, cache, player priority, and debug logging.
 - Small panel menu for quick position/alignment changes and preferences access.
 - Strict local harness: formatting, linting, type checking, architecture checks, unit tests, schema validation, and bundle build.
 

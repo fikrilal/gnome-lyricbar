@@ -22,6 +22,12 @@
       <summary>Fallback mode</summary>
       <description>Display behavior when synced lyrics are unavailable.</description>
     </key>
+    <key name="lyrics-offset-ms" type="i">
+      <default>0</default>
+      <range min="-5000" max="5000"/>
+      <summary>Lyrics timing offset</summary>
+      <description>Shift synced lyrics earlier or later in milliseconds. Positive values delay the lyrics; negative values show them earlier.</description>
+    </key>
     <key name="show-settings-icon" type="b">
       <default>true</default>
       <summary>Show settings icon</summary>

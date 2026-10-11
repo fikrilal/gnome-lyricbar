@@ -33,6 +33,15 @@ export function shouldRefreshSettingsAccess(previous, next) {
 }
 
 /**
+ * @param {LyricBarSettings} previous
+ * @param {LyricBarSettings} next
+ * @returns {boolean}
+ */
+export function shouldRefreshSyncedLyrics(previous, next) {
+  return previous.lyricsOffsetMs !== next.lyricsOffsetMs;
+}
+
+/**
  * @param {readonly string[]} left
  * @param {readonly string[]} right
  * @returns {boolean}

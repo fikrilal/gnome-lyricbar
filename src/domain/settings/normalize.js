@@ -11,6 +11,9 @@ const DEFAULT_MAX_WIDTH = 360;
 const MIN_MAX_WIDTH = 120;
 const MAX_MAX_WIDTH = 720;
 const DEFAULT_FALLBACK_MODE = 'track';
+const DEFAULT_LYRICS_OFFSET_MS = 0;
+const MIN_LYRICS_OFFSET_MS = -5000;
+const MAX_LYRICS_OFFSET_MS = 5000;
 const DEFAULT_PLAYER_PRIORITY = ['spotify'];
 const DEFAULT_BROWSER_PLAYER_SERVICE = 'auto';
 const DEFAULT_TEXT_ALIGN = 'left';
@@ -48,6 +51,7 @@ export function normalizeSettings(raw) {
     maxWidth: normalizeMaxWidth(raw.maxWidth),
     textAlign: normalizeTextAlign(raw.textAlign),
     fallbackMode: normalizeFallbackMode(raw.fallbackMode),
+    lyricsOffsetMs: normalizeLyricsOffset(raw.lyricsOffsetMs),
     showSettingsIcon: normalizeBoolean(raw.showSettingsIcon, true),
     playerPriority: normalizePlayerPriority(raw.playerPriority),
     browserPlayerService: normalizeBrowserPlayerService(raw.browserPlayerService),
@@ -90,6 +94,19 @@ export function normalizeFallbackMode(value) {
   return typeof value === 'string' && FALLBACK_MODES.has(value)
     ? /** @type {FallbackMode} */ (value)
     : DEFAULT_FALLBACK_MODE;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {number}
+ */
+export function normalizeLyricsOffset(value) {
+  if (!Number.isFinite(value)) {
+    return DEFAULT_LYRICS_OFFSET_MS;
+  }
+
+  const rounded = Math.round(/** @type {number} */ (value));
+  return Math.min(MAX_LYRICS_OFFSET_MS, Math.max(MIN_LYRICS_OFFSET_MS, rounded));
 }
 
 /**

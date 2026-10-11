@@ -17,6 +17,7 @@ describe('SettingsAdapter', () => {
       maxWidth: 360,
       textAlign: 'right',
       fallbackMode: 'track',
+      lyricsOffsetMs: -250,
       showSettingsIcon: true,
       playerPriority: ['spotify'],
       browserPlayerService: 'auto',
@@ -36,16 +37,16 @@ describe('SettingsAdapter', () => {
 
     adapter.subscribe(callback);
 
-    expect(backend.connect).toHaveBeenCalledTimes(12);
+    expect(backend.connect).toHaveBeenCalledTimes(13);
     backend.emit('changed::max-width');
 
     expect(callback).toHaveBeenCalledWith(adapter.read());
 
     lifecycle.dispose();
 
-    expect(backend.disconnect).toHaveBeenCalledTimes(12);
-    expect(backend.disconnect).toHaveBeenNthCalledWith(1, 12);
-    expect(backend.disconnect).toHaveBeenNthCalledWith(12, 1);
+    expect(backend.disconnect).toHaveBeenCalledTimes(13);
+    expect(backend.disconnect).toHaveBeenNthCalledWith(1, 13);
+    expect(backend.disconnect).toHaveBeenNthCalledWith(13, 1);
   });
 });
 
@@ -80,7 +81,7 @@ function createSettingsBackend(overrides = {}) {
       }
       return '';
     }),
-    get_int: vi.fn(() => 360),
+    get_int: vi.fn((key) => (key === 'lyrics-offset-ms' ? -250 : 360)),
     get_strv: vi.fn(() => ['spotify']),
     get_boolean: vi.fn(
       (key) =>

@@ -283,6 +283,22 @@ export default class LyricBarPreferences extends ExtensionPreferences {
       description: 'Customize lyrics behavior and player connection.',
     });
 
+    // lyrics-offset-ms: SpinRow
+    const lyricsOffsetRow = new Adw.SpinRow({
+      title: 'Lyrics offset',
+      subtitle:
+        'Shift synced lyrics earlier or later in milliseconds. Positive values delay the lyrics.',
+      adjustment: new Gtk.Adjustment({
+        lower: -5000,
+        upper: 5000,
+        step_increment: 50,
+        page_increment: 500,
+        value: settings.get_int('lyrics-offset-ms'),
+      }),
+    });
+    settings.bind('lyrics-offset-ms', lyricsOffsetRow, 'value', Gio.SettingsBindFlags.DEFAULT);
+    behaviorGroup.add(lyricsOffsetRow);
+
     // player-priority: EntryRow
     const playerPriorityRow = new Adw.EntryRow({
       title: 'Player priority (comma-separated)',
@@ -721,6 +737,7 @@ function buildDiagnosticsMarkdown(metadata, settings) {
     `| Text alignment | ${escapeMarkdownTable(settings.get_string('text-align'))} |`,
     `| Maximum width | ${settings.get_int('max-width')} |`,
     `| Fallback mode | ${escapeMarkdownTable(settings.get_string('fallback-mode'))} |`,
+    `| Lyrics offset (ms) | ${settings.get_int('lyrics-offset-ms')} |`,
     `| Show settings icon | ${formatBoolean(settings.get_boolean('show-settings-icon'))} |`,
     `| Player priority | ${escapeMarkdownTable(settings.get_strv('player-priority').join(', '))} |`,
     `| Browser player service | ${escapeMarkdownTable(settings.get_string('browser-player-service'))} |`,

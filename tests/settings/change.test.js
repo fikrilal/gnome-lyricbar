@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   shouldRefreshPlayerSelection,
   shouldRefreshSettingsAccess,
+  shouldRefreshSyncedLyrics,
   shouldRepositionPanelIndicator,
 } from '../../src/domain/settings/change.js';
 
@@ -70,6 +71,21 @@ describe('shouldRefreshSettingsAccess', () => {
   });
 });
 
+describe('shouldRefreshSyncedLyrics', () => {
+  it('returns false when the lyrics offset is unchanged', () => {
+    expect(shouldRefreshSyncedLyrics(settings(['spotify']), settings(['vlc']))).toBe(false);
+  });
+
+  it('returns true when the lyrics offset changes', () => {
+    expect(
+      shouldRefreshSyncedLyrics(
+        settings(['spotify'], { lyricsOffsetMs: 0 }),
+        settings(['spotify'], { lyricsOffsetMs: -500 }),
+      ),
+    ).toBe(true);
+  });
+});
+
 /**
  * @param {readonly string[]} playerPriority
  * @returns {import('../../src/domain/settings/types.js').LyricBarSettings}
@@ -80,6 +96,7 @@ function settings(playerPriority, overrides = {}) {
     maxWidth: 360,
     textAlign: 'left',
     fallbackMode: 'track',
+    lyricsOffsetMs: 0,
     showSettingsIcon: true,
     playerPriority,
     browserPlayerService: 'spotify',

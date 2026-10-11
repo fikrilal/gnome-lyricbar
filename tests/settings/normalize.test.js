@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   normalizeFallbackMode,
+  normalizeLyricsOffset,
   normalizeBrowserPlayerService,
   normalizeMaxWidth,
   normalizePanelPosition,
@@ -20,6 +21,7 @@ describe('normalizeSettings', () => {
         maxWidth: 420,
         textAlign: 'center',
         fallbackMode: 'hidden',
+        lyricsOffsetMs: -1250,
         showSettingsIcon: false,
         playerPriority: ['spotify', 'firefox'],
         browserPlayerService: 'generic',
@@ -34,6 +36,7 @@ describe('normalizeSettings', () => {
       maxWidth: 420,
       textAlign: 'center',
       fallbackMode: 'hidden',
+      lyricsOffsetMs: -1250,
       showSettingsIcon: false,
       playerPriority: ['spotify', 'firefox'],
       browserPlayerService: 'generic',
@@ -52,6 +55,7 @@ describe('normalizeSettings', () => {
         maxWidth: 'wide',
         textAlign: 'bad',
         fallbackMode: 'loud',
+        lyricsOffsetMs: 'soon',
         showSettingsIcon: 'yes',
         playerPriority: 'spotify',
         browserPlayerService: 'bad',
@@ -66,6 +70,7 @@ describe('normalizeSettings', () => {
       maxWidth: 360,
       textAlign: 'left',
       fallbackMode: 'track',
+      lyricsOffsetMs: 0,
       showSettingsIcon: true,
       playerPriority: ['spotify'],
       browserPlayerService: 'auto',
@@ -99,6 +104,27 @@ describe('normalizeMaxWidth', () => {
 
   it('clamps above maximum', () => {
     expect(normalizeMaxWidth(1200)).toBe(720);
+  });
+});
+
+describe('normalizeLyricsOffset', () => {
+  it('rounds finite numbers', () => {
+    expect(normalizeLyricsOffset(244.7)).toBe(245);
+  });
+
+  it('clamps below the minimum', () => {
+    expect(normalizeLyricsOffset(-6000)).toBe(-5000);
+  });
+
+  it('clamps above the maximum', () => {
+    expect(normalizeLyricsOffset(6000)).toBe(5000);
+  });
+
+  it('falls back to zero for non-finite values', () => {
+    expect(normalizeLyricsOffset(Number.NaN)).toBe(0);
+    expect(normalizeLyricsOffset(Infinity)).toBe(0);
+    expect(normalizeLyricsOffset('later')).toBe(0);
+    expect(normalizeLyricsOffset(undefined)).toBe(0);
   });
 });
 

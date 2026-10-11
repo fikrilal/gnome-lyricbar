@@ -3,6 +3,7 @@ import GLib from 'gi://GLib';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
+import { applyLyricsOffset } from '../domain/display/lyrics-offset.js';
 import {
   displayStateFromLookup,
   displayStateFromSyncedPosition,
@@ -20,6 +21,7 @@ import { selectActivePlayer } from '../domain/mpris/selection.js';
 import {
   shouldRefreshPlayerSelection,
   shouldRefreshSettingsAccess,
+  shouldRefreshSyncedLyrics,
   shouldRepositionPanelIndicator,
 } from '../domain/settings/change.js';
 import { LyricBarIndicator, LyricBarSettingsIndicator } from '../shell/indicator.js';
@@ -195,6 +197,9 @@ export class LyricBarController {
       if (previousSettings !== null && shouldRefreshPlayerSelection(previousSettings, settings)) {
         this.#refreshSelection();
         return;
+      }
+      if (previousSettings !== null && shouldRefreshSyncedLyrics(previousSettings, settings)) {
+        this.#refreshSyncedPosition();
       }
       this.#refreshDisplay();
     });
@@ -523,6 +528,17 @@ export class LyricBarController {
   /**
    * @returns {void}
    */
+  #refreshSyncedPosition() {
+    if (this.#syncSourceId === 0) {
+      return;
+    }
+
+    this.#pollSyncedPosition();
+  }
+
+  /**
+   * @returns {void}
+   */
   #refreshDisplay() {
     if (!this.#enabled) {
       return;
@@ -633,7 +649,9 @@ export class LyricBarController {
         return;
       }
 
-      const next = displayStateFromSyncedPosition(player, lookup, effectivePositionMs);
+      const offsetMs = this.#currentSettings?.lyricsOffsetMs ?? 0;
+      const displayPositionMs = applyLyricsOffset(effectivePositionMs, offsetMs);
+      const next = displayStateFromSyncedPosition(player, lookup, displayPositionMs);
       const line = next.kind === 'lyrics' ? next.line : null;
       if (line === this.#lastSyncedLine) {
         return;
@@ -641,7 +659,9 @@ export class LyricBarController {
 
       this.#lastSyncedLine = line;
       this.#logger?.debug('sync-line-selected', {
-        positionMs: effectivePositionMs,
+        effectivePositionMs,
+        offsetMs,
+        positionMs: displayPositionMs,
         rawPositionMs: positionMs,
         text: line,
       });
