@@ -81,4 +81,4 @@ Result:
 
 ## Completion Notes
 
-Merged as PR #16 and released as v0.1.15 on 2026-10-18. An independent review reproduced the full suite (38 files, 432 tests), validated the tier chain against live LRCLIB, and confirmed the error-cache fix against a real HTTP 503; README and the compatibility matrix were updated to record the GNOME Shell 51 evidence, and a newly published fast-uri advisory was patched separately.
+Merged as PR #16 and released as v0.1.15 on 2026-10-24. An independent review reproduced the full suite (38 files, 432 tests), validated the tier chain against live LRCLIB, and confirmed the error-cache fix against a real HTTP 503; README and the compatibility matrix were updated to record the GNOME Shell 51 evidence, and a newly published fast-uri advisory was patched separately.

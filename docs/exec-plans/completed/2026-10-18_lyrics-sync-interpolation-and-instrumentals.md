@@ -80,4 +80,4 @@ Result:
 
 ## Completion Notes
 
-Merged as PR #16 and released as v0.1.15 on 2026-10-18. The independent review reproduced the full suite (38 files, 432 tests), checked the clock integration against the existing browser normalization and lyrics offset paths, and confirmed the empty-line fallback behavior through `formatDisplayState`; runtime smoke testing on the maintainer's players remains the post-install check.
+Merged as PR #16 and released as v0.1.15 on 2026-10-24. The independent review reproduced the full suite (38 files, 432 tests), checked the clock integration against the existing browser normalization and lyrics offset paths, and confirmed the empty-line fallback behavior through `formatDisplayState`; runtime smoke testing on the maintainer's players remains the post-install check.
