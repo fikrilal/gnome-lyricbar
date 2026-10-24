@@ -14,14 +14,15 @@ Compatibility depends on whether the player exposes useful MPRIS metadata: title
 
 ## Desktop Environments
 
-| Environment           | GNOME Shell | Status    | Evidence                                                                                                      |
-| --------------------- | ----------: | --------- | ------------------------------------------------------------------------------------------------------------- |
-| Ubuntu GNOME          |          46 | Supported | Daily development machine and live Spotify/Desktop browser testing.                                           |
-| GNOME Shell           |          47 | Supported | Metadata-compatible; needs broader distro confirmation.                                                       |
-| GNOME Shell           |          48 | Supported | Metadata-compatible; needs broader distro confirmation.                                                       |
-| GNOME Shell           |          49 | Supported | Metadata-compatible; needs broader distro confirmation.                                                       |
-| Fedora 44 Workstation |        50.0 | Supported | Fedora VM smoke test: extension loaded, preferences opened, YouTube Music Web rendered lyrics in the top bar. |
-| GNOME Shell           |        50.1 | Supported | Metadata-compatible with 50; needs explicit user confirmation from Fedora 44 / GNOME 50.1.                    |
+| Environment           | GNOME Shell | Status    | Evidence                                                                                                                |
+| --------------------- | ----------: | --------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Ubuntu GNOME          |          46 | Supported | Daily development machine and live Spotify/Desktop browser testing.                                                     |
+| GNOME Shell           |          47 | Supported | Metadata-compatible; needs broader distro confirmation.                                                                 |
+| GNOME Shell           |          48 | Supported | Metadata-compatible; needs broader distro confirmation.                                                                 |
+| GNOME Shell           |          49 | Supported | Metadata-compatible; needs broader distro confirmation.                                                                 |
+| Fedora 44 Workstation |        50.0 | Supported | Fedora VM smoke test: extension loaded, preferences opened, YouTube Music Web rendered lyrics in the top bar.           |
+| GNOME Shell           |        50.1 | Supported | Metadata-compatible with 50; needs explicit user confirmation from Fedora 44 / GNOME 50.1.                              |
+| GNOME Shell           |          51 | Supported | Contributed smoke test on GNOME Shell 51.1 (CachyOS, Wayland): extension installs, enables, and lyrics render (PR #16). |
 
 ## Music Clients
 
@@ -74,3 +75,4 @@ Before changing support status to **Supported**, capture:
 3. GNOME Shell 50.1 confirmation on Fedora 44.
 4. Brave/Vivaldi browser behavior for Spotify Web and YouTube Music Web.
 5. TIDAL clients that expose a stable service identity, including native, wrapper, Firefox, or other browser routes.
+6. Broader GNOME Shell 51 confirmation across distributions.

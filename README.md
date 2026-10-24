@@ -2,7 +2,7 @@
 
 LyricBar is a GNOME Shell extension that displays synchronized live lyrics in the top bar for MPRIS-compatible music players.
 
-It is built for GNOME Shell 46-50 and supports Spotify Desktop, Spotify Web, YouTube Music Web, Apple Music Web, and other MPRIS players. Lyrics are fetched from LRCLIB, cached locally, and rendered as a single glanceable line in the panel.
+It is built for GNOME Shell 46-51 and supports Spotify Desktop, Spotify Web, YouTube Music Web, Apple Music Web, and other MPRIS players. Lyrics are fetched from LRCLIB, cached locally, and rendered as a single glanceable line in the panel.
 
 ![LyricBar screenshot](docs/assets/lyricbar-panel.png)
 
@@ -25,7 +25,7 @@ It is built for GNOME Shell 46-50 and supports Spotify Desktop, Spotify Web, You
 
 | Target               | Status        |
 | -------------------- | ------------- |
-| GNOME Shell 46-50    | Supported     |
+| GNOME Shell 46-51    | Supported     |
 | Ubuntu 24.04         | Supported     |
 | Fedora GNOME         | Supported     |
 | Spotify Desktop      | Supported     |
@@ -80,7 +80,7 @@ curl -fsSL https://raw.githubusercontent.com/fikrilal/gnome-lyricbar/main/script
 
 Requirements:
 
-- GNOME Shell 46-50
+- GNOME Shell 46-51
 - Node.js 22+
 - `glib-compile-schemas`
 - `zip`
