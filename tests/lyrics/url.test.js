@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildLrclibSearchUrl, buildLrclibUrl } from '../../src/runtime/lyrics/url.js';
+import {
+  buildLrclibFreeTextQueries,
+  buildLrclibQuerySearchUrl,
+  buildLrclibSearchUrl,
+  buildLrclibUrl,
+} from '../../src/runtime/lyrics/url.js';
 
 describe('buildLrclibUrl', () => {
   it('builds a basic URL with artist and title', () => {
@@ -117,5 +122,54 @@ describe('buildLrclibSearchUrl', () => {
         durationMs: null,
       }),
     ).toBeNull();
+  });
+});
+
+describe('buildLrclibQuerySearchUrl', () => {
+  it('builds a query URL with encoded text', () => {
+    expect(buildLrclibQuerySearchUrl('Melangitkanmu Ghea Indrawari')).toBe(
+      'https://lrclib.net/api/search?q=Melangitkanmu+Ghea+Indrawari',
+    );
+  });
+
+  it('returns null for empty or whitespace text', () => {
+    expect(buildLrclibQuerySearchUrl('')).toBeNull();
+    expect(buildLrclibQuerySearchUrl('   ')).toBeNull();
+    expect(buildLrclibQuerySearchUrl(null)).toBeNull();
+  });
+});
+
+describe('buildLrclibFreeTextQueries', () => {
+  it('returns title with artist and bare title', () => {
+    expect(
+      buildLrclibFreeTextQueries({
+        artist: 'Ghea Indrawari',
+        title: 'Melangitkanmu (Official Lyric Video)',
+        album: '',
+        durationMs: 275000,
+      }),
+    ).toEqual(['Melangitkanmu Ghea Indrawari', 'Melangitkanmu']);
+  });
+
+  it('returns only title when artist is empty', () => {
+    expect(
+      buildLrclibFreeTextQueries({
+        artist: '',
+        title: 'Melangitkanmu',
+        album: '',
+        durationMs: 275000,
+      }),
+    ).toEqual(['Melangitkanmu']);
+  });
+
+  it('returns empty array when sanitized title is empty', () => {
+    expect(
+      buildLrclibFreeTextQueries({
+        artist: 'Artist',
+        title: '(Live)',
+        album: '',
+        durationMs: null,
+      }),
+    ).toEqual([]);
   });
 });

@@ -64,6 +64,10 @@ export function buildCacheEntry(result, now) {
  * @returns {boolean}
  */
 export function shouldWriteLyricsCache(player, result, options = {}) {
+  if (result.kind === 'error') {
+    return false;
+  }
+
   if (result.kind !== 'not-found') {
     return true;
   }

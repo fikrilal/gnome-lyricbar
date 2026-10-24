@@ -3,7 +3,12 @@ import GLib from 'gi://GLib';
 import Soup from 'gi://Soup';
 
 import { mapHttpResultToProviderResult, mapHttpResultToSyncedSearchResult } from './http-result.js';
-import { buildLrclibSearchUrl, buildLrclibUrl } from './url.js';
+import {
+  buildLrclibFreeTextQueries,
+  buildLrclibQuerySearchUrl,
+  buildLrclibSearchUrl,
+  buildLrclibUrl,
+} from './url.js';
 
 /**
  * @import { LifecycleRegistry } from '../lifecycle.js'
@@ -112,7 +117,7 @@ export class LrclibProvider {
   #lookupSyncedSearchFallback(query, fallback, callback) {
     const searchUrl = buildLrclibSearchUrl(query);
     if (searchUrl === null) {
-      callback(fallback);
+      this.#lookupFreeTextSearchFallback(query, fallback, callback);
       return;
     }
 
@@ -123,17 +128,90 @@ export class LrclibProvider {
 
     this.#send(searchUrl, (httpResult) => {
       const searchResult = mapHttpResultToSyncedSearchResult(httpResult, query);
-      if (searchResult === null) {
-        this.#logger?.debug('search-fallback-result', { kind: 'none' });
-        callback(fallback);
+      if (searchResult !== null) {
+        this.#logger?.debug('search-fallback-result', {
+          kind: searchResult.kind,
+          title: searchResult.track.trackName,
+        });
+        callback(searchResult);
         return;
       }
 
-      this.#logger?.debug('search-fallback-result', {
-        kind: searchResult.kind,
-        title: searchResult.track.trackName,
-      });
-      callback(searchResult);
+      this.#logger?.debug('search-fallback-result', { kind: 'none' });
+      this.#lookupFreeTextSearchFallback(query, fallback, callback);
+    });
+  }
+
+  /**
+   * Fuzzy fallback using free-text search queries (e.g. "{title} {artist}" then "{title}").
+   * Strictly gated on a known track duration (> 0), as the ±5s window keeps the loose match
+   * on the correct song (following Limusic's matching architecture).
+   *
+   * @param {LyricsQuery} query
+   * @param {LyricsProviderResult} fallback
+   * @param {LyricsLookupCallback} callback
+   * @returns {void}
+   */
+  #lookupFreeTextSearchFallback(query, fallback, callback) {
+    const hasDuration =
+      typeof query.durationMs === 'number' &&
+      Number.isFinite(query.durationMs) &&
+      query.durationMs > 0;
+
+    if (!hasDuration) {
+      callback(fallback);
+      return;
+    }
+
+    const freeTextQueries = buildLrclibFreeTextQueries(query);
+    if (freeTextQueries.length === 0) {
+      callback(fallback);
+      return;
+    }
+
+    this.#tryFreeTextQueries(freeTextQueries, 0, query, fallback, callback);
+  }
+
+  /**
+   * @param {readonly string[]} queries
+   * @param {number} index
+   * @param {LyricsQuery} query
+   * @param {LyricsProviderResult} fallback
+   * @param {LyricsLookupCallback} callback
+   * @returns {void}
+   */
+  #tryFreeTextQueries(queries, index, query, fallback, callback) {
+    if (!this.#enabled) {
+      return;
+    }
+
+    if (index >= queries.length) {
+      callback(fallback);
+      return;
+    }
+
+    const queryText = queries[index];
+    const url = buildLrclibQuerySearchUrl(queryText);
+    if (url === null) {
+      this.#tryFreeTextQueries(queries, index + 1, query, fallback, callback);
+      return;
+    }
+
+    this.#logger?.debug('search-free-text-start', { q: queryText, index });
+
+    this.#send(url, (httpResult) => {
+      const searchResult = mapHttpResultToSyncedSearchResult(httpResult, query);
+      if (searchResult !== null) {
+        this.#logger?.debug('search-free-text-hit', {
+          q: queryText,
+          title: searchResult.track.trackName,
+        });
+        callback(searchResult);
+        return;
+      }
+
+      this.#logger?.debug('search-free-text-miss', { q: queryText, index });
+      this.#tryFreeTextQueries(queries, index + 1, query, fallback, callback);
     });
   }
 

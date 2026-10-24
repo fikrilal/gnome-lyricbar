@@ -275,6 +275,16 @@ describe('shouldWriteLyricsCache', () => {
       ),
     ).toBe(true);
   });
+
+  it('blocks error results from being cached', () => {
+    const errorResult = /** @type {const} */ ({
+      kind: 'error',
+      reason: 'status 503',
+    });
+    expect(shouldWriteLyricsCache(playerSnapshot({}), errorResult)).toBe(false);
+    expect(shouldWriteLyricsCache(browserSnapshot({}), errorResult)).toBe(false);
+    expect(shouldWriteLyricsCache(null, errorResult)).toBe(false);
+  });
 });
 
 /**

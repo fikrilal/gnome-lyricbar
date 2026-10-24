@@ -23,9 +23,6 @@ export function parseLrc(input) {
     }
 
     const text = rawLine.replace(TIMESTAMP_PATTERN, '').trim();
-    if (text === '') {
-      continue;
-    }
 
     for (const timestamp of timestamps) {
       const timeMs = parseTimestampMs(timestamp);

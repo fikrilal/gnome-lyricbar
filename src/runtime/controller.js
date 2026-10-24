@@ -14,6 +14,7 @@ import {
   shouldUseRelativeSyncedLyricsPosition,
   shouldUseSyncedLyricsPosition,
 } from '../domain/display/sync-position-policy.js';
+import { getInterpolatedClockPosition, updateSyncedClock } from '../domain/display/sync-clock.js';
 import { updateStagnantSyncedPositionEstimate } from '../domain/display/sync-position-estimator.js';
 import { shouldPollSyncedLyrics } from '../domain/display/sync-polling.js';
 import { buildIndicatorViewModel } from '../domain/display/view-model.js';
@@ -43,6 +44,7 @@ import { SettingsAdapter } from './settings.js';
  * @import { PlayerSnapshot } from '../domain/mpris/types.js'
  * @import { LyricBarSettings } from '../domain/settings/types.js'
  * @import { StagnantSyncedPositionEstimate } from '../domain/display/sync-position-estimator.js'
+ * @import { SyncedClockState } from '../domain/display/sync-clock.js'
  * @import { GSettingsBackend } from './settings.js'
  *
  * @typedef {Readonly<{
@@ -64,6 +66,7 @@ import { SettingsAdapter } from './settings.js';
  */
 
 const POSITION_POLL_INTERVAL_MS = 500;
+const SYNC_TICK_INTERVAL_MS = 100;
 const FIREFOX_STAGNANT_POSITION_THRESHOLD_MS = 2_500;
 
 export class LyricBarController {
@@ -138,6 +141,12 @@ export class LyricBarController {
 
   /** @type {StagnantSyncedPositionEstimate | null} */
   #syncPositionEstimate = null;
+
+  /** @type {SyncedClockState | null} */
+  #syncedClock = null;
+
+  /** @type {number} */
+  #lastPollTimeMs = 0;
 
   /**
    * @param {ExtensionHandle} extension
@@ -572,12 +581,14 @@ export class LyricBarController {
 
     this.#resetSyncPositionOffset();
     this.#logger?.debug('sync-loop-start', {
-      intervalMs: POSITION_POLL_INTERVAL_MS,
+      intervalMs: SYNC_TICK_INTERVAL_MS,
+      pollIntervalMs: POSITION_POLL_INTERVAL_MS,
       title: this.#activePlayer?.title ?? null,
     });
     this.#lastSyncedLine = null;
+    this.#lastPollTimeMs = monotonicNowMs();
     this.#pollSyncedPosition();
-    this.#syncSourceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, POSITION_POLL_INTERVAL_MS, () => {
+    this.#syncSourceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, SYNC_TICK_INTERVAL_MS, () => {
       if (!this.#shouldPollSyncedLyrics()) {
         this.#logger?.debug('sync-loop-stop');
         this.#syncSourceId = 0;
@@ -585,7 +596,12 @@ export class LyricBarController {
         this.#resetSyncPositionOffset();
         return GLib.SOURCE_REMOVE;
       }
-      this.#pollSyncedPosition();
+      const nowMs = monotonicNowMs();
+      if (nowMs - this.#lastPollTimeMs >= POSITION_POLL_INTERVAL_MS) {
+        this.#lastPollTimeMs = nowMs;
+        this.#pollSyncedPosition();
+      }
+      this.#advanceSyncedLyrics(nowMs);
       return GLib.SOURCE_CONTINUE;
     });
   }
@@ -620,6 +636,54 @@ export class LyricBarController {
   }
 
   /**
+   * @param {number} nowMs
+   * @returns {void}
+   */
+  #advanceSyncedLyrics(nowMs) {
+    const player = this.#activePlayer;
+    const lookup = this.#currentLookup;
+    if (player === null || lookup?.kind !== 'synced' || this.#syncedClock === null) {
+      return;
+    }
+
+    const interpolatedPositionMs = getInterpolatedClockPosition(this.#syncedClock, nowMs);
+    this.#applySyncedDisplayPosition(
+      player,
+      lookup,
+      interpolatedPositionMs,
+      this.#syncedClock.lastSampledRawMs,
+    );
+  }
+
+  /**
+   * @param {PlayerSnapshot} player
+   * @param {Extract<LyricsProviderResult, { kind: 'synced' }>} lookup
+   * @param {number} effectivePositionMs
+   * @param {number} rawPositionMs
+   * @returns {void}
+   */
+  #applySyncedDisplayPosition(player, lookup, effectivePositionMs, rawPositionMs) {
+    const offsetMs = this.#currentSettings?.lyricsOffsetMs ?? 0;
+    const displayPositionMs = applyLyricsOffset(effectivePositionMs, offsetMs);
+    const next = displayStateFromSyncedPosition(player, lookup, displayPositionMs);
+    const line = next.kind === 'lyrics' ? next.line : null;
+    if (line === this.#lastSyncedLine) {
+      return;
+    }
+
+    this.#lastSyncedLine = line;
+    this.#logger?.debug('sync-line-selected', {
+      effectivePositionMs,
+      offsetMs,
+      positionMs: displayPositionMs,
+      rawPositionMs,
+      text: line,
+    });
+    this.#displayState = next;
+    this.#render();
+  }
+
+  /**
    * @returns {void}
    */
   #pollSyncedPosition() {
@@ -649,24 +713,16 @@ export class LyricBarController {
         return;
       }
 
-      const offsetMs = this.#currentSettings?.lyricsOffsetMs ?? 0;
-      const displayPositionMs = applyLyricsOffset(effectivePositionMs, offsetMs);
-      const next = displayStateFromSyncedPosition(player, lookup, displayPositionMs);
-      const line = next.kind === 'lyrics' ? next.line : null;
-      if (line === this.#lastSyncedLine) {
-        return;
-      }
-
-      this.#lastSyncedLine = line;
-      this.#logger?.debug('sync-line-selected', {
-        effectivePositionMs,
-        offsetMs,
-        positionMs: displayPositionMs,
-        rawPositionMs: positionMs,
-        text: line,
+      const nowMs = monotonicNowMs();
+      const trackKey = this.#buildSyncPositionTrackKey(player, lookup);
+      this.#syncedClock = updateSyncedClock(this.#syncedClock, {
+        trackKey,
+        rawPositionMs: effectivePositionMs,
+        nowMs,
+        playbackStatus: player.playbackStatus,
       });
-      this.#displayState = next;
-      this.#render();
+
+      this.#advanceSyncedLyrics(nowMs);
     });
   }
 
@@ -784,6 +840,8 @@ export class LyricBarController {
     this.#syncPositionOffsetMs = null;
     this.#lastAcceptedSyncPositionMs = null;
     this.#syncPositionEstimate = null;
+    this.#syncedClock = null;
+    this.#lastPollTimeMs = 0;
   }
 
   /**

@@ -73,7 +73,7 @@ export function displayStateFromSyncedPosition(player, lookup, positionMs) {
   /** @type {DisplayTrack} */
   const track = { title: player.title, artist: player.artist };
   const line = selectLyricLine(lookup.lines, positionMs);
-  if (line !== null && line.text.trim() !== '') {
+  if (line !== null) {
     return { kind: 'lyrics', line: line.text, track };
   }
 

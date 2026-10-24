@@ -63,6 +63,22 @@ describe('LyricsService', () => {
     expect(harness.listener).toHaveBeenLastCalledWith(snapshot({}), plainResult);
   });
 
+  it('does not write to cache when provider returns an error result', () => {
+    const harness = createHarness({ cachedResult: null });
+    /** @type {LyricsProviderResult} */
+    const errorResult = Object.freeze({
+      kind: 'error',
+      reason: 'status 503',
+    });
+
+    harness.service.setActivePlayer(snapshot({}));
+    harness.resolveProvider(errorResult);
+
+    expect(harness.provider.lookup).toHaveBeenCalledTimes(1);
+    expect(harness.cache.put).not.toHaveBeenCalled();
+    expect(harness.listener).toHaveBeenLastCalledWith(snapshot({}), errorResult);
+  });
+
   it('ignores stale cache and provider callbacks after the active track changes', () => {
     const harness = createHarness({ deferCache: true });
     const first = snapshot({ title: 'Yellow', trackId: '/com/spotify/track/yellow' });

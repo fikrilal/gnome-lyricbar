@@ -503,4 +503,81 @@ describe('parseBestSyncedLrclibSearchResponse', () => {
 
     expect(result?.kind).toBe('synced');
   });
+
+  it('matches a candidate where the title includes artist and YouTube decorations within 5s duration tolerance', () => {
+    const result = parseBestSyncedLrclibSearchResponse(
+      [
+        {
+          trackName: 'Ghea Indrawari - Melangitkanmu (Official Lyric Video)',
+          artistName: 'Ghea Indrawari',
+          albumName: 'Ghea Indrawari',
+          duration: 275,
+          syncedLyrics: '[00:04.98] Merenungi alam semesta\n[00:10.05] Merintih ke langit',
+        },
+      ],
+      {
+        artist: 'Ghea Indrawari',
+        title: 'Melangitkanmu',
+        album: '',
+        durationMs: 275000,
+      },
+    );
+
+    expect(result?.kind).toBe('synced');
+    if (result?.kind === 'synced') {
+      expect(result.lines).toHaveLength(2);
+      expect(result.lines[0]?.text).toBe('Merenungi alam semesta');
+    }
+  });
+
+  it('matches a candidate when artistName is a channel name but trackName contains the artist', () => {
+    const result = parseBestSyncedLrclibSearchResponse(
+      [
+        {
+          trackName: 'Ghea Indrawari - Melangitkanmu (Official Lyric Video)',
+          artistName: 'HITS Records',
+          albumName: '',
+          duration: 275,
+          syncedLyrics: '[00:04.98] Merenungi alam semesta',
+        },
+      ],
+      {
+        artist: 'Ghea Indrawari',
+        title: 'Melangitkanmu',
+        album: '',
+        durationMs: 275000,
+      },
+    );
+
+    expect(result?.kind).toBe('synced');
+  });
+
+  it('accepts candidates within 5s duration difference and rejects beyond 5s', () => {
+    /** @param {number} duration */
+    const candidates = (duration) => [
+      {
+        trackName: 'Melangitkanmu',
+        artistName: 'Ghea Indrawari',
+        albumName: '',
+        duration,
+        syncedLyrics: '[00:04.98] Line',
+      },
+    ];
+
+    const fourSecDiff = parseBestSyncedLrclibSearchResponse(candidates(279), {
+      artist: 'Ghea Indrawari',
+      title: 'Melangitkanmu',
+      album: '',
+      durationMs: 275000,
+    });
+    expect(fourSecDiff?.kind).toBe('synced');
+
+    const sixSecDiff = parseBestSyncedLrclibSearchResponse(candidates(281), {
+      artist: 'Ghea Indrawari',
+      title: 'Melangitkanmu',
+      album: '',
+      durationMs: 275000,
+    });
+    expect(sixSecDiff).toBeNull();
+  });
 });

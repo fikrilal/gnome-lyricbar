@@ -199,6 +199,23 @@ describe('displayStateFromSyncedPosition', () => {
     });
   });
 
+  it('returns an empty lyric line when selecting an instrumental break line', () => {
+    const lookupWithBreak = {
+      ...syncedLookup,
+      lines: [
+        { timeMs: 1000, text: 'First verse' },
+        { timeMs: 3000, text: '' },
+        { timeMs: 6000, text: 'Chorus' },
+      ],
+    };
+
+    expect(displayStateFromSyncedPosition(snapshot({}), lookupWithBreak, 4000)).toEqual({
+      kind: 'lyrics',
+      line: '',
+      track: { title: 'Yellow', artist: 'Coldplay' },
+    });
+  });
+
   it('returns idle when player is missing', () => {
     expect(displayStateFromSyncedPosition(null, syncedLookup, 5000)).toEqual({ kind: 'idle' });
   });

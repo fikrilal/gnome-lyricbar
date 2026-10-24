@@ -1,4 +1,5 @@
 import { parseLrc } from './lrc.js';
+import { sanitizeSearchTitle } from './normalize.js';
 
 /**
  * @import {
@@ -54,7 +55,7 @@ export function parseLrclibResponse(value) {
 
   if (synced !== null) {
     const lines = parseLrc(synced);
-    if (lines.length > 0) {
+    if (lines.length > 0 && lines.some((line) => line.text.trim() !== '')) {
       return Object.freeze({
         kind: 'synced',
         track,
@@ -111,10 +112,10 @@ export function parseBestSyncedLrclibSearchResponse(value, query) {
 function scoreSearchResult(track, query) {
   const queryArtist = normalizeComparable(query.artist);
   const resultArtist = normalizeComparable(track.artistName);
-  const queryTitle = normalizeComparable(stripParentheticalSuffix(query.title));
-  const resultTitle = normalizeComparable(stripParentheticalSuffix(track.trackName));
+  const queryTitle = normalizeComparable(sanitizeSearchTitle(query.title));
+  const resultTitle = normalizeComparable(sanitizeSearchTitle(track.trackName));
 
-  if (queryArtist === '' || resultArtist === '' || !artistsMatch(queryArtist, resultArtist)) {
+  if (queryArtist === '' || !artistsMatch(queryArtist, resultArtist, resultTitle)) {
     return null;
   }
 
@@ -154,23 +155,25 @@ function scoreDuration(resultDurationMs, queryDurationMs) {
   }
 
   const deltaMs = Math.abs(resultDurationMs - queryDurationMs);
-  if (deltaMs > 3000) {
+  if (deltaMs > 5000) {
     return null;
   }
 
-  return Math.max(0, 30 - Math.round(deltaMs / 100));
+  return Math.max(0, 50 - Math.round(deltaMs / 100));
 }
 
 /**
  * @param {string} queryArtist
  * @param {string} resultArtist
+ * @param {string} [resultTitle]
  * @returns {boolean}
  */
-function artistsMatch(queryArtist, resultArtist) {
+function artistsMatch(queryArtist, resultArtist, resultTitle = '') {
   return (
     queryArtist === resultArtist ||
-    queryArtist.includes(resultArtist) ||
-    resultArtist.includes(queryArtist)
+    (resultArtist !== '' &&
+      (queryArtist.includes(resultArtist) || resultArtist.includes(queryArtist))) ||
+    (resultTitle !== '' && resultTitle.includes(queryArtist))
   );
 }
 
@@ -185,14 +188,6 @@ function titlesMatch(queryTitle, resultTitle) {
     queryTitle.includes(resultTitle) ||
     resultTitle.includes(queryTitle)
   );
-}
-
-/**
- * @param {string} value
- * @returns {string}
- */
-function stripParentheticalSuffix(value) {
-  return value.replace(/\s+\([^)]{1,32}\)\s*$/u, '').trim();
 }
 
 /**

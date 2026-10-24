@@ -1,3 +1,5 @@
+import { sanitizeSearchTitle } from '../../domain/lyrics/normalize.js';
+
 const GET_ENDPOINT = 'https://lrclib.net/api/get';
 const SEARCH_ENDPOINT = 'https://lrclib.net/api/search';
 
@@ -44,7 +46,7 @@ export function buildLrclibUrl(query) {
  */
 export function buildLrclibSearchUrl(query) {
   const artist = normalize(query.artist);
-  const title = normalizeSearchTitle(query.title);
+  const title = sanitizeSearchTitle(query.title);
   if (artist === '' || title === '') {
     return null;
   }
@@ -59,6 +61,42 @@ export function buildLrclibSearchUrl(query) {
 }
 
 /**
+ * @param {string | null | undefined} queryText
+ * @returns {string | null}
+ */
+export function buildLrclibQuerySearchUrl(queryText) {
+  const text = normalize(queryText);
+  if (text === '') {
+    return null;
+  }
+
+  return `${SEARCH_ENDPOINT}?q=${encodeFormComponent(text)}`;
+}
+
+/**
+ * Returns candidate free-text search queries for fuzzy fallback matching:
+ * 1. "{sanitizedTitle} {artist}"
+ * 2. "{sanitizedTitle}"
+ *
+ * @param {LyricsQuery} query
+ * @returns {string[]}
+ */
+export function buildLrclibFreeTextQueries(query) {
+  const title = sanitizeSearchTitle(query.title);
+  const artist = normalize(query.artist);
+  if (title === '') {
+    return [];
+  }
+
+  const queries = [];
+  if (artist !== '') {
+    queries.push(`${title} ${artist}`.trim());
+  }
+  queries.push(title);
+  return queries;
+}
+
+/**
  * @param {string | null | undefined} value
  * @returns {string}
  */
@@ -67,19 +105,6 @@ function normalize(value) {
     return '';
   }
   return value.trim();
-}
-
-/**
- * Parenthetical suffixes are often release decorations in Spotify titles
- * while LRCLIB's synced entries may store the base title.
- *
- * @param {string | null | undefined} value
- * @returns {string}
- */
-function normalizeSearchTitle(value) {
-  return normalize(value)
-    .replace(/(?:^|\s+)\([^)]{1,32}\)\s*$/u, '')
-    .trim();
 }
 
 /**
