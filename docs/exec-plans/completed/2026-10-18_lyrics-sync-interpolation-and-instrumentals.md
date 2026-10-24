@@ -2,7 +2,7 @@
 
 Date: 2026-10-18  
 Owner: achmad  
-Status: active  
+Status: completed  
 Risk class: medium  
 Related issue/PR: N/A
 
@@ -77,3 +77,7 @@ Result:
   - Mitigation: The 100ms timer only executes a fast binary/linear search and mathematical subtraction; if the selected lyric line string is identical to the current line, it returns immediately without DOM/St redraws.
 - Risk: Clock drift across long songs.
   - Mitigation: Seek jumps and large drifts (>= 1500ms) re-anchor base position immediately, while continuous playback uses the monotonic hardware clock.
+
+## Completion Notes
+
+Merged as PR #16 and released as v0.1.15 on 2026-10-18. The independent review reproduced the full suite (38 files, 432 tests), checked the clock integration against the existing browser normalization and lyrics offset paths, and confirmed the empty-line fallback behavior through `formatDisplayState`; runtime smoke testing on the maintainer's players remains the post-install check.
