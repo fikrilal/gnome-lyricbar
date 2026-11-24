@@ -9,6 +9,7 @@ import { buildIndicatorViewModel } from '../../src/domain/display/view-model.js'
 /** @type {LyricBarSettings} */
 const baseSettings = {
   panelPosition: 'center',
+  panelIndex: 0,
   maxWidth: 360,
   textAlign: 'left',
   fallbackMode: 'track',

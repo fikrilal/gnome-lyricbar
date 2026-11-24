@@ -7,6 +7,9 @@ import {
 } from './appearance.js';
 
 const DEFAULT_PANEL_POSITION = 'center';
+const DEFAULT_PANEL_INDEX = 0;
+const MIN_PANEL_INDEX = -1;
+const MAX_PANEL_INDEX = 20;
 const DEFAULT_MAX_WIDTH = 360;
 const MIN_MAX_WIDTH = 120;
 const MAX_MAX_WIDTH = 720;
@@ -48,6 +51,7 @@ const TEXT_ALIGNS = new Set(['left', 'center', 'right']);
 export function normalizeSettings(raw) {
   return {
     panelPosition: normalizePanelPosition(raw.panelPosition),
+    panelIndex: normalizePanelIndex(raw.panelIndex),
     maxWidth: normalizeMaxWidth(raw.maxWidth),
     textAlign: normalizeTextAlign(raw.textAlign),
     fallbackMode: normalizeFallbackMode(raw.fallbackMode),
@@ -71,6 +75,19 @@ export function normalizePanelPosition(value) {
   return typeof value === 'string' && PANEL_POSITIONS.has(value)
     ? /** @type {PanelPosition} */ (value)
     : DEFAULT_PANEL_POSITION;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {number}
+ */
+export function normalizePanelIndex(value) {
+  if (!Number.isFinite(value)) {
+    return DEFAULT_PANEL_INDEX;
+  }
+
+  const rounded = Math.round(/** @type {number} */ (value));
+  return Math.min(MAX_PANEL_INDEX, Math.max(MIN_PANEL_INDEX, rounded));
 }
 
 /**

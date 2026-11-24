@@ -14,6 +14,7 @@ describe('SettingsAdapter', () => {
 
     expect(adapter.read()).toEqual({
       panelPosition: 'center',
+      panelIndex: 1,
       maxWidth: 360,
       textAlign: 'right',
       fallbackMode: 'track',
@@ -37,16 +38,16 @@ describe('SettingsAdapter', () => {
 
     adapter.subscribe(callback);
 
-    expect(backend.connect).toHaveBeenCalledTimes(13);
+    expect(backend.connect).toHaveBeenCalledTimes(14);
     backend.emit('changed::max-width');
 
     expect(callback).toHaveBeenCalledWith(adapter.read());
 
     lifecycle.dispose();
 
-    expect(backend.disconnect).toHaveBeenCalledTimes(13);
-    expect(backend.disconnect).toHaveBeenNthCalledWith(1, 13);
-    expect(backend.disconnect).toHaveBeenNthCalledWith(13, 1);
+    expect(backend.disconnect).toHaveBeenCalledTimes(14);
+    expect(backend.disconnect).toHaveBeenNthCalledWith(1, 14);
+    expect(backend.disconnect).toHaveBeenNthCalledWith(14, 1);
   });
 });
 
@@ -81,7 +82,15 @@ function createSettingsBackend(overrides = {}) {
       }
       return '';
     }),
-    get_int: vi.fn((key) => (key === 'lyrics-offset-ms' ? -250 : 360)),
+    get_int: vi.fn((key) => {
+      if (key === 'panel-index') {
+        return 1;
+      }
+      if (key === 'lyrics-offset-ms') {
+        return -250;
+      }
+      return 360;
+    }),
     get_strv: vi.fn(() => ['spotify']),
     get_boolean: vi.fn(
       (key) =>

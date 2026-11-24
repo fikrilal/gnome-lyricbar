@@ -5,6 +5,7 @@ import {
   normalizeLyricsOffset,
   normalizeBrowserPlayerService,
   normalizeMaxWidth,
+  normalizePanelIndex,
   normalizePanelPosition,
   normalizePlayerPriority,
   normalizeSettings,
@@ -18,6 +19,7 @@ describe('normalizeSettings', () => {
     expect(
       normalizeSettings({
         panelPosition: 'left',
+        panelIndex: 1,
         maxWidth: 420,
         textAlign: 'center',
         fallbackMode: 'hidden',
@@ -33,6 +35,7 @@ describe('normalizeSettings', () => {
       }),
     ).toEqual({
       panelPosition: 'left',
+      panelIndex: 1,
       maxWidth: 420,
       textAlign: 'center',
       fallbackMode: 'hidden',
@@ -52,6 +55,7 @@ describe('normalizeSettings', () => {
     expect(
       normalizeSettings({
         panelPosition: 'bad',
+        panelIndex: 'first',
         maxWidth: 'wide',
         textAlign: 'bad',
         fallbackMode: 'loud',
@@ -67,6 +71,7 @@ describe('normalizeSettings', () => {
       }),
     ).toEqual({
       panelPosition: 'center',
+      panelIndex: 0,
       maxWidth: 360,
       textAlign: 'left',
       fallbackMode: 'track',
@@ -90,6 +95,27 @@ describe('normalizePanelPosition', () => {
 
   it('rejects unknown panel positions', () => {
     expect(normalizePanelPosition('top')).toBe('center');
+  });
+});
+
+describe('normalizePanelIndex', () => {
+  it('rounds finite numbers', () => {
+    expect(normalizePanelIndex(1.6)).toBe(2);
+  });
+
+  it('clamps below minimum', () => {
+    expect(normalizePanelIndex(-5)).toBe(-1);
+  });
+
+  it('clamps above maximum', () => {
+    expect(normalizePanelIndex(99)).toBe(20);
+  });
+
+  it('falls back to zero for non-finite values', () => {
+    expect(normalizePanelIndex(Number.NaN)).toBe(0);
+    expect(normalizePanelIndex(Infinity)).toBe(0);
+    expect(normalizePanelIndex('first')).toBe(0);
+    expect(normalizePanelIndex(undefined)).toBe(0);
   });
 });
 

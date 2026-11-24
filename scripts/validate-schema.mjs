@@ -11,6 +11,7 @@ const failures = [];
 
 const requiredKeys = [
   'panel-position',
+  'panel-index',
   'max-width',
   'fallback-mode',
   'player-priority',

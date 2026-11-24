@@ -6,6 +6,12 @@
       <summary>Panel position</summary>
       <description>Where the LyricBar indicator should be placed in the GNOME top bar.</description>
     </key>
+    <key name="panel-index" type="i">
+      <default>0</default>
+      <range min="-1" max="20"/>
+      <summary>Panel index</summary>
+      <description>0-based position index within the selected top-bar panel box (0 is first; 1 places after Activities on the left; -1 appends to the end).</description>
+    </key>
     <key name="max-width" type="i">
       <default>360</default>
       <range min="120" max="720"/>

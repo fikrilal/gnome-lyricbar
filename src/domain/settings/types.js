@@ -7,6 +7,7 @@
  *
  * @typedef {Readonly<{
  *   panelPosition?: unknown,
+ *   panelIndex?: unknown,
  *   maxWidth?: unknown,
  *   textAlign?: unknown,
  *   fallbackMode?: unknown,
@@ -23,6 +24,7 @@
  *
  * @typedef {Readonly<{
  *   panelPosition: PanelPosition,
+ *   panelIndex: number,
  *   maxWidth: number,
  *   textAlign: TextAlign,
  *   fallbackMode: FallbackMode,

@@ -26,7 +26,7 @@ import {
   shouldRepositionPanelIndicator,
 } from '../domain/settings/change.js';
 import { LyricBarIndicator, LyricBarSettingsIndicator } from '../shell/indicator.js';
-import { normalizePanelPosition } from '../domain/settings/normalize.js';
+import { normalizePanelIndex, normalizePanelPosition } from '../domain/settings/normalize.js';
 import { LifecycleRegistry } from './lifecycle.js';
 import { LyricsCache } from './lyrics/cache.js';
 import { LrclibProvider } from './lyrics/lrclib.js';
@@ -190,13 +190,16 @@ export class LyricBarController {
         browserPlayerService: settings.browserPlayerService,
         debugLogging: settings.debugLogging,
         maxWidth: settings.maxWidth,
+        panelIndex: settings.panelIndex,
         panelPosition: settings.panelPosition,
         showSettingsIcon: settings.showSettingsIcon,
       });
       if (previousSettings !== null && shouldRepositionPanelIndicator(previousSettings, settings)) {
         this.#logger?.debug('indicator-reposition-requested', {
-          from: previousSettings.panelPosition,
-          to: settings.panelPosition,
+          fromIndex: previousSettings.panelIndex,
+          fromPosition: previousSettings.panelPosition,
+          toIndex: settings.panelIndex,
+          toPosition: settings.panelPosition,
         });
         this.#replaceIndicator();
       }
@@ -291,10 +294,11 @@ export class LyricBarController {
     Main.panel.addToStatusArea(
       this.#extension.uuid,
       indicator,
-      0,
+      normalizePanelIndex(this.#currentSettings.panelIndex),
       normalizePanelPosition(this.#currentSettings.panelPosition),
     );
     this.#logger?.debug('indicator-mounted', {
+      panelIndex: this.#currentSettings.panelIndex,
       panelPosition: this.#currentSettings.panelPosition,
     });
     this.#syncIndicatorPreferencesAction();

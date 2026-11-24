@@ -42,7 +42,7 @@ describe('shouldRefreshPlayerSelection', () => {
 });
 
 describe('shouldRepositionPanelIndicator', () => {
-  it('returns false when panel position is unchanged', () => {
+  it('returns false when panel position and index are unchanged', () => {
     expect(shouldRepositionPanelIndicator(settings(['spotify']), settings(['vlc']))).toBe(false);
   });
 
@@ -51,6 +51,15 @@ describe('shouldRepositionPanelIndicator', () => {
       shouldRepositionPanelIndicator(
         { ...settings(['spotify']), panelPosition: 'left' },
         { ...settings(['spotify']), panelPosition: 'right' },
+      ),
+    ).toBe(true);
+  });
+
+  it('returns true when panel index changes', () => {
+    expect(
+      shouldRepositionPanelIndicator(
+        { ...settings(['spotify']), panelIndex: 0 },
+        { ...settings(['spotify']), panelIndex: 1 },
       ),
     ).toBe(true);
   });
@@ -93,6 +102,7 @@ describe('shouldRefreshSyncedLyrics', () => {
 function settings(playerPriority, overrides = {}) {
   return {
     panelPosition: 'center',
+    panelIndex: 0,
     maxWidth: 360,
     textAlign: 'left',
     fallbackMode: 'track',

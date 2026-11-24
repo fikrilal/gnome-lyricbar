@@ -397,6 +397,7 @@ Settings should be stored through GSettings.
 Initial settings:
 
 - `panel-position`: `left`, `center`, or `right`
+- `panel-index`: integer order within the selected panel box (`-1..20`, default `0`)
 - `max-width`: integer pixel width
 - `fallback-mode`: `track`, `idle`, or `hidden`
 - `player-priority`: string array of preferred player bus-name fragments

@@ -16,6 +16,7 @@ import { normalizeSettings } from '../domain/settings/normalize.js';
 
 const SETTING_KEYS = [
   'panel-position',
+  'panel-index',
   'max-width',
   'text-align',
   'fallback-mode',
@@ -49,6 +50,7 @@ export class SettingsAdapter {
   read() {
     return normalizeSettings({
       panelPosition: this.#settings.get_string('panel-position'),
+      panelIndex: this.#settings.get_int('panel-index'),
       maxWidth: this.#settings.get_int('max-width'),
       textAlign: this.#settings.get_string('text-align'),
       fallbackMode: this.#settings.get_string('fallback-mode'),

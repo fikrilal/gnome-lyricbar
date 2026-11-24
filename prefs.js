@@ -87,6 +87,21 @@ export default class LyricBarPreferences extends ExtensionPreferences {
     });
     connections.push([settings, posChangedId]);
 
+    // panel-index: SpinRow
+    const panelIndexRow = new Adw.SpinRow({
+      title: 'Panel index',
+      subtitle:
+        'Order within the selected panel box (0 is first; 1 places after Activities on the left; -1 appends to the end).',
+      adjustment: new Gtk.Adjustment({
+        lower: -1,
+        upper: 20,
+        step_increment: 1,
+        page_increment: 5,
+        value: settings.get_int('panel-index'),
+      }),
+    });
+    settings.bind('panel-index', panelIndexRow, 'value', Gio.SettingsBindFlags.DEFAULT);
+
     // max-width: SpinRow
     const maxWidthRow = new Adw.SpinRow({
       title: 'Maximum width',
@@ -173,6 +188,7 @@ export default class LyricBarPreferences extends ExtensionPreferences {
     );
 
     displayGroup.add(panelPositionRow);
+    displayGroup.add(panelIndexRow);
     displayGroup.add(maxWidthRow);
     displayGroup.add(textAlignRow);
     displayGroup.add(fallbackModeRow);
@@ -734,6 +750,7 @@ function buildDiagnosticsMarkdown(metadata, settings) {
     `| URL | ${escapeMarkdownTable(readMetadataText(metadata, 'url', 'https://github.com/fikrilal/gnome-lyricbar'))} |`,
     `| Shell compatibility | ${escapeMarkdownTable(readShellVersions(metadata))} |`,
     `| Panel position | ${escapeMarkdownTable(settings.get_string('panel-position'))} |`,
+    `| Panel index | ${settings.get_int('panel-index')} |`,
     `| Text alignment | ${escapeMarkdownTable(settings.get_string('text-align'))} |`,
     `| Maximum width | ${settings.get_int('max-width')} |`,
     `| Fallback mode | ${escapeMarkdownTable(settings.get_string('fallback-mode'))} |`,

@@ -20,7 +20,7 @@ export function shouldRefreshPlayerSelection(previous, next) {
  * @returns {boolean}
  */
 export function shouldRepositionPanelIndicator(previous, next) {
-  return previous.panelPosition !== next.panelPosition;
+  return previous.panelPosition !== next.panelPosition || previous.panelIndex !== next.panelIndex;
 }
 
 /**
